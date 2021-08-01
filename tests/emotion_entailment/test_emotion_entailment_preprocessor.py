@@ -4,7 +4,7 @@ import unittest
 import torch
 from transformers import BatchEncoding
 
-from sgnlp_models.models.emotion_entailment import (
+from sgnlp.models.emotion_entailment import (
     RecconEmotionEntailmentPreprocessor,
 )
 

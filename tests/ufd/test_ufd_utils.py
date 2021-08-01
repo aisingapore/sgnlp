@@ -6,14 +6,14 @@ import unittest
 
 import torch
 
-from sgnlp_models.models.ufd import (
+from sgnlp.models.ufd import (
     UFDAdaptorGlobalModel,
     UFDAdaptorDomainModel,
     UFDCombineFeaturesMapModel,
     UFDClassifierModel,
     UFDArguments
 )
-from sgnlp_models.models.ufd.utils import (
+from sgnlp.models.ufd.utils import (
     create_unsupervised_models,
     load_trained_models,
     create_classifiers,

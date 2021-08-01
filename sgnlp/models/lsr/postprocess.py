@@ -1,4 +1,4 @@
-"""Functionality for postprocessing :class:`~sgnlp_models.models.lsr.modeling.LsrModelOutput`"""
+"""Functionality for postprocessing :class:`~sgnlp.models.lsr.modeling.LsrModelOutput`"""
 
 import json
 import numpy as np
@@ -7,7 +7,7 @@ from .utils import idx2ht
 
 
 class LsrPostprocessor:
-    """This class processes :class:`~sgnlp_models.models.lsr.modeling.LsrModelOutput` to a readable format.
+    """This class processes :class:`~sgnlp.models.lsr.modeling.LsrModelOutput` to a readable format.
 
     Args:
         rel2id (:obj:`dict`):

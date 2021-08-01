@@ -1,5 +1,5 @@
 """Run this script to download all predtrained weights"""
-from sgnlp_models.models.ufd import (
+from sgnlp.models.ufd import (
     UFDEmbeddingConfig,
     UFDEmbeddingModel,
     UFDTokenizer,

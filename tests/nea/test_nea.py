@@ -6,7 +6,7 @@ import pytest
 import torch
 from transformers import PretrainedConfig
 
-from sgnlp_models.models.nea import (
+from sgnlp.models.nea import (
     NEAConfig,
     NEARegPoolingModel,
     NEARegModel,

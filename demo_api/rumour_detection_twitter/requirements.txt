@@ -4,4 +4,4 @@ torch==1.8.1
 numpy
 flask
 gunicorn
-sgnlp-models==0.0.15
+sgnlp==0.0.1

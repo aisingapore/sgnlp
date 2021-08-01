@@ -213,7 +213,7 @@ def squad_convert_examples_to_features(
 
     Args:
         examples (List[SquadExample]): list of SquadExample
-        tokenizer (RecconSpanExtractionTokenizer): RecconSpanExtractionTokenizer from sgnlp_models
+        tokenizer (RecconSpanExtractionTokenizer): RecconSpanExtractionTokenizer from sgnlp
         max_seq_length (int): set max_seq_length
         doc_stride (int): set doc_stride
         max_query_length (int): set max_query_length
@@ -372,7 +372,7 @@ def load_examples(
 
     Args:
         examples (List[Dict[str, torch.Tensor]]): train data
-        tokenizer (RecconSpanExtractionTokenizer): RecconSpanExtractionTokenizer from sgnlp_models
+        tokenizer (RecconSpanExtractionTokenizer): RecconSpanExtractionTokenizer from sgnlp
         max_seq_length (int, optional): set max_seq_length. Defaults to 512.
         doc_stride (int, optional): set max_seq_length. Defaults to 512.
         max_query_length (int, optional): set max_seq_length. Defaults to 512.

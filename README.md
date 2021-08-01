@@ -1,10 +1,10 @@
-# SG-NLP Models
+# SG-NLP
 
-Repository for supported models in the SG-NLP demo website.
+Models from Singapore's NLP research community.
 
 ## Development Requirements
 
-Below is an example on how to install development related packages.
+* Python >= 3.8
 
 ```sh
 pip install -r requirements_dev.txt
@@ -14,7 +14,8 @@ pip install -r requirements_dev.txt
 
 Unit and integration tests scripts are all stored in the `tests` folder.
 
-In order for unit tests in `Tests` folder to import `sgnlp-models` modules, please add the Python path variable at the root `sgnlp-models` folder prior to running test cases.
+In order for unit tests in `Tests` folder to import the modules properly, please add the root of the repository to the 
+Python path variable  prior to running test cases.
 
 For Linux
 
@@ -29,7 +30,7 @@ set PYTHONPATH=%cd%
 ```
 
 Below is the example to execute all test cases in the `tests` folder, commands are executed at the root
-`sg-nlp-models` folder.
+of the repository.
 
 Using Pytest package
 
@@ -47,18 +48,6 @@ pytest -m 'not slow' tests/
 pytest <path/to/script>
 ```
 
-## Building and pushing
-
-Below is an example of building an api image and pushing to the registry.
-
-```sh
-docker build -t lif-3way-ap .
-
-docker login registry.aisingapore.net
-docker tag lif-3way-ap registry.aisingapore.net/sg-nlp/lif-3way-ap:latest
-docker push registry.aisingapore.net/sg-nlp/lif-3way-ap:latest
-```
-
 ## Publishing to PyPI
 
 - Requires `twine`
@@ -66,7 +55,7 @@ docker push registry.aisingapore.net/sg-nlp/lif-3way-ap:latest
 - Increment version number in `setup.py`
 
 ```sh
-rm -rf build dist sgnlp_models.egg-info/
+rm -rf build dist sgnlp.egg-info/
 
 python setup.py sdist bdist_wheel
 

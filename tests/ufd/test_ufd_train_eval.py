@@ -4,9 +4,9 @@ import pytest
 import shutil
 import unittest
 
-from sgnlp_models.models.ufd import UFDArguments
-from sgnlp_models.models.ufd.train import train
-from sgnlp_models.models.ufd.eval import evaluate
+from sgnlp.models.ufd import UFDArguments
+from sgnlp.models.ufd.train import train
+from sgnlp.models.ufd.eval import evaluate
 
 PARENT_DIR = str(pathlib.Path(__file__).parent)
 

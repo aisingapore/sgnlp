@@ -370,7 +370,7 @@ class UFDModel(nn.Module):
             UFDModelOutput: output UFDModelOutput instance with loss and logits.
 
         Example::
-            from sgnlp_models.models.ufd import (
+            from sgnlp.models.ufd import (
                 UFDModelBuilder,
                 UFDPreprocessor
             )

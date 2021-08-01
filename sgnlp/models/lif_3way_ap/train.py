@@ -11,9 +11,9 @@ from sklearn.metrics import roc_auc_score, f1_score
 from transformers import set_seed
 from datetime import datetime
 
-from sgnlp_models.models.lif_3way_ap.config import LIF3WayAPConfig
-from sgnlp_models.models.lif_3way_ap.modeling import LIF3WayAPModel
-from sgnlp_models.models.lif_3way_ap.preprocess import LIF3WayAPPreprocessor, lif_3way_ap_collate_fn
+from sgnlp.models.lif_3way_ap.config import LIF3WayAPConfig
+from sgnlp.models.lif_3way_ap.modeling import LIF3WayAPModel
+from sgnlp.models.lif_3way_ap.preprocess import LIF3WayAPPreprocessor, lif_3way_ap_collate_fn
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

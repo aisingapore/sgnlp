@@ -3,7 +3,7 @@ import pytest
 
 import torch
 
-from sgnlp_models.models.lif_3way_ap import (
+from sgnlp.models.lif_3way_ap import (
     LIF3WayAPConfig,
     LIF3WayAPModel
 )

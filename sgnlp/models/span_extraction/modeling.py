@@ -15,7 +15,7 @@ class RecconSpanExtractionModel(BertForQuestionAnswering):
 
     Example::
 
-            from sgnlp_models.models.span_extraction import RecconSpanExtractionConfig, RecconSpanExtractionTokenizer, RecconSpanExtractionModel, utils
+            from sgnlp.models.span_extraction import RecconSpanExtractionConfig, RecconSpanExtractionTokenizer, RecconSpanExtractionModel, utils
 
             # 1. load from default
             config = RecconSpanExtractionConfig()

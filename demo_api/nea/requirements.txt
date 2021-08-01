@@ -5,4 +5,4 @@ nltk==3.5
 numpy
 flask
 gunicorn
-sgnlp-models==0.0.14
+sgnlp==0.0.1

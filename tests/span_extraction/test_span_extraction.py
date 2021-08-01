@@ -3,7 +3,7 @@ import pytest
 
 import torch
 
-from sgnlp_models.models.span_extraction import (
+from sgnlp.models.span_extraction import (
     RecconSpanExtractionConfig,
     RecconSpanExtractionTokenizer,
     RecconSpanExtractionModel,

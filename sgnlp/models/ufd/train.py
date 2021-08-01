@@ -264,8 +264,8 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
         :obj:`Tuple[Dict]`: all train/validation loss and acc records.
 
     Example::
-        from sgnlp_models.models.ufd import parse_args_and_load_config
-        from sgnlp_models.models.ufd import train
+        from sgnlp.models.ufd import parse_args_and_load_config
+        from sgnlp.models.ufd import train
         cfg = parse_args_and_load_config
         train(cfg)
     """

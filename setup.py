@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="sgnlp_models",
+    name="sgnlp",
     packages=find_packages(),
     version="0.0.15",
     description="State-of-the-art models from Singapore's NLP research community",
@@ -22,7 +22,7 @@ setup(
         "torchtext",
         "transformers",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     classifiers=[
         "Programming Language :: Python :: 3",
     ],

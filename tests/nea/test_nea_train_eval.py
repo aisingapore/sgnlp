@@ -3,7 +3,7 @@ import shutil
 import unittest
 import pytest
 
-from sgnlp_models.models.nea import train, evaluate, NEAArguments
+from sgnlp.models.nea import train, evaluate, NEAArguments
 
 
 PARENT_DIR = pathlib.Path(__file__).parent

@@ -11,7 +11,7 @@ from transformers import (
     XLMRobertaTokenizer
 )
 
-from sgnlp_models.models.ufd import (
+from sgnlp.models.ufd import (
     UFDAdaptorGlobalConfig,
     UFDAdaptorDomainConfig,
     UFDCombineFeaturesMapConfig,

@@ -3,14 +3,14 @@ import json
 
 from flask import Flask, request, jsonify
 
-from sgnlp_models.models.span_extraction import (
+from sgnlp.models.span_extraction import (
     RecconSpanExtractionConfig,
     RecconSpanExtractionModel,
     RecconSpanExtractionTokenizer,
     RecconSpanExtractionPreprocessor,
     RecconSpanExtractionPostprocessor,
 )
-from sgnlp_models.models.span_extraction.utils import (
+from sgnlp.models.span_extraction.utils import (
     get_all_evidence_utterance_from_conversation,
 )
 

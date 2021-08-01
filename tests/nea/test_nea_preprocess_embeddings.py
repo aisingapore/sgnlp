@@ -1,8 +1,8 @@
 import pathlib
 import unittest
 
-from sgnlp_models.models.nea.preprocess_embeddings import preprocess_embedding
-from sgnlp_models.models.nea.data_class import NEAArguments
+from sgnlp.models.nea.preprocess_embeddings import preprocess_embedding
+from sgnlp.models.nea.data_class import NEAArguments
 
 PARENT_DIR = pathlib.Path(__file__).parent
 

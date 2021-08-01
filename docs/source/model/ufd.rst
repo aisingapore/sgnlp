@@ -100,7 +100,7 @@ First import the neccessary modules/classes
 
 .. code:: python
 
-   from sgnlp_models.models.ufd import (
+   from sgnlp.models.ufd import (
        UFDModelBuilder,
        UFDPreprocessor)
 
@@ -113,7 +113,7 @@ please refer to the API documentations.
    model_builder = UFDModelBuilder()
    preprocessor = UFDPreprocessor()
 
-Note: By default, :class:`~sgnlp_models.models.ufd.model_builder.UFDModelBuilder` will include all available pretrained models,
+Note: By default, :class:`~sgnlp.models.ufd.model_builder.UFDModelBuilder` will include all available pretrained models,
 to target only specific model set, simply define the `source_domains`,
 `target_languages` and `target_domains` input arguments.
 The following shows an example for a single model set for the `books` source
@@ -136,7 +136,7 @@ per model group.
    model_groups = model_builder.build_model_group()
 
 The ``build_model_group()`` method call will return a dictionary of pretained
-:class:`~sgnlp_models.models.ufd.modeling.UFDModel`
+:class:`~sgnlp.models.ufd.modeling.UFDModel`
 with the model grouping as keys. Each keys are formed via concatenating the
 source domain key, the target language key and the target domain key seperated
 via an underscore. (i.e. ``books_de_dvd`` for model group trained on English language ``books``
@@ -144,7 +144,7 @@ domain dataset and is the best performing model when evalulated on the German
 ``de`` target language and ``dvd`` target domain dataset.)
 
 Next run the inference step with raw input text by accessing the desired model group via the dictionary key.
-The output is a :class:`~sgnlp_models.models.ufd.modeling.UFDModelOutput`  type which contains the optional ``loss`` value and the ``logits``.
+The output is a :class:`~sgnlp.models.ufd.modeling.UFDModelOutput`  type which contains the optional ``loss`` value and the ``logits``.
 
 .. code:: python
 
@@ -159,7 +159,7 @@ Full starter code is as follows,
 
 .. code:: python
 
-    from sgnlp_models.models.ufd import (
+    from sgnlp.models.ufd import (
        UFDModelBuilder,
        UFDPreprocessor)
     import torch
@@ -186,7 +186,7 @@ Full starter code is as follows,
 Input
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The input data to the :class:`~sgnlp_models.models.ufd.preprocess.UFDPreprocessor`
+The input data to the :class:`~sgnlp.models.ufd.preprocess.UFDPreprocessor`
 is a list of strings of the target language and target domain. The keys to the
 model groups should match the input data target language and target domain,
 as well as the desired source domain.
@@ -195,7 +195,7 @@ as well as the desired source domain.
 Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The output from the model is a :class:`~sgnlp_models.models.ufd.modeling.UFDModelOutput`
+The output from the model is a :class:`~sgnlp.models.ufd.modeling.UFDModelOutput`
 object which containers the `logits` and optional `loss` value. For probability
 and sentiment of the output, pass the `logits` thru a softmax function and get
 the max value, the index of the max value represents the sentiment.
@@ -291,8 +291,8 @@ To start UFD training, execute the follow code,
 
 .. code:: python
 
-    from sgnlp_models.models.ufd.utils import parse_args_and_load_config
-    from sgnlp_models.models.ufd.train import train
+    from sgnlp.models.ufd.utils import parse_args_and_load_config
+    from sgnlp.models.ufd.train import train
     cfg = parse_args_and_load_config
     train(cfg)
 
@@ -352,7 +352,7 @@ To start UFD evaluation, execute the following code,
 
 .. code:: python
 
-    from sgnlp_models.models.ufd import parse_args_and_load_config
-    from sgnlp_models.models.ufd import evaluate
+    from sgnlp.models.ufd import parse_args_and_load_config
+    from sgnlp.models.ufd import evaluate
     cfg = parse_args_and_load_config('config/ufd_config.json')
     evaluate(cfg)

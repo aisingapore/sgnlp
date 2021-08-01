@@ -1,4 +1,4 @@
-# SG NLP Documentation
+# SG-NLP Documentation
 
 ## Installation
 
@@ -9,7 +9,7 @@ You can install both packages with the following command
 pip install -r requirements.txt
 ```
 
-Additionally, install either the sgnlp_models package locally or add to PYTHONPATH
+Additionally, install either the repository locally or add to PYTHONPATH
 
 ```
 # From root folder
@@ -20,7 +20,8 @@ pip install -e .
 export PYTHONPATH=.
 ```
 
-Note: When using AutoClass feature, Sphinx requires all package dependency in the code to be installed as well, when adding new documentation, please also add new package dependency in the requirements.txt if there are any.
+Note: When using AutoClass feature, Sphinx requires all package dependency in the code to be installed as well, when 
+adding new documentation, please also add new package dependency in the requirements.txt if there are any.
 
 ## Building documentation
 

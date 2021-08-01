@@ -4,9 +4,9 @@ import pytest
 import shutil
 import unittest
 
-from sgnlp_models.models.nea.data_class import NEAArguments
-from sgnlp_models.models.nea.tokenization import NEA_NLTK_Tokenizer, NEATokenizer
-from sgnlp_models.models.nea.utils import download_tokenizer_files_from_azure
+from sgnlp.models.nea.data_class import NEAArguments
+from sgnlp.models.nea.tokenization import NEA_NLTK_Tokenizer, NEATokenizer
+from sgnlp.models.nea.utils import download_tokenizer_files_from_azure
 
 PARENT_DIR = pathlib.Path(__file__).parent
 TEST_STRING = "Dear @CAPS1 @CAPS2, I believe that using computers will benefit us in many ways"

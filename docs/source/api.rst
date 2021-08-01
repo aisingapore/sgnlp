@@ -3,4 +3,4 @@
    :template: custom-module-template.rst
    :recursive:
 
-   sgnlp_models
+   sgnlp

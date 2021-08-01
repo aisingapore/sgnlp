@@ -8,7 +8,7 @@ Recognizing Emotion Cause in Conversations
 
 ### Installation
 
-Install the dependencies required for sgnlp-models package.
+Install the dependencies required for sgnlp package.
 
 ### Dataset
 

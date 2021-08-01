@@ -4,7 +4,7 @@ import allennlp_models.tagging  # Needed by Predictor
 from allennlp.predictors.predictor import Predictor
 from transformers import cached_path
 
-from sgnlp_models.models.lsr import LsrModel, LsrConfig
+from sgnlp.models.lsr import LsrModel, LsrConfig
 
 
 # Downloads pretrained allennlp models

@@ -75,8 +75,8 @@ def evaluate(cfg: UFDArguments) -> None:
             UFDArgument config load from configuration file.
 
     Example::
-        from sgnlp_models.models.ufd import parse_args_and_load_config
-        from sgnlp_models.models.ufd import evaluate
+        from sgnlp.models.ufd import parse_args_and_load_config
+        from sgnlp.models.ufd import evaluate
         cfg = parse_args_and_load_config('config/ufd_config.json')
         evaluate(cfg)
     """

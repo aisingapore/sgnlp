@@ -35,8 +35,8 @@ def evaluate(cfg: NEAArguments) -> None:
 
         # From Code
         import json
-        from sgnlp_models.models.nea.utils import parse_args_and_load_config
-        from sgnlp_models.models.nea import evaluate
+        from sgnlp.models.nea.utils import parse_args_and_load_config
+        from sgnlp.models.nea import evaluate
         cfg = parse_args_and_load_config('config/nea_config.json')
         evaluate(cfg)
     """

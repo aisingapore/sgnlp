@@ -6,9 +6,9 @@ import pytest
 import numpy as np
 import torch
 
-from sgnlp_models.models.nea import NEARegPoolingModel
-from sgnlp_models.models.nea import NEAArguments
-from sgnlp_models.models.nea.utils import (
+from sgnlp.models.nea import NEARegPoolingModel
+from sgnlp.models.nea import NEAArguments
+from sgnlp.models.nea.utils import (
     init_model,
     get_emb_matrix,
     pad_sequences_from_list,

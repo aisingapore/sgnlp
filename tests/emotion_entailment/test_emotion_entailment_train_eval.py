@@ -4,7 +4,7 @@ import shutil
 import unittest
 import pytest
 
-from sgnlp_models.models.emotion_entailment import (
+from sgnlp.models.emotion_entailment import (
     train,
     evaluate,
     RecconEmotionEntailmentArguments,

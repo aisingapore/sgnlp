@@ -1,7 +1,7 @@
 import pytest
 import unittest
 
-from sgnlp_models.models.emotion_entailment import (
+from sgnlp.models.emotion_entailment import (
     RecconEmotionEntailmentPreprocessor,
     RecconEmotionEntailmentConfig,
     RecconEmotionEntailmentModel,

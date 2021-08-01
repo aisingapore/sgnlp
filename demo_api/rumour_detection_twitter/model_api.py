@@ -2,7 +2,7 @@ import pathlib
 import json
 
 from flask import Flask, jsonify, request
-from sgnlp_models.models.rumour_detection_twitter import (
+from sgnlp.models.rumour_detection_twitter import (
     RumourDetectionTwitterConfig,
     RumourDetectionTwitterModel,
     RumourDetectionTwitterTokenizer,

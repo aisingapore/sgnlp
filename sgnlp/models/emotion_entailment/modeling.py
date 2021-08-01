@@ -14,7 +14,7 @@ class RecconEmotionEntailmentModel(RobertaForSequenceClassification):
 
     Example::
 
-            from sgnlp_models.models.emotion_entailment import RecconEmotionEntailmentConfig, RecconEmotionEntailmentModel, RecconEmotionEntailmentTokenizer
+            from sgnlp.models.emotion_entailment import RecconEmotionEntailmentConfig, RecconEmotionEntailmentModel, RecconEmotionEntailmentTokenizer
 
             # 1. load from default
             config = RecconEmotionEntailmentConfig()

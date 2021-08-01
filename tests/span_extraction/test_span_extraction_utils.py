@@ -7,8 +7,8 @@ from transformers.data.processors.squad import (
     SquadFeatures,
 )
 
-from sgnlp_models.models.span_extraction import RecconSpanExtractionTokenizer
-from sgnlp_models.models.span_extraction.utils import (
+from sgnlp.models.span_extraction import RecconSpanExtractionTokenizer
+from sgnlp.models.span_extraction.utils import (
     RecconSpanExtractionData,
     InputFeatures,
     get_examples,

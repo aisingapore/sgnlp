@@ -3,7 +3,7 @@ import logging
 from flask import Flask, request, jsonify
 from transformers import cached_path
 
-from sgnlp_models.models.lsr import LsrModel, LsrConfig, LsrPreprocessor, LsrPostprocessor
+from sgnlp.models.lsr import LsrModel, LsrConfig, LsrPreprocessor, LsrPostprocessor
 from text_input_to_docred_pipeline import TextInputToDocredPipeline
 
 app = Flask(__name__)

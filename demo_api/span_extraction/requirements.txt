@@ -6,4 +6,4 @@ transformers==4.4.2
 tokenizers==0.10.1
 flask
 gunicorn
-sgnlp-models==0.0.14
+sgnlp==0.0.1

@@ -9,4 +9,4 @@ tqdm==4.60.0
 omegaconf==2.0.6
 flask
 gunicorn
-sgnlp-models==0.0.14
+sgnlp==0.0.1

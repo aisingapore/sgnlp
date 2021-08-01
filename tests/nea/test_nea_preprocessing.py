@@ -3,7 +3,7 @@ import pytest
 import shutil
 import unittest
 
-from sgnlp_models.models.nea import (
+from sgnlp.models.nea import (
     NEAArguments,
     NEAPreprocessor,
     NEATokenizer,

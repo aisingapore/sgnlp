@@ -1,9 +1,8 @@
-Welcome to sgnlp_models's documentation
+Welcome to sgnlp's documentation
 =======================================
 
-This package is part of the SG-NLP project.
-The sgnlp_models package is a collection of models developed by Singapore's NLP
-researchers and implemented using the Pytorch and Transformers frameworks.
+The sgnlp package is a collection of models developed by Singapore's NLP researchers and
+implemented using the Pytorch and Transformers frameworks. It is part of the SG-NLP project.
 
 What is SG-NLP?
 ---------------
@@ -17,4 +16,4 @@ You can interact with our `demos <..>`_ or view our :doc:`guide to get started <
 
    Quickstart <quickstart>
    Advanced Tutorial <models>
-   API Reference <api_reference/sgnlp_models>
+   API Reference <api_reference/sgnlp>

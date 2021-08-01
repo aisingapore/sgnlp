@@ -68,8 +68,8 @@ class NEATokenizer(PreTrainedTokenizer):
         tokens["input_ids"]
 
         # 3. Download pretrained from Azure storage
-        import sgnlp_models.models.nea import NEAArguments
-        import sgnlp_models.models.nea.utils import download_tokenizer_files_from_azure
+        import sgnlp.models.nea import NEAArguments
+        import sgnlp.models.nea.utils import download_tokenizer_files_from_azure
         cfg = NEAArguments()
         download_tokenizer_files_from_azure(cfg)
         tokenizer = NEATokenizer.from_pretrained(cfg.tokenizer_args["save_folder"])

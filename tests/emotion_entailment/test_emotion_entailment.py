@@ -3,7 +3,7 @@ import pytest
 
 import torch
 
-from sgnlp_models.models.emotion_entailment import (
+from sgnlp.models.emotion_entailment import (
     RecconEmotionEntailmentConfig,
     RecconEmotionEntailmentTokenizer,
     RecconEmotionEntailmentModel,

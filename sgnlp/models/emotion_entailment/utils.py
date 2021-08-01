@@ -127,7 +127,7 @@ def convert_df_to_dataset(
     Args:
         df (pd.DataFrame): DataFrame containing 'text' and 'labels' columns
         max_seq_length (int): max sequence length
-        tokenizer (RecconEmotionEntailmentTokenizer): RecconEmotionEntailmentTokenizer from sgnlp_models
+        tokenizer (RecconEmotionEntailmentTokenizer): RecconEmotionEntailmentTokenizer from sgnlp
 
     Returns:
         TensorDataset: A tensordataset object containing all examples
@@ -259,7 +259,7 @@ def convert_examples_to_features(
     Args:
         examples (List[InputExample]):List of InputExample
         max_seq_length (int): Max sequence length
-        tokenizer (RecconEmotionEntailmentTokenizer): RecconEmotionEntailmentTokenizer sgnlp_models
+        tokenizer (RecconEmotionEntailmentTokenizer): RecconEmotionEntailmentTokenizer sgnlp
         cls_token_at_end (bool, optional): Option to use cls_token_at_end . Defaults to False.
         sep_token_extra (bool, optional): Option to use sep_token_extra. Defaults to False.
         pad_on_left (bool, optional): Option to use pad_on_left. Defaults to False.
@@ -309,7 +309,7 @@ def load_examples(
     Args:
         examples (List[InputExample]): list of InputFeatures
         max_seq_length (int): max sequence length
-        tokenizer (RecconEmotionEntailmentTokenizer): RecconEmotionEntailmentTokenizer from sgnlp_models
+        tokenizer (RecconEmotionEntailmentTokenizer): RecconEmotionEntailmentTokenizer from sgnlp
 
     Returns:
         TensorDataset: A tensordataset object containing all examples

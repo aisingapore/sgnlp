@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from flask import Flask, request, jsonify
 
-from sgnlp_models.models.ufd import (
+from sgnlp.models.ufd import (
     UFDEmbeddingConfig,
     UFDEmbeddingModel,
     UFDTokenizer,

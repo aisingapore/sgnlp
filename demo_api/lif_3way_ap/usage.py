@@ -1,4 +1,4 @@
-from sgnlp_models.models.lif_3way_ap import LIF3WayAPModel, LIF3WayAPConfig, LIF3WayAPPreprocessor
+from sgnlp.models.lif_3way_ap import LIF3WayAPModel, LIF3WayAPConfig, LIF3WayAPPreprocessor
 from transformers import cached_path
 
 # Load model

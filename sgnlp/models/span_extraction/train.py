@@ -22,8 +22,8 @@ def train(cfg: RecconSpanExtractionArguments):
     Example::
 
             import json
-            from sgnlp_models.models.span_extraction import train
-            from sgnlp_models.models.span_extraction.utils import parse_args_and_load_config
+            from sgnlp.models.span_extraction import train
+            from sgnlp.models.span_extraction.utils import parse_args_and_load_config
 
             cfg = parse_args_and_load_config('config/span_extraction_config.json')
             train(cfg)

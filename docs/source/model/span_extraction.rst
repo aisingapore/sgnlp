@@ -34,7 +34,7 @@ following code:
 
 .. code:: python
 
-    from sgnlp_models.models.span_extraction import (
+    from sgnlp.models.span_extraction import (
         RecconSpanExtractionConfig,
         RecconSpanExtractionModel,
         RecconSpanExtractionTokenizer,
@@ -104,7 +104,7 @@ required.
 
 Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-There are 3 outputs returned from :class:`~sgnlp_models.models.span_extraction.postprocess.RecconSpanExtractionPostprocessor`.
+There are 3 outputs returned from :class:`~sgnlp.models.span_extraction.postprocess.RecconSpanExtractionPostprocessor`.
 
 1. Context: This shows the span extracted from the evidence utterance. This is a list of list of str.
 
@@ -161,18 +161,18 @@ You may refer to the other *train_args* parameters `here <https://huggingface.co
 
 Running Train Code
 ----------------------
-Import :func:`~sgnlp_models.models.span_extraction.train.train` and
-:func:`~sgnlp_models.models.span_extraction.utils.parse_args_and_load_config`
+Import :func:`~sgnlp.models.span_extraction.train.train` and
+:func:`~sgnlp.models.span_extraction.utils.parse_args_and_load_config`
 function. Set the path to the config file as the argument for the
-:func:`~sgnlp_models.models.span_extraction.utils.parse_args_and_load_config`
-function. Run :func:`~sgnlp_models.models.span_extraction.train.train` on the
+:func:`~sgnlp.models.span_extraction.utils.parse_args_and_load_config`
+function. Run :func:`~sgnlp.models.span_extraction.train.train` on the
 config.
 
 .. code:: python
 
     import json
-    from sgnlp_models.models.span_extraction import train
-    from sgnlp_models.models.span_extraction.utils import parse_args_and_load_config
+    from sgnlp.models.span_extraction import train
+    from sgnlp.models.span_extraction.utils import parse_args_and_load_config
 
     cfg = parse_args_and_load_config('config/span_extraction_config.json')
     train(cfg)
@@ -225,18 +225,18 @@ For the other parameters, you can either use the default values or modify it.
 
 Running Evaluation Code
 ---------------------------
-Import :func:`~sgnlp_models.models.span_extraction.eval.evaluate` and
-:func:`~sgnlp_models.models.span_extraction.utils.parse_args_and_load_config`
+Import :func:`~sgnlp.models.span_extraction.eval.evaluate` and
+:func:`~sgnlp.models.span_extraction.utils.parse_args_and_load_config`
 function. Set the path to the config file as the argument for the
-:func:`~sgnlp_models.models.span_extraction.utils.parse_args_and_load_config`
-function. Run :func:`~sgnlp_models.models.span_extraction.eval.evaluate` on the
+:func:`~sgnlp.models.span_extraction.utils.parse_args_and_load_config`
+function. Run :func:`~sgnlp.models.span_extraction.eval.evaluate` on the
 config.
 
 .. code:: python
 
     import json
-    from sgnlp_models.models.span_extraction import evaluate
-    from sgnlp_models.models.span_extraction.utils import parse_args_and_load_config
+    from sgnlp.models.span_extraction import evaluate
+    from sgnlp.models.span_extraction.utils import parse_args_and_load_config
 
     cfg = parse_args_and_load_config('config/span_extraction_config.json')
     evaluate(cfg)

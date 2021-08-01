@@ -5,7 +5,7 @@ import pathlib
 import pandas as pd
 from torch.utils.data import TensorDataset
 
-from sgnlp_models.models.emotion_entailment.utils import (
+from sgnlp.models.emotion_entailment.utils import (
     convert_df_to_dataset,
     convert_df_to_examples,
     convert_example_to_feature,
@@ -15,7 +15,7 @@ from sgnlp_models.models.emotion_entailment.utils import (
     InputFeatures,
     RecconEmotionEntailmentData,
 )
-from sgnlp_models.models.emotion_entailment import RecconEmotionEntailmentTokenizer
+from sgnlp.models.emotion_entailment import RecconEmotionEntailmentTokenizer
 
 
 TRAINING_OUTPUT_DIR = str(pathlib.Path(__file__).parent)

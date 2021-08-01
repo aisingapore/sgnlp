@@ -3,8 +3,8 @@ import json
 
 from flask import Flask, jsonify, request
 
-from sgnlp_models.models.nea import NEAConfig, NEARegPoolingModel, NEATokenizer, NEAPreprocessor
-from sgnlp_models.models.nea.utils import convert_to_dataset_friendly_scores
+from sgnlp.models.nea import NEAConfig, NEARegPoolingModel, NEATokenizer, NEAPreprocessor
+from sgnlp.models.nea.utils import convert_to_dataset_friendly_scores
 
 app = Flask(__name__)
 

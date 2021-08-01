@@ -1,6 +1,6 @@
 """Run this script during build time to download the pretrained models and relevant files first"""
 
-from sgnlp_models.models.lif_3way_ap import (
+from sgnlp.models.lif_3way_ap import (
     LIF3WayAPModel,
     LIF3WayAPConfig
 )

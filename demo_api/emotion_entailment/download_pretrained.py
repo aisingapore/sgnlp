@@ -1,6 +1,6 @@
 """Run this script during build time to download the pretrained models and relevant files first"""
 
-from sgnlp_models.models.emotion_entailment import (
+from sgnlp.models.emotion_entailment import (
     RecconEmotionEntailmentConfig,
     RecconEmotionEntailmentTokenizer,
     RecconEmotionEntailmentModel,

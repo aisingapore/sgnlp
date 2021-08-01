@@ -1,7 +1,7 @@
 import pytest
 import unittest
 
-from sgnlp_models.models.ufd import (
+from sgnlp.models.ufd import (
     UFDPreprocessor,
     UFDTokenizer
 )

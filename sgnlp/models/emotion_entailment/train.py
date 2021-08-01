@@ -25,8 +25,8 @@ def train(cfg: RecconEmotionEntailmentArguments):
     Example::
 
             import json
-            from sgnlp_models.models.emotion_entailment import train
-            from sgnlp_models.models.emotion_entailment.utils import parse_args_and_load_config
+            from sgnlp.models.emotion_entailment import train
+            from sgnlp.models.emotion_entailment.utils import parse_args_and_load_config
 
             cfg = parse_args_and_load_config('config/emotion_entailment_config.json')
             train(cfg)

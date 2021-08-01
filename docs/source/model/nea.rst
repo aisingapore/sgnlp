@@ -30,14 +30,14 @@ The pretrained model can be downloaded and accessed as follows:
 
 .. code:: python
 
-    from sgnlp_models.models.nea import (
+    from sgnlp.models.nea import (
         NEAArguments,
         NEAPreprocessor,
         NEAConfig,
         NEARegPoolingModel,
         NEATokenizer,
         download_tokenizer_files_from_azure)
-    from sgnlp_models.models.nea.utils import convert_to_dataset_friendly_scores
+    from sgnlp.models.nea.utils import convert_to_dataset_friendly_scores
 
     # Download tokenizer files from azure
     cfg = NEAArguments()
@@ -85,13 +85,13 @@ The pretrained model can be downloaded and accessed as follows:
 Input
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The input data to the :class:`~sgnlp_models.models.nea.preprocess.NEAPreprocessor` is a list of strings.
+The input data to the :class:`~sgnlp.models.nea.preprocess.NEAPreprocessor` is a list of strings.
 
 
 Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The output from the model is a :class:`~sgnlp_models.models.nea.modeling.NEAModelOutput`
+The output from the model is a :class:`~sgnlp.models.nea.modeling.NEAModelOutput`
 object which contains the `logits` and optional `loss` value. To obtain a score
 as define in the paper, pass the `logits` and `prompt_id` to the
 `convert_to_dataset_friendly_scores` function.
@@ -179,8 +179,8 @@ To start NEA training, execute the following code,
     import nltk
     nltk.download('punkt')
 
-    from sgnlp_models.models.nea.utils import parse_args_and_load_config
-    from sgnlp_models.models.nea import train
+    from sgnlp.models.nea.utils import parse_args_and_load_config
+    from sgnlp.models.nea import train
     cfg = parse_args_and_load_config('config/nea_config.json')
     train(cfg)
 
@@ -252,7 +252,7 @@ To start NEA evaluation, execute the following code,
     import nltk
     nltk.download('punkt')
 
-    from sgnlp_models.models.nea.utils import parse_args_and_load_config
-    from sgnlp_models.models.nea import train
+    from sgnlp.models.nea.utils import parse_args_and_load_config
+    from sgnlp.models.nea import train
     cfg = parse_args_and_load_config('config/nea_config.json')
     eval(cfg)

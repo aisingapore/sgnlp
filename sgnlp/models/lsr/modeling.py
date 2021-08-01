@@ -17,7 +17,7 @@ from .modules.reasoner import StructInduction
 @dataclass
 class LsrModelOutput:
     """
-    Output type of :class:`~sgnlp_models.models.lsr.LsrModel`
+    Output type of :class:`~sgnlp.models.lsr.LsrModel`
 
     Args:
         prediction (:obj:`torch.FloatTensor` of shape :obj:`(batch_size, max_h_t_count, num_relations)`):
@@ -64,14 +64,14 @@ class LsrModel(LsrPreTrainedModel):
     general usage and behavior.
 
     Args:
-        config (:class:`~sgnlp_models.models.lsr.LsrConfig`):
+        config (:class:`~sgnlp.models.lsr.LsrConfig`):
             Model configuration class with all the parameters of the model. Initializing with a config file does not
             load the weights associated with the model, only the configuration.
             Use the :obj:`.from_pretrained` method to load the model weights.
 
     Example::
 
-        from sgnlp_models.models.lsr import LsrModel, LsrConfig
+        from sgnlp.models.lsr import LsrModel, LsrConfig
 
         # Method 1: Loading a default model
         config = LsrConfig()
@@ -220,7 +220,7 @@ class LsrModel(LsrPreTrainedModel):
                 Label for all possible head to tail entity relations.
 
         Returns:
-            output (:class:`~sgnlp_models.models.lsr.modeling.LsrModelOutput`)
+            output (:class:`~sgnlp.models.lsr.modeling.LsrModelOutput`)
         """
 
         # Step 1: Encode the document

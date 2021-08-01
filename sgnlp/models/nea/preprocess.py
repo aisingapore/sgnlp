@@ -4,7 +4,7 @@ import torch
 from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 
-from sgnlp_models.models.nea.tokenization import NEATokenizer
+from sgnlp.models.nea.tokenization import NEATokenizer
 
 
 class NEAPreprocessor:

@@ -1,7 +1,7 @@
 import pytest
 import unittest
 
-from sgnlp_models.models.span_extraction import (
+from sgnlp.models.span_extraction import (
     RecconSpanExtractionPreprocessor,
     RecconSpanExtractionConfig,
     RecconSpanExtractionModel,

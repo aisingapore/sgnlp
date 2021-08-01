@@ -1,4 +1,4 @@
-from sgnlp_models.models.span_extraction import (
+from sgnlp.models.span_extraction import (
     RecconSpanExtractionConfig,
     RecconSpanExtractionModel,
     RecconSpanExtractionTokenizer,

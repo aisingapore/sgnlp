@@ -1,4 +1,4 @@
-from sgnlp_models.models.lsr import LsrModel, LsrConfig, LsrPreprocessor, LsrPostprocessor
+from sgnlp.models.lsr import LsrModel, LsrConfig, LsrPreprocessor, LsrPostprocessor
 from transformers import cached_path
 
 # Download files from azure blob storage

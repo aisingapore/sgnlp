@@ -4,14 +4,14 @@ import torch
 import numpy as np
 from flask import Flask, request, jsonify
 
-from sgnlp_models.models.emotion_entailment import (
+from sgnlp.models.emotion_entailment import (
     RecconEmotionEntailmentConfig,
     RecconEmotionEntailmentTokenizer,
     RecconEmotionEntailmentModel,
     RecconEmotionEntailmentPreprocessor,
     RecconEmotionEntailmentPostprocessor,
 )
-from sgnlp_models.models.emotion_entailment.utils import (
+from sgnlp.models.emotion_entailment.utils import (
     get_all_evidence_utterance_from_conversation,
 )
 

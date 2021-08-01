@@ -5,7 +5,7 @@ import torch
 from transformers import BatchEncoding
 from transformers.data.processors.squad import SquadExample, SquadFeatures
 
-from sgnlp_models.models.span_extraction import (
+from sgnlp.models.span_extraction import (
     RecconSpanExtractionPreprocessor,
 )
 

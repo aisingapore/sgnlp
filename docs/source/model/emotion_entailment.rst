@@ -34,7 +34,7 @@ following code:
 
 .. code:: python
 
-    from sgnlp_models.models.emotion_entailment import (
+    from sgnlp.models.emotion_entailment import (
         RecconEmotionEntailmentConfig,
         RecconEmotionEntailmentModel,
         RecconEmotionEntailmentTokenizer,
@@ -94,7 +94,7 @@ required.
 
 Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The output returned from :class:`~sgnlp_models.models.emotion_entailment.postprocess.RecconEmotionEntailmentPostprocessor`
+The output returned from :class:`~sgnlp.models.emotion_entailment.postprocess.RecconEmotionEntailmentPostprocessor`
 instance is a list of int.
 
 1 indicates that the evidence_utterance at the corresponding index caused the
@@ -139,18 +139,18 @@ You may refer to the other *train_args* parameters `here <https://huggingface.co
 
 Running Train Code
 ----------------------
-Import :func:`~sgnlp_models.models.emotion_entailment.train.train` and
-:func:`~sgnlp_models.models.emotion_entailment.utils.parse_args_and_load_config`
+Import :func:`~sgnlp.models.emotion_entailment.train.train` and
+:func:`~sgnlp.models.emotion_entailment.utils.parse_args_and_load_config`
 function. Set the path to the config file as the argument for the
-:func:`~sgnlp_models.models.emotion_entailment.utils.parse_args_and_load_config`
-function. Run :func:`~sgnlp_models.models.emotion_entailment.train.train` on the
+:func:`~sgnlp.models.emotion_entailment.utils.parse_args_and_load_config`
+function. Run :func:`~sgnlp.models.emotion_entailment.train.train` on the
 config.
 
 .. code:: python
 
     import json
-    from sgnlp_models.models.emotion_entailment import train
-    from sgnlp_models.models.emotion_entailment.utils import parse_args_and_load_config
+    from sgnlp.models.emotion_entailment import train
+    from sgnlp.models.emotion_entailment.utils import parse_args_and_load_config
 
     cfg = parse_args_and_load_config('config/emotion_entailment_config.json')
     train(cfg)
@@ -192,18 +192,18 @@ For the other parameters, you can either use the default values or modify it.
 
 Running Evaluation Code
 ---------------------------
-Import :func:`~sgnlp_models.models.emotion_entailment.eval.evaluate` and
-:func:`~sgnlp_models.models.emotion_entailment.utils.parse_args_and_load_config`
+Import :func:`~sgnlp.models.emotion_entailment.eval.evaluate` and
+:func:`~sgnlp.models.emotion_entailment.utils.parse_args_and_load_config`
 function. Set the path to the config file as the argument for the
-:func:`~sgnlp_models.models.emotion_entailment.utils.parse_args_and_load_config`
-function. Run :func:`~sgnlp_models.models.emotion_entailment.eval.evaluate` on the
+:func:`~sgnlp.models.emotion_entailment.utils.parse_args_and_load_config`
+function. Run :func:`~sgnlp.models.emotion_entailment.eval.evaluate` on the
 config.
 
 .. code:: python
 
     import json
-    from sgnlp_models.models.emotion_entailment import evaluate
-    from sgnlp_models.models.emotion_entailment.utils import parse_args_and_load_config
+    from sgnlp.models.emotion_entailment import evaluate
+    from sgnlp.models.emotion_entailment.utils import parse_args_and_load_config
 
     cfg = parse_args_and_load_config('config/emotion_entailment_config.json')
     evaluate(cfg)

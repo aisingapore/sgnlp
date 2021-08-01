@@ -7,7 +7,7 @@ from transformers import PreTrainedModel
 
 from .config import LIF3WayAPConfig
 from .modules.layers import SeqAttnMat, GatedEncoding, GatedMultifactorSelfAttnEnc, CharCNNEmbedding, WordEmbedding
-from sgnlp_models.models.lif_3way_ap.utils import sequential_weighted_avg
+from sgnlp.models.lif_3way_ap.utils import sequential_weighted_avg
 
 
 class LIF3WayAPPreTrainedModel(PreTrainedModel):

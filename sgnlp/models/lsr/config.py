@@ -4,7 +4,7 @@ from transformers import PretrainedConfig
 
 class LsrConfig(PretrainedConfig):
     """
-    This is the configuration class to store the configuration of a :class:`~sgnlp_models.models.lsr.LsrModel`.
+    This is the configuration class to store the configuration of a :class:`~sgnlp.models.lsr.LsrModel`.
     It is used to instantiate a relation extraction model using latent structure refinement (LSR)
     according to the specified arguments, defining the model architecture.
 
@@ -48,7 +48,7 @@ class LsrConfig(PretrainedConfig):
 
     Example::
 
-        from sgnlp_models.models.lsr import LsrConfig
+        from sgnlp.models.lsr import LsrConfig
 
         # Initializing with default values
         configuration = LsrConfig()

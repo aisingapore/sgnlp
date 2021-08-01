@@ -4,7 +4,7 @@ import shutil
 import unittest
 import pytest
 
-from sgnlp_models.models.span_extraction import (
+from sgnlp.models.span_extraction import (
     train,
     evaluate,
     RecconSpanExtractionArguments,

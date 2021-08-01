@@ -4,13 +4,13 @@ Quickstart
 Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-sgnlp_models is tested on Python 3.8+ and Pytorch 1.8+.
+sgnlp is tested on Python 3.8+ and Pytorch 1.8+.
 
-Install sgnlp_models with Python's pip package manager.
+Install sgnlp with Python's pip package manager.
 
 .. code:: python
 
-    pip install sgnlp_models
+    pip install sgnlp
 
 
 Basics
@@ -30,7 +30,7 @@ Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. code:: python
 
-    from sgnlp_models.models.emotion_entailment import (
+    from sgnlp.models.emotion_entailment import (
         RecconEmotionEntailmentConfig,
         RecconEmotionEntailmentModel,
         RecconEmotionEntailmentTokenizer,
