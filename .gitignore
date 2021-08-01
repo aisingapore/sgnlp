@@ -1,0 +1,13 @@
+__pycache__/
+.DS_Store
+.vscode/
+.idea/
+data/
+*.egg-info
+build/
+dist/
+output/
+
+# Docs
+docs/build
+docs/source/api_reference

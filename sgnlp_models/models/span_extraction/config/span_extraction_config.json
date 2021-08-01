@@ -1,0 +1,39 @@
+{
+  "model_name": "mrm8488/spanbert-finetuned-squadv2",
+  "train_data_path": "data/subtask1/fold1/dailydialog_qa_train_with_context.json",
+  "val_data_path": "data/subtask1/fold1/dailydialog_qa_valid_with_context.json",
+  "test_data_path": "data/subtask1/fold1/dailydialog_qa_test_with_context.json",
+  "max_seq_length": 512,
+  "doc_stride": 512,
+  "max_query_length": 512,
+  "train_args": {
+    "output_dir": "output/",
+    "overwrite_output_dir": true,
+    "evaluation_strategy": "steps",
+    "per_device_train_batch_size": 16,
+    "per_device_eval_batch_size": 16,
+    "gradient_accumulation_steps": 1,
+    "learning_rate": 1e-5,
+    "weight_decay": 0,
+    "adam_epsilon": 1e-8,
+    "max_grad_norm": 1,
+    "num_train_epochs": 12,
+    "warmup_ratio": 0.06,
+    "no_cuda": false,
+    "seed": 0,
+    "fp16": false,
+    "load_best_model_at_end": true,
+    "label_names": ["start_positions", "end_positions"],
+    "report_to": "none"
+  },
+  "eval_args": {
+    "trained_model_dir": "output/",
+    "results_path": "result/",
+    "batch_size": 16,
+    "n_best_size": 20,
+    "null_score_diff_threshold": 0.0,
+    "sliding_window": false,
+    "no_cuda": false,
+    "max_answer_length": 200
+  }
+}

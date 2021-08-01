@@ -1,0 +1,41 @@
+{
+  "name": "LSR",
+  "languages": "English",
+  "description": "This is a neural network that induces a latent document-level graph and uses a refinement strategy that allows the model to incrementally aggregate relevant information for multi-hop reasoning.",
+  "paper": {
+    "text": "Nan, G., Guo, Z., Sekulić, I., & Lu, W. (2020). Reasoning with Latent Structure Refinement for Document-Level Relation Extraction. Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, July 2020 (pp. 1546-1557).",
+    "url": "https://aclanthology.org/2020.acl-main.141/"
+  },
+  "trainingDataset": {
+    "text": "DocRED",
+    "url": "https://github.com/thunlp/DocRED/tree/master/data"
+  },
+  "evaluationDataset": {
+    "text": "DocRED",
+    "url": "https://github.com/thunlp/DocRED/tree/master/data"
+  },
+  "evaluationScores": "0.55 F1 on development set. 0.59 F1 reported by authors in paper on development set.",
+  "trainingConfig": {
+    "text": "Not available."
+  },
+  "trainingTime": "~17 hours for 100 epochs on a single V100 GPU.",
+  "modelWeights": {
+    "text": "https://sgnlp.blob.core.windows.net/models/lsr/pytorch_model.bin",
+    "url": "https://sgnlp.blob.core.windows.net/models/lsr/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "https://sgnlp.blob.core.windows.net/models/lsr/config.json",
+    "url": "https://sgnlp.blob.core.windows.net/models/lsr/config.json"
+  },
+  "modelInput": "Coreference clusters of entities, relations between clusters of entities, and text.",
+  "modelOutput": "Scores of all possible relation labels between all possible pairs of entity clusters.",
+  "modelSize": "~85MB",
+  "inferenceInfo": "Not available.",
+  "usageScenarios": "Knowledge graph building.",
+  "originalCode": {
+    "text": "https://github.com/nanguoshun/LSR",
+    "url": "https://github.com/nanguoshun/LSR"
+  },
+  "contact": "sg-nlp@aisingapore.org",
+  "additionalInfo": "CAVEATS: The model trained in this paper alone is not sufficient to do extract relations from a document. It requires other models to perform entity recognition and coreference between the entities. For this demo, two other pretrained models from AllenNLP is used: Fine Grained Name Entity Recognition and Coreference SpanBERT."
+}

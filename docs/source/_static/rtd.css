@@ -1,0 +1,4 @@
+/* Make content width wider*/
+.wy-nav-content {
+    max-width: 100%;
+}

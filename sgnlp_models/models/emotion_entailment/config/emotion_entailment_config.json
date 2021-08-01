@@ -1,0 +1,33 @@
+{
+  "model_name": "roberta-base",
+  "x_train_path": "data/dailydialog_classification_train_with_context.csv",
+  "x_valid_path": "data/dailydialog_classification_valid_with_context.csv",
+  "max_seq_length": 512,
+  "train_args": {
+    "output_dir": "output/",
+    "overwrite_output_dir": true,
+    "evaluation_strategy": "steps",
+    "per_device_train_batch_size": 8,
+    "per_device_eval_batch_size": 8,
+    "gradient_accumulation_steps": 1,
+    "learning_rate": 1e-5,
+    "weight_decay": 0,
+    "adam_epsilon": 1e-8,
+    "max_grad_norm": 1,
+    "num_train_epochs": 12,
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.06,
+    "no_cuda": false,
+    "seed": 0,
+    "fp16": false,
+    "load_best_model_at_end": true,
+    "report_to": "none"
+  },
+  "eval_args": {
+    "trained_model_dir": "output/",
+    "x_test_path": "data/dailydialog_classification_test_with_context.csv",
+    "results_path": "output/classification_result.txt",
+    "per_device_eval_batch_size": 8,
+    "no_cuda": false
+  }
+}

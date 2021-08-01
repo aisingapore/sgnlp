@@ -1,0 +1,41 @@
+{
+  "name": "LIF3WayAP",
+  "languages": "English",
+  "description": "This is a neural network that applies attention mechanism and pooling to 3 sets of inputs: context, candidate question, previous questions and answers. It then classifies whether a candidate question is a follow-up question.",
+  "paper": {
+    "text": "Kundu, S., Lin, Q., and Ng. H. T (2020). Learning to Identify Follow-Up Questions in Conversational Question Answering. Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, July 2020 (pp. 959-968).",
+    "url": "https://aclanthology.org/2020.acl-main.90/"
+  },
+  "trainingDataset": {
+    "text": "Custom dataset derived from QuAC. Can be downloaded from the author's github repository.",
+    "url": "https://github.com/nusnlp/LIF"
+  },
+  "evaluationDataset": {
+    "text": "Custom dataset derived from QuAC. Can be downloaded from the author's github repository.",
+    "url": "https://github.com/nusnlp/LIF"
+  },
+  "evaluationScores": "0.81 F1 on development set. 0.82 F1 reported by authors in paper on development set.",
+  "trainingConfig": {
+    "text": "Not available."
+  },
+  "trainingTime": "~13 hours for 25 epochs on a single V100 GPU.",
+  "modelWeights": {
+    "text": "https://sgnlp.blob.core.windows.net/models/lif_3way_ap/pytorch_model.bin",
+    "url": "https://sgnlp.blob.core.windows.net/models/lif_3way_ap/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "https://sgnlp.blob.core.windows.net/models/lif_3way_ap/config.json",
+    "url": "https://sgnlp.blob.core.windows.net/models/lif_3way_ap/config.json"
+  },
+  "modelInput": "Context, historical questions and answers pairs, and candidate question.",
+  "modelOutput": "Probability score of whether candidate question is a valid follow-up question.",
+  "modelSize": "~130MB",
+  "inferenceInfo": "Not available.",
+  "usageScenarios": "Chatbots",
+  "originalCode": {
+    "text": "https://github.com/nusnlp/LIF",
+    "url": "https://github.com/nusnlp/LIF"
+  },
+  "contact": "sg-nlp@aisingapore.org",
+  "additionalInfo": "-"
+}

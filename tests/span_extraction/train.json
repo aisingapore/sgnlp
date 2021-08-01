@@ -1,0 +1,82 @@
+[
+  {
+    "context": "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited !",
+    "qas": [
+      {
+        "id": "dailydialog_tr_1097_utt_1_true_cause_utt_1_span_0",
+        "is_impossible": false,
+        "question": "The target utterance is Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! The evidence utterance is Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! Excited ? What's there to be excited about ? It's just another company dinner , right ? You have no idea ! There's a banquet with prizes , performances ... you name it !",
+    "qas": [
+      {
+        "id": "dailydialog_tr_1097_utt_3_impossible_cause_utt_1",
+        "is_impossible": true,
+        "question": "The target utterance is You have no idea ! There's a banquet with prizes , performances ... you name it ! The evidence utterance is Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! Excited ? What's there to be excited about ? It's just another company dinner , right ? You have no idea ! There's a banquet with prizes , performances ... you name it !",
+    "qas": [
+      {
+        "id": "dailydialog_tr_1097_utt_3_impossible_cause_utt_2",
+        "is_impossible": true,
+        "question": "The target utterance is You have no idea ! There's a banquet with prizes , performances ... you name it ! The evidence utterance is Excited ? What's there to be excited about ? It's just another company dinner , right ? What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! Excited ? What's there to be excited about ? It's just another company dinner , right ? You have no idea ! There's a banquet with prizes , performances ... you name it !",
+    "qas": [
+      {
+        "id": "dailydialog_tr_1097_utt_3_true_cause_utt_3_span_0",
+        "is_impossible": false,
+        "question": "The target utterance is You have no idea ! There's a banquet with prizes , performances ... you name it ! The evidence utterance is You have no idea ! There's a banquet with prizes , performances ... you name it ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "There's a banquet with prizes , performances",
+            "answer_start": 214
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! Excited ? What's there to be excited about ? It's just another company dinner , right ? You have no idea ! There's a banquet with prizes , performances ... you name it ! Really ? What kind of prizes ?",
+    "qas": [
+      {
+        "id": "dailydialog_tr_1097_utt_4_impossible_cause_utt_1",
+        "is_impossible": true,
+        "question": "The target utterance is Really ? What kind of prizes ? The evidence utterance is Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! What is the causal span from context that is relevant to the target utterance's emotion surprise ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  }
+]

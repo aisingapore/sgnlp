@@ -1,0 +1,37 @@
+{
+  "name": "Span Extraction",
+  "languages": "English",
+  "description": "This is a causal span extraction model based on SPANBert which recognises that causes of emotions in conversations. Given 4 sets of inputs: target utterance, target utterance's emotion, evidence utterance and conversational history, it returns arrays of start and end logits which can be postprocessed to obtain the span which caused the emotion in the target utterance.",
+  "paper": {
+    "text": "Poria, S., Majumder, N., Hazarika, D., Ghosal, D., Bhardwaj, R., Jian, S.Y.B., Hong, P., Ghosh, R., Roy, A., Chhaya, N., Gelbukh, A. and Mihalcea, R. (2020). Recognizing emotion cause in conversations. arXiv preprint arXiv:2012.11820., Dec 2020.",
+    "url": "https://arxiv.org/abs/2012.11820"
+  },
+  "trainingDataset": {
+    "text": "RECCON dataset. Can be downloaded from the author's github repository.",
+    "url": "https://github.com/declare-lab/RECCON/tree/main/data"
+  },
+  "evaluationDataset": {
+    "text": "RECCON dataset. Can be downloaded from the author's github repository.",
+    "url": "https://github.com/declare-lab/RECCON/tree/main/data"
+  },
+  "evaluationScores": "34.37% EMPos, 60.62% F1Pos, 83.18% F1Neg on development set, 34.64% EMPos, 60.00% F1Pos, 86.02% F1Neg, 75.71% F1 reported by authors in paper on development set.",
+  "trainingTime": "~3 hours for 12 epochs on a single V100 GPU.",
+  "modelWeights": {
+    "text": "https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/pytorch_model.bin",
+    "url": "https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/config.json",
+    "url": "https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/config.json"
+  },
+  "modelInput": "Target utterance, emotion in target utterance, evidence utterance and conversational history.",
+  "modelOutput": "Array of start logits and array of end logits. These 2 arrays can be post processed to detemine the start and end of the causal span.",
+  "modelSize": "~411MB",
+  "inferenceInfo": "~ 2 sec on Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz.",
+  "usageScenarios": "Recognizing emotion cause for phone support satisfaction.",
+  "originalCode": {
+    "text": "https://github.com/declare-lab/RECCON",
+    "url": "https://github.com/declare-lab/RECCON"
+  },
+  "contact": "sg-nlp@aisingapore.org"
+}

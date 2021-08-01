@@ -1,0 +1,37 @@
+{
+  "name": "Neural Essay Assessor",
+  "languages": "English",
+  "description": "An automatic essay scoring system based on convolutional and recurrent neural networks, including GRU and LSTM. Given an essay, it returns the evaluated score.",
+  "paper": {
+    "text": "Taghipour, K., & Ng, H. T. (2016). A neural approach to automated essay scoring. Proceedings of the 2016 conference on empirical methods in natural language processing, Nov 2016 (pp. 1882-1891).",
+    "url": "https://aclanthology.org/D16-1193/"
+  },
+  "trainingDataset": {
+    "text": "Dataset can be downloaded from Kaggle. Run the author's preprocess scripts to prepare the data for training and testing.",
+    "url": "https://github.com/nusnlp/nea"
+  },
+  "evaluationDataset": {
+    "text": "Dataset can be downloaded from Kaggle. Run the author's preprocess scripts to prepare the data for training and testing.",
+    "url": "https://github.com/nusnlp/nea"
+  },
+  "evaluationScores": "0.822 Quadratic Weighted Kappa on validation set, 0.764 Quadratic Weighted Kappa on test set, 0.821 Quadratic Weighted Kappa reported by authors in paper on development set.",
+  "trainingTime": "~3 hours for 50 epochs on a single V100 GPU.",
+  "modelWeights": {
+    "text": "https://sgnlp.blob.core.windows.net/models/nea/pytorch_model.bin",
+    "url": "https://sgnlp.blob.core.windows.net/models/nea/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "https://sgnlp.blob.core.windows.net/models/nea/config.json",
+    "url": "https://sgnlp.blob.core.windows.net/models/nea/config.json"
+  },
+  "modelInput": "Essay.",
+  "modelOutput": "Normalised essay score of between 0 and 1. The normalised essay score can be converted back to the original range.",
+  "modelSize": "~2.4MB",
+  "inferenceInfo": "~ 1 sec on Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz.",
+  "usageScenarios": "Automated grading of student essays without human interference.",
+  "originalCode": {
+    "text": "https://github.com/nusnlp/nea",
+    "url": "https://github.com/nusnlp/nea"
+  },
+  "contact": "sg-nlp@aisingapore.org"
+}

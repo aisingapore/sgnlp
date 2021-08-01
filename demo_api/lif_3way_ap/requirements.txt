@@ -1,0 +1,8 @@
+torch==1.8.1
+torchtext==0.9.1
+allennlp==2.4.0
+spacy==3.0.6
+transformers==4.5.1
+flask
+gunicorn
+sgnlp-models==0.0.14

@@ -1,0 +1,58 @@
+{
+  "use_wandb": false,
+  "wandb_config": {
+    "project": "nea",
+    "tags": ["nea"],
+    "name": "nea_train_run"
+  },
+  "model_type": "regp",
+  "emb_path": "embeddings.w2v.txt",
+  "preprocess_data_args": {
+    "train_path": "data/fold_0/train.tsv",
+    "dev_path": "data/fold_0/dev.tsv",
+    "test_path": "data/fold_0/test.tsv",
+    "prompt_id": 1,
+    "maxlen": 0,
+    "to_lower": true,
+    "score_index": 6
+  },
+  "tokenizer_args": {
+    "azure_path": "https://sgnlp.blob.core.windows.net/models/nea/",
+    "files": ["special_tokens_map.json", "vocab.txt", "tokenizer_config.json"],
+    "vocab_train_file": "data/fold_0/train.tsv",
+    "save_folder": "nea_tokenizer"
+  },
+  "train_args": {
+    "output_dir": "output/",
+    "overwrite_output_dir": true,
+    "seed": 0,
+    "num_train_epochs": 50,
+    "per_device_train_batch_size": 32,
+    "per_device_eval_batch_size": 32,
+    "learning_rate": 0.001,
+    "optimizer_type": "rmsprop",
+    "optimizer_epsilon": 1e-6,
+    "logging_strategy": "epoch",
+    "evaluation_strategy": "epoch",
+    "save_total_limit": 3,
+    "no_cuda": false,
+    "metric_for_best_model": "qwk",
+    "load_best_model_at_end": true,
+    "report_to": "none"
+  },
+  "eval_args": {
+    "results_path": "output/result.txt",
+    "trainer_args": {
+      "output_dir": "output/",
+      "report_to": "none"
+    }
+  },
+  "preprocess_raw_dataset_args": {
+    "data_folder": "data/",
+    "input_file": "training_set_rel3.tsv"
+  },
+  "preprocess_embedding_args": {
+    "raw_embedding_file": "release/En_vectors.txt",
+    "preprocessed_embedding_file": "embeddings.w2v.txt"
+  }
+}

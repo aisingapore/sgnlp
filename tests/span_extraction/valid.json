@@ -1,0 +1,82 @@
+[
+  {
+    "context": "I ' m hungry , let ' s go grab a bite to eat . Yeah me too . Oh ! Can we stop at the shop really fast ? I lost my makeup bag at the airport and I want to pick up a few things . Will you take long ? No ! Five minutes I promise ! Come on ! We have been here for almost an hour ! I thought you said you were only going to get a few things ! How long does it take you to pick out a lipstick and some nail polish ! Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq",
+    "qas": [
+      {
+        "id": "dailydialog_va_922_utt_6_impossible_cause_utt_1",
+        "is_impossible": true,
+        "question": "The target utterance is Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq The evidence utterance is I ' m hungry , let ' s go grab a bite to eat . What is the causal span from context that is relevant to the target utterance's emotion surprise ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "I ' m hungry , let ' s go grab a bite to eat . Yeah me too . Oh ! Can we stop at the shop really fast ? I lost my makeup bag at the airport and I want to pick up a few things . Will you take long ? No ! Five minutes I promise ! Come on ! We have been here for almost an hour ! I thought you said you were only going to get a few things ! How long does it take you to pick out a lipstick and some nail polish ! Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq",
+    "qas": [
+      {
+        "id": "dailydialog_va_922_utt_6_impossible_cause_utt_2",
+        "is_impossible": true,
+        "question": "The target utterance is Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq The evidence utterance is Yeah me too . Oh ! Can we stop at the shop really fast ? I lost my makeup bag at the airport and I want to pick up a few things . What is the causal span from context that is relevant to the target utterance's emotion surprise ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "I ' m hungry , let ' s go grab a bite to eat . Yeah me too . Oh ! Can we stop at the shop really fast ? I lost my makeup bag at the airport and I want to pick up a few things . Will you take long ? No ! Five minutes I promise ! Come on ! We have been here for almost an hour ! I thought you said you were only going to get a few things ! How long does it take you to pick out a lipstick and some nail polish ! Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq",
+    "qas": [
+      {
+        "id": "dailydialog_va_922_utt_6_impossible_cause_utt_3",
+        "is_impossible": true,
+        "question": "The target utterance is Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq The evidence utterance is Will you take long ? What is the causal span from context that is relevant to the target utterance's emotion surprise ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "I ' m hungry , let ' s go grab a bite to eat . Yeah me too . Oh ! Can we stop at the shop really fast ? I lost my makeup bag at the airport and I want to pick up a few things . Will you take long ? No ! Five minutes I promise ! Come on ! We have been here for almost an hour ! I thought you said you were only going to get a few things ! How long does it take you to pick out a lipstick and some nail polish ! Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq",
+    "qas": [
+      {
+        "id": "dailydialog_va_922_utt_6_impossible_cause_utt_4",
+        "is_impossible": true,
+        "question": "The target utterance is Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq The evidence utterance is No ! Five minutes I promise ! What is the causal span from context that is relevant to the target utterance's emotion surprise ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "I ' m hungry , let ' s go grab a bite to eat . Yeah me too . Oh ! Can we stop at the shop really fast ? I lost my makeup bag at the airport and I want to pick up a few things . Will you take long ? No ! Five minutes I promise ! Come on ! We have been here for almost an hour ! I thought you said you were only going to get a few things ! How long does it take you to pick out a lipstick and some nail polish ! Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq",
+    "qas": [
+      {
+        "id": "dailydialog_va_922_utt_6_true_cause_utt_5_span_0",
+        "is_impossible": false,
+        "question": "The target utterance is Are you crazy ? You have no idea what you are talking about ! Just for my eyes I have to get eye-liner , an eyelash curler , eye shadow , an eyebrow pencil and mascara . Then I need to get foundation , liq The evidence utterance is Come on ! We have been here for almost an hour ! I thought you said you were only going to get a few things ! How long does it take you to pick out a lipstick and some nail polish ! What is the causal span from context that is relevant to the target utterance's emotion surprise ?",
+        "answers": [
+          {
+            "text": "I thought you said you were only going to get a few things ! How long does it take you to pick out a lipstick and some nail polish !",
+            "answer_start": 277
+          }
+        ]
+      }
+    ]
+  }
+]

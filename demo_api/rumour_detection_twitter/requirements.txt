@@ -1,0 +1,7 @@
+transformers==4.4.2
+tokenizers==0.10.1
+torch==1.8.1
+numpy
+flask
+gunicorn
+sgnlp-models==0.0.15

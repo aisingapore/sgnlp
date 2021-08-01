@@ -1,0 +1,37 @@
+{
+  "name": "Emotion Entailment",
+  "languages": "English",
+  "description": "This is an emotion entailment model based on RoBERTa base which recognises the cause behind emotions in conversations. Given 4 sets of inputs: target utterance, target utterance's emotion, evidence utterance and conversational history, it returns the probability of the evidence utterance causing the emotion specified in the target utterance.",
+  "paper": {
+    "text": "Poria, S., Majumder, N., Hazarika, D., Ghosal, D., Bhardwaj, R., Jian, S.Y.B., Hong, P., Ghosh, R., Roy, A., Chhaya, N., Gelbukh, A. and Mihalcea, R. (2020). Recognizing emotion cause in conversations. arXiv preprint arXiv:2012.11820., Dec 2020.",
+    "url": "https://arxiv.org/abs/2012.11820"
+  },
+  "trainingDataset": {
+    "text": "RECCON dataset. Can be downloaded from the author's github repository.",
+    "url": "https://github.com/declare-lab/RECCON/tree/main/data"
+  },
+  "evaluationDataset": {
+    "text": "RECCON dataset. Can be downloaded from the author's github repository.",
+    "url": "https://github.com/declare-lab/RECCON/tree/main/data"
+  },
+  "evaluationScores": "64.02% F1Pos, 87.84% F1Neg on development set, 64.28% F1Pos, 88.74% F1Neg, 76.51% Macro F1 reported by authors in paper on development set.",
+  "trainingTime": "~3 hours for 12 epochs on a single V100 GPU.",
+  "modelWeights": {
+    "text": "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/pytorch_model.bin",
+    "url": "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/config.json",
+    "url": "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/config.json"
+  },
+  "modelInput": "Target utterance, emotion in target utterance, evidence utterance and conversational history.",
+  "modelOutput": "Probability score of whether evidence utterance caused target utterance to exhibit the emotion specified.",
+  "modelSize": "~477MB",
+  "inferenceInfo": "~ 2 sec on Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz.",
+  "usageScenarios": "Recognizing emotion cause for phone support satisfaction.",
+  "originalCode": {
+    "text": "https://github.com/declare-lab/RECCON",
+    "url": "https://github.com/declare-lab/RECCON"
+  },
+  "contact": "sg-nlp@aisingapore.org"
+}

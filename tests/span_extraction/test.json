@@ -1,0 +1,82 @@
+[
+  {
+    "context": "Hit ' em high , hit ' em low . Class of ' 93 -- let's go !",
+    "qas": [
+      {
+        "id": "dailydialog_te_354_utt_1_impossible_cause_utt_1",
+        "is_impossible": true,
+        "question": "The target utterance is Hit ' em high , hit ' em low . Class of ' 93 -- let's go ! The evidence utterance is Hit ' em high , hit ' em low . Class of ' 93 -- let's go ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "Hit ' em high , hit ' em low . Class of ' 93 -- let's go ! Hi there , everyone . We hope you're having a good night !",
+    "qas": [
+      {
+        "id": "dailydialog_te_354_utt_2_impossible_cause_utt_1",
+        "is_impossible": true,
+        "question": "The target utterance is Hi there , everyone . We hope you're having a good night ! The evidence utterance is Hit ' em high , hit ' em low . Class of ' 93 -- let's go ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "Hit ' em high , hit ' em low . Class of ' 93 -- let's go ! Hi there , everyone . We hope you're having a good night !",
+    "qas": [
+      {
+        "id": "dailydialog_te_354_utt_2_true_cause_utt_2_span_0",
+        "is_impossible": false,
+        "question": "The target utterance is Hi there , everyone . We hope you're having a good night ! The evidence utterance is Hi there , everyone . We hope you're having a good night ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "We hope you're having a good night !",
+            "answer_start": 81
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "Hit ' em high , hit ' em low . Class of ' 93 -- let's go ! Hi there , everyone . We hope you're having a good night ! Wasn't that football game great ! I just knew we'd win !",
+    "qas": [
+      {
+        "id": "dailydialog_te_354_utt_3_impossible_cause_utt_1",
+        "is_impossible": true,
+        "question": "The target utterance is Wasn't that football game great ! I just knew we'd win ! The evidence utterance is Hit ' em high , hit ' em low . Class of ' 93 -- let's go ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "context": "Hit ' em high , hit ' em low . Class of ' 93 -- let's go ! Hi there , everyone . We hope you're having a good night ! Wasn't that football game great ! I just knew we'd win !",
+    "qas": [
+      {
+        "id": "dailydialog_te_354_utt_3_impossible_cause_utt_2",
+        "is_impossible": true,
+        "question": "The target utterance is Wasn't that football game great ! I just knew we'd win ! The evidence utterance is Hi there , everyone . We hope you're having a good night ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+        "answers": [
+          {
+            "text": "Impossible \u2260\u00e6\u2260\u00e6\u2260 answer",
+            "answer_start": 0
+          }
+        ]
+      }
+    ]
+  }
+]

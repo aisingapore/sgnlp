@@ -1,0 +1,20 @@
+{
+  "experiment_name": "test-run",
+  "experiement_number": "000",
+  "log_frequency": "100",
+  "save_model_frequency": 1,
+  "output_dir": "/polyaxon-data/SG-NLP/rumour_refactor",
+  "data_path": "/polyaxon-data/SG-NLP/rumour_refactor/data/t15-s4-full",
+  "tokenizer_path": "/polyaxon-data/SG-NLP/rumour_refactor/data/rumour-detection-tokenizer-15k",
+  "model_config_path": null,
+  "pretrained_embedding_path": "/polyaxon-data/SG-NLP/rumour_refactor/data/rumour-detection-glove-vectors.npy",
+  "optim": "adam",
+  "lr": 0.01,
+  "momentum": 0.99,
+  "num_epoch": 100,
+  "batch_size": 4,
+  "lr_annealing_factor": 0.9,
+  "scheduler_step_size": 1,
+  "seed": 0,
+  "use_gpu": true
+}

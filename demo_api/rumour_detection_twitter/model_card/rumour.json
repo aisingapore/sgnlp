@@ -1,0 +1,40 @@
+{
+  "name": "Rumour Detection",
+  "languages": "English",
+  "description": "This model is based on the hierarchical transformer architecture described in the associated paper.",
+  "paper": {
+    "text": "Khoo, L. M. S., Chieu, H. L., Qian, Z., & Jiang, J. (2020). Interpretable rumor detection in microblogs by attending to user interactions. Proceedings of the AAAI Conference on Artificial Intelligence, April 2020 (Vol. 34, No. 05, pp. 8783-8790).",
+    "url": "https://ojs.aaai.org//index.php/AAAI/article/view/6405"
+  },
+  "trainingDataset": {
+    "text": "The train and evaluation datasets were derived from the Twitter15, Twitter16 and PHEME datasets. The full dataset can be downloaded from the author's Dropbox.",
+    "url": "https://www.dropbox.com/sh/w3bh1crt6estijo/AAD9p5m5DceM0z63JOzFV7fxa?dl=0"
+  },
+  "evaluationDataset": {
+    "text": "The train and evaluation datasets were derived from the Twitter15, Twitter16 and PHEME datasets. The full dataset can be downloaded from the author's Dropbox.",
+    "url": "https://www.dropbox.com/sh/w3bh1crt6estijo/AAD9p5m5DceM0z63JOzFV7fxa?dl=0"
+  },
+  "evaluationScores": "Retrained scores: (F1: 69.8%) | Scores reported in paper: (F1: 77.4%) ",
+  "trainingConfig": {
+    "text": "Not available."
+  },
+  "trainingTime": "~6 hours on a single V100 GPU",
+  "modelWeights": {
+    "text": "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/pytorch_model.bin",
+    "url": "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/config.json",
+    "url": "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/config.json"
+  },
+  "modelInput": "Thread of tweets. The first tweet should be the target tweet.",
+  "modelOutput": "Array of logits for each class (True, False, Unverified, Non-Rumour). This can be converted into probabilities using the softmax function.",
+  "modelSize": "~60mb",
+  "inferenceInfo": "Not available.",
+  "usageScenarios": "Rumour detection / fake news detection on Twitter",
+  "originalCode": {
+    "text": "https://github.com/serenaklm/rumor_detection",
+    "url": "https://github.com/serenaklm/rumor_detection"
+  },
+  "contact": "sg-nlp@aisingapore.org"
+}
