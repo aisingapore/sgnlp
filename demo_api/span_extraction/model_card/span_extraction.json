@@ -33,5 +33,9 @@
     "text": "https://github.com/declare-lab/RECCON",
     "url": "https://github.com/declare-lab/RECCON"
   },
+  "license": {
+    "text": "MIT License",
+    "url": "https://choosealicense.com/licenses/mit"
+  },
   "contact": "sg-nlp@aisingapore.org"
 }

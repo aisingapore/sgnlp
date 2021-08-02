@@ -33,5 +33,9 @@
     "text": "https://github.com/lijuntaopku/UFD",
     "url": "https://github.com/lijuntaopku/UFD"
   },
+  "license": {
+    "text": "For non-commercial use: GNU GPLv3. For commercial use, please contact us.",
+    "url": "https://choosealicense.com/licenses/gpl-3.0"
+  },
   "contact": "sg-nlp@aisingapore.org"
 }
