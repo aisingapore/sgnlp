@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="sgnlp",
     packages=find_packages(),
-    version="0.0.15",
+    version="0.0.1",
     description="State-of-the-art models from Singapore's NLP research community",
     author="Jonathan Heng, Raymond Ng, Zhi Chong Tan, Benedict Lee",
     author_email="sg-nlp@aisingapore.org",
