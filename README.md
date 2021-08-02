@@ -63,3 +63,8 @@ twine check dist/*
 
 twine upload dist/*
 ```
+
+## License
+
+Code and models from this project is released under the MIT License unless otherwise stated.
+If a model's code is under a separate license, it can be found in the respective model's folder.
