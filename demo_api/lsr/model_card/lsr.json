@@ -36,6 +36,10 @@
     "text": "https://github.com/nanguoshun/LSR",
     "url": "https://github.com/nanguoshun/LSR"
   },
+  "license": {
+    "text": "MIT License",
+    "url": "https://choosealicense.com/licenses/mit"
+  },
   "contact": "sg-nlp@aisingapore.org",
   "additionalInfo": "CAVEATS: The model trained in this paper alone is not sufficient to do extract relations from a document. It requires other models to perform entity recognition and coreference between the entities. For this demo, two other pretrained models from AllenNLP is used: Fine Grained Name Entity Recognition and Coreference SpanBERT."
 }

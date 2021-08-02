@@ -36,5 +36,9 @@
     "text": "https://github.com/serenaklm/rumor_detection",
     "url": "https://github.com/serenaklm/rumor_detection"
   },
+  "license": {
+    "text": "MIT License",
+    "url": "https://choosealicense.com/licenses/mit"
+  },
   "contact": "sg-nlp@aisingapore.org"
 }
