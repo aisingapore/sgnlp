@@ -16,7 +16,6 @@ setup(
     author_email="sg-nlp@aisingapore.org",
     keywords=["NLP", "machine learning", "deep learning"],
     install_requires=[
-        "allennlp",
         "datasets",
         "nltk",
         "numpy",
