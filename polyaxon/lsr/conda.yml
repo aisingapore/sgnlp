@@ -1,0 +1,18 @@
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - pip=21.0.1
+  - cudatoolkit=10.2 # comment out for local install
+  - pip:
+    - nltk
+    - networkx
+    - numpy
+    - pandas
+    - scikit-learn
+    - sentencepiece
+    - spacy>=3
+    - tokenizers
+    - torch>=1.8,<2
+    - torchtext
+    - transformers

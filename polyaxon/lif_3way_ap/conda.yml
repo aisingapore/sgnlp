@@ -1,0 +1,8 @@
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - pip=21.0.1
+  - cudatoolkit=10.2 # comment out for local install
+  - pip:
+      - -r file:requirements.txt

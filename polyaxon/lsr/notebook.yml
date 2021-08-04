@@ -1,0 +1,16 @@
+---
+version: 1
+
+kind: notebook
+
+build:
+  dockerfile: polyaxon/lsr/notebook.Dockerfile
+  context: .
+
+environment:
+  persistence:
+    data: ["100e-nlp-lab-data"]
+    outputs: exp-output
+
+logging:
+  level: DEBUG

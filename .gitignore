@@ -7,6 +7,8 @@ data/
 build/
 dist/
 output/
+.polyaxon
+.polyaxonignore
 
 # Docs
 docs/build

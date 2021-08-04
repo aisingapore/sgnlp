@@ -1,0 +1,31 @@
+---
+version: 1
+
+kind: experiment
+
+build:
+  dockerfile: polyaxon/lsr/experiment.Dockerfile
+
+environment:
+  persistence:
+    data: ["100e-nlp-lab-data"]
+  resources:
+    gpu:
+      requests: 1
+      limits: 1
+
+framework: pytorch
+
+logging:
+  level: INFO
+
+run:
+  cmd: python -m sgnlp_models.models.lsr.train \
+    --train_file="/polyaxon-data/workspace/jonheng/lsr/docred/train_annotated.json" \
+    --validation_file="/polyaxon-data/workspace/jonheng/lsr/docred/dev.json" \
+    --output_dir="/polyaxon-data/workspace/jonheng/lsr/experiment-output/bert" \
+    --metadata_dir="/polyaxon-data/workspace/jonheng/lsr/metadata" \
+    --batch_size=4 \
+    --num_epoch=100 \
+    --seed=64 \
+    --model_config_path="/polyaxon-data/workspace/jonheng/lsr/config/config_bert.json"
