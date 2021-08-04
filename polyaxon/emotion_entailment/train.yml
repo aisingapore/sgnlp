@@ -1,0 +1,18 @@
+version: 1
+kind: experiment
+logging:
+  level: DEBUG
+build:
+  dockerfile: polyaxon/docker/experiment.df
+  context: .
+environment:
+  resources:
+    gpu:
+      requests: 1
+      limits: 1
+  persistence:
+    data:
+      - data
+run:
+  cmd: >-
+    python train.py --config config/polyaxon_emotion_entailment_config.json

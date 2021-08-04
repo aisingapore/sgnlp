@@ -1,0 +1,14 @@
+name: emotion_entailment
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - pip=21.0.1
+  - cudatoolkit=10.2
+  - pip:
+      - transformers==4.4.2
+      - tokenizers==0.10.1
+      - torch==1.8.1
+      - nltk==3.5
+      - numpy
+      - wandb

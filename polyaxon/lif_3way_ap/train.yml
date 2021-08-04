@@ -1,0 +1,31 @@
+---
+version: 1
+
+kind: experiment
+
+build:
+  dockerfile: polyaxon/lif_3way_ap/experiment.Dockerfile
+
+environment:
+  persistence:
+    data: ["100e-nlp-lab-data"]
+  resources:
+    gpu:
+      requests: 1
+      limits: 1
+
+framework: pytorch
+
+logging:
+  level: INFO
+
+run:
+  cmd: python -m sgnlp_models.models.lif_3way_ap.train \
+    --train_file="/polyaxon-data/workspace/jonheng/l2af/dataset/train.json" \
+    --validation_file="/polyaxon-data/workspace/jonheng/l2af/dataset/dev.json" \
+    --batch_size=32 \
+    --num_epoch=25 \
+    --seed=10 \
+    --model_config_path="/polyaxon-data/workspace/jonheng/l2af/model_config.json" \
+    --pretrained_embeddings_path="/polyaxon-data/workspace/jonheng/l2af/glove.840B.300d.txt" \
+    --output_dir="/polyaxon-data/workspace/jonheng/l2af/experiment-output/"
