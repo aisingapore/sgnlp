@@ -12,7 +12,6 @@ import torch
 from torch.nn.functional import softmax
 
 from create_inputs import generate_structure
-from download_pretrained import download_tokenizer_files_from_azure
 
 app = Flask(__name__)
 
