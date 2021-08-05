@@ -17,7 +17,7 @@ local retag_and_push_production(module_name, image_name) = {
   image: "registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest",
   stage: "retag_and_push_production",
   only: {
-    refs: ["master"]
+    refs: ["main"]
   },
   needs: ["%s_restart_kubernetes_staging" % module_name],
   when: "manual",
@@ -49,7 +49,7 @@ local restart_kubernetes_production(module_name, deployment_name) = {
   image: "registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest",
   stage: "restart_kubernetes_production",
   only: {
-    refs: ["master"]
+    refs: ["main"]
   },
   when: "manual",
   needs: ["%s_retag_and_push_production" % module_name],
