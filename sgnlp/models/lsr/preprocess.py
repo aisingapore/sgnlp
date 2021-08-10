@@ -213,14 +213,6 @@ class LsrPreprocessor:
         }
 
     def get_node_position(self, data, node_position, node_sent_num, entity_position, sentence_start_idx):
-        """
-        :param data: input
-        :param node_position: mention node position in a document (flatten)
-        :param node_sent_num: number of nodes in each sentence
-        :param entity_position:
-        :param sentence_start_idx: the start position of each sentence in document
-        :return:
-        """
         nodes = [[] for _ in range(len(data['sents']))]
         nodes_sent = [[] for _ in range(len(data['sents']))]
 
