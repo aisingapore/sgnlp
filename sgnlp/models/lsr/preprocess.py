@@ -7,6 +7,8 @@ import numpy as np
 import networkx as nx
 from collections import defaultdict
 from operator import add
+
+from . import LsrConfig
 from .modules.bert import Bert
 from .utils import h_t_idx_generator, get_default_device, join_document
 
@@ -22,30 +24,36 @@ class LsrPreprocessor:
             ner2id_path: str,
             output_file_prefix: str = 'dev',
             output_dir: str = None,
-            max_length: int = 512,
+            config: LsrConfig = None,
             max_node_num: int = 200,
             max_node_per_sent: int = 40,
             max_sent_num: int = 30,
             max_sent_len: int = 200,
             max_entity_num: int = 100,
             h_t_limit: int = 1800,
-            num_relations: int = 97,
             is_train: bool = False,
-            use_bert: bool = False,
             device=None
     ):
+        # Load mappings
+        self.rel2id = json.load(open(rel2id_path))
+        self.word2id = json.load(open(word2id_path))
+        self.ner2id = json.load(open(ner2id_path))
+
         self.output_file_prefix = output_file_prefix
         self.output_dir = output_dir
-        self.max_length = max_length
+
+        self.config = config if config else LsrConfig()
+        self.max_length = self.config.max_length
+        self.num_relations = self.config.num_relations
+        self.use_bert = self.config.use_bert
+
         self.max_node_num = max_node_num
         self.max_node_per_sent = max_node_per_sent
         self.max_sent_num = max_sent_num
         self.max_sent_len = max_sent_len
         self.max_entity_num = max_entity_num
         self.h_t_limit = h_t_limit
-        self.num_relations = num_relations
         self.is_train = is_train
-        self.use_bert = use_bert
         self.device = device if device else get_default_device()
 
         # Load spacy model
@@ -54,11 +62,6 @@ class LsrPreprocessor:
         # Load Bert if needed
         if self.use_bert:
             self.bert = Bert('bert-base-uncased')
-
-        # Load mappings
-        self.rel2id = json.load(open(rel2id_path))
-        self.word2id = json.load(open(word2id_path))
-        self.ner2id = json.load(open(ner2id_path))
 
         # Build dis2idx
         self.dis2idx = self._get_dis2idx()
@@ -134,7 +137,8 @@ class LsrPreprocessor:
         bert_starts = np.zeros((batch_size, self.max_length), dtype=np.int64)
 
         for i, data_instance in enumerate(data_batch):
-            bert_token[i], bert_mask[i], bert_starts[i] = self.bert.subword_tokenize_to_ids(join_document(data_instance))
+            bert_token[i], bert_mask[i], bert_starts[i] = self.bert.subword_tokenize_to_ids(
+                join_document(data_instance))
 
         return {
             'bert_token': bert_token,
