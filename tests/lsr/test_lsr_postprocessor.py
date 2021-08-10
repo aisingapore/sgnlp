@@ -53,7 +53,7 @@ class TestLsrPostprocessor(unittest.TestCase):
             ]
         }
 
-        expected_result = {
+        expected_result = [{
             'clusters': [[[0, 2]], [[4, 6]], [[9, 11]], [[12, 15]], [[18, 20]], [[21, 23]], [[30, 32]], [[37, 38]],
                          [[41, 42]], [[43, 44]], [[46, 48]], [[49, 51]], [[52, 54]]],
             'document': ['Lark', 'Force', 'was', 'an', 'Australian', 'Army', 'formation', 'established', 'in', 'March',
@@ -80,12 +80,12 @@ class TestLsrPostprocessor(unittest.TestCase):
                           {'score': 0.5315709710121155, 'relation': 'country', 'object_idx': 9, 'subject_idx': 7},
                           {'score': 0.384608656167984, 'relation': 'country', 'object_idx': 10, 'subject_idx': 7},
                           {'score': 0.4059601426124573, 'relation': 'country', 'object_idx': 11, 'subject_idx': 7}]
-        }
+        }]
 
         rel2id_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/rel2id.json')
         rel_info_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/rel_info.json')
 
         postprocessor = LsrPostprocessor.from_file_paths(rel2id_path=rel2id_path, rel_info_path=rel_info_path)
-        result = postprocessor(self.sample_model_prediction[0], instance)
+        result = postprocessor(self.sample_model_prediction, [instance])
 
         self.assertEqual(expected_result, result)

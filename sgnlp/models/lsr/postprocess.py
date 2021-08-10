@@ -35,67 +35,75 @@ class LsrPostprocessor:
                 Path to relation info file. This is a mapping from relation to relation description.
             pred_threshold (:obj:`float`, `optional`, defaults to 0.3):
                 Threshold for relation prediction to be returned.
+
+        Returns:
+            postprocessor (:class:`~sgnlp.models.lsr.postprocess.LsrPostprocessor`)
         """
         rel2id = json.load(open(rel2id_path))
         rel_info = json.load(open(rel_info_path))
         rel_info['Na'] = 'No relation'
         return LsrPostprocessor(rel2id, rel_info, pred_threshold)
 
-    def __call__(self, pred_instance, data_instance):
-        # TODO: refactor to take in LsrModelOutput and return a batch
+    def __call__(self, predictions, data):
         """
         Args:
-            pred_instance (:obj:`torch.Tensor`):
-                Single instance from batched output of LsrModel.
-            data_instance:
-                Original DocRED-like data instance.
+            predictions (:class:`~sgnlp.models.lsr.modeling.LsrModelOutput.prediction`):
+                Predictions of LsrModel.
+            data:
+                DocRED-like data that was used as input in preprocessing step.
 
         Returns:
-            Dictionary that includes the document, the entity clusters found in the document, and
+            List of dictionary that includes the document, the entity clusters found in the document, and
             the predicted relations between the entity clusters.
         """
-        document = [item for sublist in data_instance['sents'] for item in sublist]  # Flatten nested list tokens
-        num_entities = len(data_instance['vertexSet'])
-        total_relation_combinations = num_entities * (num_entities - 1)
 
-        pred = sigmoid(pred_instance).data.cpu().numpy()
-        pred = pred[:total_relation_combinations]
+        output = []
+        for prediction, data_instance in zip(predictions, data):
+            document = [item for sublist in data_instance['sents'] for item in sublist]  # Flatten nested list tokens
+            num_entities = len(data_instance['vertexSet'])
+            total_relation_combinations = num_entities * (num_entities - 1)
 
-        above_threshold_indices = zip(*np.where(pred > self.pred_threshold))
+            pred = sigmoid(prediction).data.cpu().numpy()
+            pred = pred[:total_relation_combinations]
 
-        relations = []
-        for h_t_idx, rel_idx in above_threshold_indices:
-            h_idx, t_idx = idx2ht(h_t_idx, num_entities)
-            rel_description = self.rel_info[self.id2rel[rel_idx]]
+            above_threshold_indices = zip(*np.where(pred > self.pred_threshold))
 
-            # Typecasts are to allow JSON serializable (Numpy types generally not json serializable by default)
-            relations.append({
-                "score": float(pred[h_t_idx, rel_idx]),
-                "relation": rel_description,
-                "object_idx": int(h_idx),
-                "subject_idx": int(t_idx)
+            relations = []
+            for h_t_idx, rel_idx in above_threshold_indices:
+                h_idx, t_idx = idx2ht(h_t_idx, num_entities)
+                rel_description = self.rel_info[self.id2rel[rel_idx]]
+
+                # Typecasts are to allow JSON serializable (Numpy types generally not json serializable by default)
+                relations.append({
+                    "score": float(pred[h_t_idx, rel_idx]),
+                    "relation": rel_description,
+                    "object_idx": int(h_idx),
+                    "subject_idx": int(t_idx)
+                })
+
+            # Compute sentence start indices
+            sentence_start_idx = [0]
+            sentence_start_idx_counter = 0
+            for sent in data_instance['sents']:
+                sentence_start_idx_counter += len(sent)
+                sentence_start_idx.append(sentence_start_idx_counter)
+
+            clusters = []
+            for vertex_set in data_instance['vertexSet']:
+                cluster = []
+                for entity in vertex_set:
+                    sent_id = entity['sent_id']  # sent_id that entity appears in
+                    pos_adjustment = sentence_start_idx[sent_id]  # start idx of sent
+                    pos = list(entity['pos'])
+                    pos = [pos[0] + pos_adjustment,
+                           pos[1] + pos_adjustment]  # adjust pos by adding start of sentence idx
+                    cluster.append(pos)
+                clusters.append(cluster)
+
+            output.append({
+                "clusters": clusters,
+                "document": document,
+                "relations": relations
             })
 
-        # Compute sentence start indices
-        sentence_start_idx = [0]
-        sentence_start_idx_counter = 0
-        for sent in data_instance['sents']:
-            sentence_start_idx_counter += len(sent)
-            sentence_start_idx.append(sentence_start_idx_counter)
-
-        clusters = []
-        for vertex_set in data_instance['vertexSet']:
-            cluster = []
-            for entity in vertex_set:
-                sent_id = entity['sent_id']  # sent_id that entity appears in
-                pos_adjustment = sentence_start_idx[sent_id]  # start idx of sent
-                pos = list(entity['pos'])
-                pos = [pos[0] + pos_adjustment, pos[1] + pos_adjustment]  # adjust pos by adding start of sentence idx
-                cluster.append(pos)
-            clusters.append(cluster)
-
-        return {
-            "clusters": clusters,
-            "document": document,
-            "relations": relations
-        }
+        return output
