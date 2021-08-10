@@ -44,11 +44,11 @@ class LsrPostprocessor:
         rel_info['Na'] = 'No relation'
         return LsrPostprocessor(rel2id, rel_info, pred_threshold)
 
-    def __call__(self, predictions, data):
+    def __call__(self, prediction, data):
         """
         Args:
-            predictions (:class:`~sgnlp.models.lsr.modeling.LsrModelOutput.prediction`):
-                Predictions of LsrModel.
+            prediction (:class:`torch.FloatTensor`):
+                Prediction of :class:`~sgnlp.models.lsr.modeling.LsrModelOutput`.
             data:
                 DocRED-like data that was used as input in preprocessing step.
 
@@ -58,12 +58,12 @@ class LsrPostprocessor:
         """
 
         output = []
-        for prediction, data_instance in zip(predictions, data):
+        for prediction_instance, data_instance in zip(prediction, data):
             document = [item for sublist in data_instance['sents'] for item in sublist]  # Flatten nested list tokens
             num_entities = len(data_instance['vertexSet'])
             total_relation_combinations = num_entities * (num_entities - 1)
 
-            pred = sigmoid(prediction).data.cpu().numpy()
+            pred = sigmoid(prediction_instance).data.cpu().numpy()
             pred = pred[:total_relation_combinations]
 
             above_threshold_indices = zip(*np.where(pred > self.pred_threshold))
