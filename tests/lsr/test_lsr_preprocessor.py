@@ -7,7 +7,7 @@ from sgnlp.models.lsr import LsrPreprocessor
 
 class TestLsrPreprocessor(unittest.TestCase):
     def setUp(self):
-        with open('data/sample_preprocessed_input.pickle', 'rb') as f:
+        with open('test_data/sample_preprocessed_input.pickle', 'rb') as f:
             self.sample_preprocessed_input = pickle.load(f)
 
     def test_preprocessor(self):
@@ -56,7 +56,8 @@ class TestLsrPreprocessor(unittest.TestCase):
         rel2id_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/rel2id.json')
         word2id_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/word2id.json')
         ner2id_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/ner2id.json')
-        preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path)
+        preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path,
+                                       is_train=True)
         preprocessed_input = preprocessor([instance])
 
         for k, v in preprocessed_input.items():
