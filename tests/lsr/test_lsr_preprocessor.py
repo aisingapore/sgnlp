@@ -1,14 +1,17 @@
 import unittest
 import torch
 import pickle
+import pathlib
 from transformers import cached_path
 
 from sgnlp.models.lsr import LsrPreprocessor, LsrConfig
 
+DIR = pathlib.Path(__file__).parent
+
 
 class TestLsrPreprocessor(unittest.TestCase):
     def setUp(self):
-        with open('test_data/sample_preprocessed_input.pickle', 'rb') as f:
+        with open(DIR / 'test_data/sample_preprocessed_input.pickle', 'rb') as f:
             self.sample_preprocessed_input = pickle.load(f)
 
     def test_preprocessor(self):

@@ -2,16 +2,19 @@ import unittest
 import pytest
 import pickle
 import torch
+import pathlib
 
 from sgnlp.models.lsr import (
     LsrConfig,
     LsrModel
 )
 
+DIR = pathlib.Path(__file__).parent
+
 
 class TestLsr(unittest.TestCase):
     def setUp(self):
-        with open('test_data/sample_preprocessed_input.pickle', 'rb') as f:
+        with open(DIR / 'test_data/sample_preprocessed_input.pickle', 'rb') as f:
             self.test_input_with_labels = pickle.load(f)
 
         self.test_input_without_labels = self.test_input_with_labels.copy()
