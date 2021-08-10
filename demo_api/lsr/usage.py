@@ -90,6 +90,4 @@ instance = {
 tensor_doc = preprocessor([instance])
 output = model(**tensor_doc)
 
-result = postprocessor(output.prediction[0], instance)
-print(result)
-
+result = postprocessor(output.prediction, [instance])

@@ -53,7 +53,7 @@ def predict():
     else:
         tensor_doc = preprocessor([docred_doc])
         output = model(**tensor_doc)
-        return postprocessor(output.prediction[0], docred_doc)
+        return postprocessor(output.prediction, [docred_doc])[0]
 
 
 model_card_path = "model_card/lsr.json"
