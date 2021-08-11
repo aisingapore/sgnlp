@@ -318,9 +318,9 @@ def train(args):
     word2id_path = os.path.join(args.metadata_dir, "word2id.json")
     ner2id_path = os.path.join(args.metadata_dir, "ner2id.json")
     train_preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path,
-                                         is_train=True, device=torch.device("cpu"), use_bert=config.use_bert)
+                                         is_train=True, device=torch.device("cpu"), config=config)
     val_preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path,
-                                       device=torch.device("cpu"), use_bert=config.use_bert)
+                                       device=torch.device("cpu"), config=config)
     train_dataset = DocredDataset(json_file=args.train_file, preprocessor=train_preprocessor)
     val_dataset = DocredDataset(json_file=args.validation_file, preprocessor=val_preprocessor)
 
@@ -358,6 +358,10 @@ def train(args):
 
             # Backpropagation
             loss = outputs.loss
+            # TODO: Remove debug logs below
+            if np.isnan(loss.item()):
+                logger.info("Loss is nan!")
+
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
