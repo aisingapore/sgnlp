@@ -23,7 +23,7 @@ run:
   cmd: python -m sgnlp.models.lsr.train \
     --train_file="/polyaxon-data/workspace/jonheng/lsr/docred/train_annotated.json" \
     --validation_file="/polyaxon-data/workspace/jonheng/lsr/docred/dev.json" \
-    --output_dir="/polyaxon-data/workspace/jonheng/lsr/experiment-output/default3" \
+    --output_dir="/polyaxon-data/workspace/jonheng/lsr/experiment-output/bce_sigmoid" \
     --metadata_dir="/polyaxon-data/workspace/jonheng/lsr/metadata" \
     --pretrained_embeddings_path="/polyaxon-data/workspace/jonheng/lsr/metadata/vec.npy" \
     --batch_size=4 \
