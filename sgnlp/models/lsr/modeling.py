@@ -2,6 +2,7 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
+import numpy as np
 
 from dataclasses import dataclass
 from torch.nn.utils.rnn import pad_sequence
@@ -296,5 +297,10 @@ class LsrModel(LsrPreTrainedModel):
             loss_fn = nn.BCEWithLogitsLoss(reduction='none')
             loss = torch.sum(loss_fn(prediction, relation_multi_label) * relation_mask.unsqueeze(2)) \
                    / torch.sum(relation_mask)
+            if np.isnan(loss.item()):
+                print(f'loss is nan!')
+                print(f'relation_mask_sum: {torch.sum(relation_mask)}')
+                print(f'label_loss: {loss_fn(prediction, relation_multi_label)}')
+                print(f'numerator: {torch.sum(loss_fn(prediction, relation_multi_label) * relation_mask.unsqueeze(2))}')
 
         return LsrModelOutput(prediction=prediction, loss=loss)

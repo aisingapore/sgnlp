@@ -360,7 +360,8 @@ def train(args):
             loss = outputs.loss
             # TODO: Remove debug logs below
             if np.isnan(loss.item()):
-                logger.info("Loss is nan!")
+                logger.info("Skipping backward prop.")
+                continue
 
             optimizer.zero_grad()
             loss.backward()

@@ -28,4 +28,5 @@ run:
     --pretrained_embeddings_path="/polyaxon-data/workspace/jonheng/lsr/metadata/vec.npy" \
     --batch_size=4 \
     --num_epoch=100 \
-    --seed=64
+    --seed=64 \
+    --evaluate_epoch=20
