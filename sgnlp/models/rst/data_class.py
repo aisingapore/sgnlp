@@ -26,6 +26,13 @@ class RSTSegmenterArguments:
     def __post_init__(self):
         assert(self.rnn in ["GRU", "LSTM"]), "Invalid RNN type!"
         assert(self.elmo_size in ['Large', 'Medium', 'Small']), "Invalid Elmo size!"
+        if self.use_polyaxon:
+            try:
+                import polyaxon_client  # noqa: F401
+            except ImportError:
+                raise ImportError("polyaxon_client is required for using Polyaxon to track the training progress.")
+        if not self.use_polyaxon:
+            assert(self.save_dir is not None), "Please specify a directory to save the model."
 
 
 @dataclass
@@ -58,3 +65,10 @@ class RSTParserArguments:
     def __post_init__(self):
         assert(self.elmo_size in ['Large', 'Medium', 'Small']), "Invalid Elmo size!"
         assert(self.atten_model in ['Dotproduct', 'Biaffine']), "Invalid Attention model!"
+        if self.use_polyaxon:
+            try:
+                import polyaxon_client  # noqa: F401
+            except ImportError:
+                raise ImportError("polyaxon_client is required for using Polyaxon to track the training progress.")
+        if not self.use_polyaxon:
+            assert(self.save_dir is not None), "Please specify a directory to save the model."
