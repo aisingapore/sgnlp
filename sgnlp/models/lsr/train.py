@@ -213,9 +213,11 @@ def get_optimizer(name, parameters, lr, l2=0):
         # use custom adagrad to allow for init accumulator value
         return MyAdagrad(parameters, lr=lr, init_accu_value=0.1, weight_decay=l2)
     elif name == 'adam':
-        return torch.optim.Adam(parameters, lr, weight_decay=l2)  # use default lr
+        return torch.optim.Adam(parameters, lr, weight_decay=l2)
+    elif name == 'adamw':
+        return torch.optim.AdamW(parameters, lr=lr, weight_decay=l2)
     elif name == 'adamax':
-        return torch.optim.Adamax(parameters, weight_decay=l2)  # use default lr
+        return torch.optim.Adamax(parameters, weight_decay=l2)
     elif name == 'adadelta':
         return torch.optim.Adadelta(parameters, lr=lr, weight_decay=l2)
     else:
@@ -245,7 +247,7 @@ def parse_args():
     parser.add_argument('--lr_decay', type=float, default=0.98, help='Learning rate decay rate.')
     parser.add_argument('--decay_epoch', type=int, default=20, help='Decay learning rate after this epoch.')
     parser.add_argument('--evaluate_epoch', type=int, default=30, help='Evaluate after this epoch.')
-    parser.add_argument('--optim', choices=['sgd', 'adagrad', 'adam', 'adamax'], default='adam',
+    parser.add_argument('--optim', choices=['sgd', 'adagrad', 'adam', 'adamw', 'adamax'], default='adam',
                         help='Choice of optimizer.')
     parser.add_argument('--weight_decay', type=float, default=0, help='L2 weight decay.')
     parser.add_argument('--num_epoch', type=int, default=200, help='Number of total training epochs.')
