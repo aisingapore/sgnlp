@@ -247,6 +247,7 @@ def parse_args():
     parser.add_argument('--evaluate_epoch', type=int, default=30, help='Evaluate after this epoch.')
     parser.add_argument('--optim', choices=['sgd', 'adagrad', 'adam', 'adamax'], default='adam',
                         help='Choice of optimizer.')
+    parser.add_argument('--weight_decay', type=float, default=0, help='L2 weight decay.')
     parser.add_argument('--num_epoch', type=int, default=200, help='Number of total training epochs.')
     parser.add_argument('--batch_size', type=int, default=20, help='Training batch size.')
     parser.add_argument('--max_grad_norm', type=float, default=5.0, help='Gradient clipping.')
