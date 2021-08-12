@@ -1,16 +1,11 @@
-import json
-import logging
-from flask import Flask, request, jsonify
+from flask import request
 from transformers import cached_path
 
+from demo_api.common import create_api
 from sgnlp.models.lsr import LsrModel, LsrConfig, LsrPreprocessor, LsrPostprocessor
 from text_input_to_docred_pipeline import TextInputToDocredPipeline
 
-app = Flask(__name__)
-
-gunicorn_logger = logging.getLogger('gunicorn.error')
-app.logger.handlers = gunicorn_logger.handlers
-app.logger.setLevel(gunicorn_logger.level)
+app = create_api(app_name=__name__, model_card_path="model_card/lsr.json")
 
 # Download files from azure blob storage
 rel2id_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/rel2id.json')
@@ -56,20 +51,5 @@ def predict():
         return postprocessor(output.prediction, [docred_doc])[0]
 
 
-model_card_path = "model_card/lsr.json"
-
-
-@app.route("/model-card", methods=["GET"])
-def get_model_card():
-    """GET method for model card
-
-    Returns:
-        json: return model card in json format
-    """
-    with open(model_card_path) as f:
-        model_card = json.load(f)
-    return jsonify(**model_card)
-
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run()
