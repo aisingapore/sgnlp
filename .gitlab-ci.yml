@@ -5,14 +5,10 @@ stages:
   - unit_test_slow
   - pre
   - build
-  - restart_docs_staging
-  - push_docs_prod
-  - restart_docs_prod
 
 run_non_slow_unit_tests:
   stage: unit_test_non_slow
   script:
-    - echo 'Installing docs dependencies'
     - apt-get update
     - apt-get -y install build-essential
     - apt-get update
@@ -28,7 +24,6 @@ run_slow_unit_tests:
   needs:
     - run_non_slow_unit_tests
   script:
-    - echo 'Installing docs dependencies'
     - apt-get update
     - apt-get -y install build-essential
     - apt-get update
@@ -57,68 +52,3 @@ build_and_push_demo_api:
     include:
       - artifact: generated-config.yml
         job: generate_demo_api_yaml
-
-build_doc:
-  stage: build
-  when: manual
-  script:
-    - echo 'Building Sphinx docs'
-    - cd docs
-    - echo 'Installing docker'
-    - apt-get update
-    - apt-get -y install apt-transport-https ca-certificates curl gnupg lsb-release
-    - curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    - echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    - apt-get update
-    - apt-get -y install docker-ce docker-ce-cli containerd.io
-    - echo 'Installing docs dependencies'
-    - apt-get -y install build-essential
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install -e ../.
-    - pip install networkx
-    - sphinx-build -b html source build
-    - echo 'Building SG-NLP Documentation'
-    - echo $STG_REGISTRY_PASSWORD | docker login registry.aisingapore.net -u $STG_DOCKER_USER --password-stdin
-    - docker build -t sg-nlp-docs -f Dockerfile .
-    - docker tag sg-nlp-docs registry.aisingapore.net/sg-nlp/sg-nlp-docs:latest
-    - docker push registry.aisingapore.net/sg-nlp/sg-nlp-docs:latest
-
-
-restart_docs_staging:
-  stage: restart_docs_staging
-  image: registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest
-  when: manual
-  needs:
-    - build_doc
-  script:
-    - echo 'Restarting pods...'
-    - export KUBECONFIG=$STG_KUBE_CONFIG
-    - kubectl rollout restart deployment/docs -n sg-nlp-revamp
-
-push_docs_prod:
-  stage: push_docs_prod
-  image: registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest
-  when: manual
-  needs:
-    - restart_docs_staging
-  script:
-    - echo 'Logging in to AISG Docker Registry...'
-    - echo $STG_REGISTRY_PASSWORD | docker login registry.aisingapore.net -u $STG_DOCKER_USER --password-stdin
-    - docker pull registry.aisingapore.net/sg-nlp/sg-nlp-docs:latest
-    - echo 'Logging in to AKS Registry'
-    - echo $PROD_REGISTRY_PASSWORD | docker login aisgk8sregistry.azurecr.io -u $PROD_REGISTRY_USER --password-stdin
-    - echo 'Retagging and pushing image...'
-    - docker tag registry.aisingapore.net/sg-nlp/sg-nlp-docs:latest aisgk8sregistry.azurecr.io/sgnlp/docs:latest
-    - docker push aisgk8sregistry.azurecr.io/sgnlp/docs:latest
-
-restart_docs_prod:
-  stage: restart_docs_prod
-  image: registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest
-  when: manual
-  needs:
-    - push_docs_prod
-  script:
-    - echo 'Restarting pods...'
-    - export KUBECONFIG=$PROD_KUBE_CONFIG
-    - kubectl rollout restart deployment/docs -n sgnlp
