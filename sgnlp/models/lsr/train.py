@@ -257,6 +257,9 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=0, help="A seed for reproducible training.")
     parser.add_argument('--use_gpu', type=bool, default=True, help="Whether you want to use GPU for training.")
 
+    parser.add_argument('--use_wandb', type=bool, default=False, help="Whether to use wandb to monitor training.")
+    parser.add_argument('--wandb_run_name', type=str, default=None, help="Wandb run name.")
+
     args = parser.parse_args()
 
     return args
@@ -305,6 +308,11 @@ def train(args):
         model = LsrModel.from_pretrained(args.model_weights_path, config=config)
     else:
         model = LsrModel(config)
+
+    if args.use_wandb:
+        import wandb
+        wandb.init(project="lsr", name=args.wandb_run_name)
+        wandb.watch(model, log="all")
 
     # Note: this will override the provided model weights
     if args.pretrained_embeddings_path is not None and not config.use_bert:
@@ -381,6 +389,16 @@ def train(args):
         logger.info(f"Train loss: {avg_epoch_train_loss:.3f}, best theta: {best_theta:.3f}, "
                     f"f1: {f1:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, auc: {auc:.5f}")
 
+        if args.use_wandb:
+            wandb.log({
+                "train_loss": avg_epoch_train_loss,
+                "train_best_theta": best_theta,
+                "train_f1": f1,
+                "train_precision": precision,
+                "train_recall": recall,
+                "train_auc": auc
+            }, step=epoch)
+
         # Write train metrics
         if args.output_dir is not None:
             with open(train_metrics_file, 'a') as f:
@@ -408,6 +426,16 @@ def train(args):
             avg_epoch_val_loss = total_epoch_val_loss / (step + 1)
             logger.info(f"Val loss: {avg_epoch_val_loss:.3f}, best theta: {best_theta:.3f}, "
                         f"f1: {f1:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, auc: {auc:.5f}")
+
+            if args.use_wandb:
+                wandb.log({
+                    "val_loss": avg_epoch_val_loss,
+                    "val_best_theta": best_theta,
+                    "val_f1": f1,
+                    "val_precision": precision,
+                    "val_recall": recall,
+                    "val_auc": auc
+                }, step=epoch)
 
             # Write val metrics
             if args.output_dir is not None:
