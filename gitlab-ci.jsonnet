@@ -58,7 +58,7 @@ local retag_and_push_production(module_name, image_name) = {
     "cat $GCR_KEYFILE | docker login -u _json_key --password-stdin https://asia.gcr.io",
     "echo 'Retagging and pushing image...'",
     "docker tag registry.aisingapore.net/sg-nlp/%s:latest asia.gcr.io/infra-public-hosting/sgnlp/%s:latest" % [image_name, image_name],
-    "docker push asia.gcr.io/infra-public-hosting/%s:latest" % image_name,
+    "docker push asia.gcr.io/infra-public-hosting/sgnlp/%s:latest" % image_name,
   ],
 };
 
