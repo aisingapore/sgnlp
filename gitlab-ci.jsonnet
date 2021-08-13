@@ -14,6 +14,7 @@ local build_and_push_staging(module_name, image_name) = {
 };
 
 local build_and_push_docs_staging() = {
+  image: "python:3.8.11-slim",
   stage: "build_and_push_staging",
   when: "manual",
   script: [
