@@ -31,6 +31,4 @@ run:
     --num_epoch=100 \
     --seed=64 \
     --evaluate_epoch=20 \
-    --weight_decay=0.01 \
-    --use_wandb=True \
-    --wandb_run_name=adam_weight_decay
+    --weight_decay=0.01
