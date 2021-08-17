@@ -277,11 +277,11 @@ def create_dataset_embedding(cfg: UFDArguments, dataset_type: str) -> Dict:
         Dict: return dictionary of dataset embeddings.
     """
     device = torch.device(cfg.device)
-    config = UFDEmbeddingConfig.from_pretrained(cfg.train_args["embedding_model_name"])
+    config = UFDEmbeddingConfig.from_pretrained(cfg.embedding_model_name)
     model = UFDEmbeddingModel.from_pretrained(
-        cfg.train_args["embedding_model_name"], config=config
+        cfg.embedding_model_name, config=config
     ).to(device)
-    tokenizer = UFDTokenizer.from_pretrained(cfg.train_args["embedding_model_name"])
+    tokenizer = UFDTokenizer.from_pretrained(cfg.embedding_model_name)
 
     if dataset_type == "train":
         dataset_embedding_dict = create_train_embeddings(

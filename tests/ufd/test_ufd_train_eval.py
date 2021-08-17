@@ -19,6 +19,7 @@ class TestTrainTestCase(unittest.TestCase):
             "data_folder": PARENT_DIR + "/test_data",
             "model_folder": PARENT_DIR + "/output",
             "cache_folder": PARENT_DIR + "/cache",
+            "embedding_model_name": "xlm-roberta-large",
             "train_args": {
                 "unsupervised_dataset_filename": "raw.txt",
                 "train_filename": "train.txt",
@@ -36,12 +37,11 @@ class TestTrainTestCase(unittest.TestCase):
                 "classifier_epochs": 4,
                 "classifier_batch_size": 2,
                 "num_class": 2,
-                "embedding_model_name": "xlm-roberta-large",
                 "source_language": "en",
                 "source_domains": ["books", "dvd", "music"],
                 "target_domains": ["books", "dvd", "music"],
                 "target_languages": ["de", "fr", "jp"],
-                "warmup_epochs": 1
+                "warmup_epochs": 1,
             },
             "eval_args": {
                 "result_folder": PARENT_DIR + "/result",
@@ -49,8 +49,12 @@ class TestTrainTestCase(unittest.TestCase):
                 "test_filename": "test.txt",
                 "eval_batch_size": 8,
                 "config_filename": "config.json",
-                "model_filename": "pytorch_model.bin"
-            }
+                "model_filename": "pytorch_model.bin",
+                "source_language": "en",
+                "source_domains": ["books", "dvd", "music"],
+                "target_domains": ["books", "dvd", "music"],
+                "target_languages": ["de", "fr", "jp"],
+            },
         }
         self.cfg = UFDArguments(**cfg)
 
@@ -74,41 +78,69 @@ class TestTrainTestCase(unittest.TestCase):
         self.assertIsNotNone(best_val_loss_log)
         self.assertIsNotNone(best_val_acc_log)
 
-        self.assertEqual(len(adaptor_loss_log), self.cfg.train_args['unsupervised_epochs'])
-        self.assertEqual(len(train_loss_log.keys()), self.cfg.train_args['unsupervised_epochs'])
-        self.assertEqual(len(train_acc_log.keys()), self.cfg.train_args['unsupervised_epochs'])
-        self.assertEqual(len(val_loss_log.keys()), self.cfg.train_args['unsupervised_epochs'])
-        self.assertEqual(len(val_acc_log.keys()), self.cfg.train_args['unsupervised_epochs'])
+        self.assertEqual(
+            len(adaptor_loss_log), self.cfg.train_args["unsupervised_epochs"]
+        )
+        self.assertEqual(
+            len(train_loss_log.keys()), self.cfg.train_args["unsupervised_epochs"]
+        )
+        self.assertEqual(
+            len(train_acc_log.keys()), self.cfg.train_args["unsupervised_epochs"]
+        )
+        self.assertEqual(
+            len(val_loss_log.keys()), self.cfg.train_args["unsupervised_epochs"]
+        )
+        self.assertEqual(
+            len(val_acc_log.keys()), self.cfg.train_args["unsupervised_epochs"]
+        )
 
-        for ep in range(self.cfg.train_args['unsupervised_epochs']):
-            for dom in self.cfg.train_args['source_domains']:
+        for ep in range(self.cfg.train_args["unsupervised_epochs"]):
+            for dom in self.cfg.train_args["source_domains"]:
                 self.assertIsNotNone(train_loss_log[ep][dom])
                 self.assertIsNotNone(train_acc_log[ep][dom])
-                self.assertTrue(len(train_loss_log[ep][dom]), self.cfg.train_args['unsupervised_epochs'])
-                self.assertTrue(len(train_acc_log[ep][dom]), self.cfg.train_args['unsupervised_epochs'])
-                self.assertTrue(len(val_loss_log[ep][dom]), self.cfg.train_args['unsupervised_epochs'])
-                self.assertTrue(len(val_acc_log[ep][dom]), self.cfg.train_args['unsupervised_epochs'])
+                self.assertTrue(
+                    len(train_loss_log[ep][dom]),
+                    self.cfg.train_args["unsupervised_epochs"],
+                )
+                self.assertTrue(
+                    len(train_acc_log[ep][dom]),
+                    self.cfg.train_args["unsupervised_epochs"],
+                )
+                self.assertTrue(
+                    len(val_loss_log[ep][dom]),
+                    self.cfg.train_args["unsupervised_epochs"],
+                )
+                self.assertTrue(
+                    len(val_acc_log[ep][dom]),
+                    self.cfg.train_args["unsupervised_epochs"],
+                )
 
         self.assertEqual(len(best_val_loss_log), 18)
         self.assertEqual(len(best_val_acc_log), 18)
 
     @pytest.mark.slow
     def test_eval(self):
-        self.cfg.model_folder = 'https://sgnlp.blob.core.windows.net/models/ufd'
-        self.cfg.train_args['source_domains'] = ['books']
-        self.cfg.train_args['target_languages'] = ['de']
-        self.cfg.train_args['target_domains'] = ['music']
-        os.makedirs(self.cfg.eval_args['result_folder'], exist_ok=True)
+        self.cfg.model_folder = "https://sgnlp.blob.core.windows.net/models/ufd"
+        self.cfg.eval_args["source_language"] = "en"
+        self.cfg.eval_args["source_domains"] = ["books"]
+        self.cfg.eval_args["target_languages"] = ["de"]
+        self.cfg.eval_args["target_domains"] = ["music"]
+        os.makedirs(self.cfg.eval_args["result_folder"], exist_ok=True)
         evaluate(self.cfg)
 
-        result_file = pathlib.Path(self.cfg.eval_args['result_folder']) / self.cfg.eval_args['result_filename']
+        result_file = (
+            pathlib.Path(self.cfg.eval_args["result_folder"])
+            / self.cfg.eval_args["result_filename"]
+        )
 
-        self.assertEqual((str(result_file), result_file.is_file()), (str(result_file), True))
+        self.assertEqual(
+            (str(result_file), result_file.is_file()), (str(result_file), True)
+        )
 
     def tearDown(self) -> None:
         shutil.rmtree(self.cfg.model_folder, ignore_errors=True)
-        shutil.rmtree(self.cfg.eval_args['result_folder'], ignore_errors=True)
+        shutil.rmtree(self.cfg.eval_args["result_folder"], ignore_errors=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
