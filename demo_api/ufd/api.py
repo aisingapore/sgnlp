@@ -1,11 +1,11 @@
 import json
-import pathlib
 from typing import List
 
 import torch
 import torch.nn.functional as F
-from flask import Flask, request, jsonify
+from flask import request, jsonify
 
+from demo_api.common import create_api
 from sgnlp.models.ufd import (
     UFDEmbeddingConfig,
     UFDEmbeddingModel,
@@ -14,10 +14,10 @@ from sgnlp.models.ufd import (
     UFDPreprocessor,
 )
 
+app = create_api(app_name=__name__, model_card_path="model_card/ufd.json")
+
 # Constants
 DEVICE = torch.device("cpu")
-
-app = Flask(__name__)
 
 model_builder = UFDModelBuilder()
 models = model_builder.build_model_group()
@@ -40,19 +40,6 @@ xlmr_model = UFDEmbeddingModel.from_pretrained(embedding_model_name).to(DEVICE)
 xlmr_tokenizer = UFDTokenizer.from_pretrained(embedding_model_name)
 
 preprocessor = UFDPreprocessor(tokenizer=xlmr_tokenizer)
-
-
-@app.route("/model-card", methods=["GET"])
-def get_model_card():
-    """GET method for model card
-
-    Returns:
-        json: return the model card in json format
-    """
-    model_card_path = str(pathlib.Path(__file__).parent.joinpath("model_card/ufd.json"))
-    with open(model_card_path) as f:
-        model_card = json.load(f)
-    return jsonify(**model_card)
 
 
 @app.route("/predict", methods=["POST"])
@@ -107,4 +94,4 @@ def get_model_group_keys(t_lang: str, t_dom: str) -> List[str]:
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run()

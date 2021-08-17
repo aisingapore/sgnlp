@@ -1,9 +1,9 @@
 FROM python:3.8-buster
 
-COPY . /rumour_detection_twitter
+COPY . /demo_api
 
-WORKDIR /rumour_detection_twitter
+WORKDIR /demo_api/rumour_detection_twitter
 
 RUN pip install -r requirements.txt
 
-CMD gunicorn --bind 0.0.0.0:8000 wsgi:app --timeout 180
+CMD PYTHONPATH=../../ gunicorn --bind 0.0.0.0:8000 api:app --timeout 180

@@ -1,11 +1,12 @@
-import json
 import logging
-from flask import Flask, request, jsonify
-
-from sgnlp.models.lif_3way_ap import LIF3WayAPModel, LIF3WayAPConfig, LIF3WayAPPreprocessor
+from flask import request
 from transformers import cached_path
 
-app = Flask(__name__)
+from demo_api.common import create_api
+from sgnlp.models.lif_3way_ap import LIF3WayAPModel, LIF3WayAPConfig, LIF3WayAPPreprocessor
+
+
+app = create_api(app_name=__name__, model_card_path="model_card/lif_3way_ap.json")
 
 gunicorn_logger = logging.getLogger('gunicorn.error')
 app.logger.handlers = gunicorn_logger.handlers
@@ -35,20 +36,5 @@ def predict():
     return {"probability": output["label_probs"].item()}
 
 
-model_card_path = "model_card/lif_3way_ap.json"
-
-
-@app.route("/model-card", methods=["GET"])
-def get_model_card():
-    """GET method for model card
-
-    Returns:
-        json: return model card in json format
-    """
-    with open(model_card_path) as f:
-        model_card = json.load(f)
-    return jsonify(**model_card)
-
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run()
