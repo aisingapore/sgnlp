@@ -1,6 +1,7 @@
 ## Building, running, and pushing image
 ```
-docker build -t lsr .
+# From root folder of repository:
+docker build -t lsr -f demo_api/lsr/Dockerfile demo_api/
 
 docker run -p 8000:8000 lsr
 
