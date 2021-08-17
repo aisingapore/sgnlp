@@ -56,7 +56,7 @@ class RSTPreprocessor:
             text_embedding = self._get_elmo_embedding(data_batch)
         else:
             text_embedding = self._get_embedding(data_batch)
-        return BatchEncoding(**text_embedding)
+        return BatchEncoding(text_embedding)
 
     def _get_embedding(self, data_batch: List[str]) -> torch.Tensor:
         raise NotImplementedError('Embedding method call not implemented.')
