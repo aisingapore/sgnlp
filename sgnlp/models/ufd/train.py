@@ -5,6 +5,7 @@ import random
 from typing import Dict, List, Tuple
 from itertools import product
 
+import os
 import numpy as np
 import torch
 from torch.optim import Adam
@@ -23,7 +24,7 @@ from .utils import (
     create_classifiers,
     get_source2target_domain_mapping,
     generate_train_val_dataset,
-    parse_args_and_load_config
+    parse_args_and_load_config,
 )
 
 
@@ -229,6 +230,9 @@ def save_models(
         maper (UFDCombineFeaturesMapModel): combine feature map model
         classifier (UFDClassifierModel): classifier model
     """
+    if not os.path.isdir(cfg.model_folder):
+        os.mkdir(cfg.model_folder)
+
     ag_path = str(
         pathlib.Path(cfg.model_folder).joinpath(
             full_combi_name + "_" + "adaptor_global"
@@ -285,8 +289,7 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
     device = torch.device(cfg.device)
 
     sourcedomain2targetdomains = get_source2target_domain_mapping(
-        cfg.train_args["source_domains"],
-        cfg.train_args["target_domains"]
+        cfg.train_args["source_domains"], cfg.train_args["target_domains"]
     )
 
     # Init unsupervised models
@@ -365,7 +368,7 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
             val_loss_log[epoch][domain] = {}
             val_acc_log[epoch][domain] = {}
             for ep in range(cfg.train_args["classifier_epochs"]):
-                if ep > cfg.train_args['warmup_epochs']:
+                if ep > cfg.train_args["warmup_epochs"]:
                     train_loss, train_acc = train_classifier(
                         train_data[domain],
                         cfg.train_args["classifier_batch_size"],
@@ -402,7 +405,9 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
                                 ep,
                             )
 
-                        if ep == cfg.train_args['warmup_epochs'] + 1:  # Init list for new keys
+                        if (
+                            ep == cfg.train_args["warmup_epochs"] + 1
+                        ):  # Init list for new keys
                             val_loss_log[epoch][domain][combi_name] = []
                             val_acc_log[epoch][domain][combi_name] = []
 
