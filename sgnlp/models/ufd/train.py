@@ -439,11 +439,10 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
                             best_val_loss_log[full_combi_name] = (val_loss, epoch, ep)
                             best_val_acc_log[full_combi_name] = (val_acc, epoch, ep)
 
-                            if cfg.verbose:
-                                logging.info(
-                                    f"Found new best for {full_combi_name}, \
-                                    Epoch {epoch}, ep {ep}, Loss {val_loss:.3f}, Acc {val_acc:.3f}"
-                                )
+                            logging.info(
+                                f"Found new best for {full_combi_name}, \
+                                Epoch {epoch}, ep {ep}, Loss {val_loss:.3f}, Acc {val_acc:.3f}"
+                            )
 
                             save_models(
                                 cfg,
@@ -453,6 +452,8 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
                                 combine_features_map_model,
                                 classifiers[domain]["model"],
                             )
+
+                            logging.info("New best models saved")
 
     if cfg.verbose:
         with open(cfg.cache_folder + "adaptor_loss.pickle", "wb") as handle:
