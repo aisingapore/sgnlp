@@ -246,13 +246,14 @@ def create_val_test_embeddings(
         Dict: dictionary of dataset embeddings for supervised and unsupervised dataset
     """
     embeddings_dict = {}
-    target_languages_list = cfg.train_args["target_languages"]
-    target_domains_list = cfg.train_args["target_domains"]
-    filename = (
-        cfg.train_args["val_filename"]
-        if dataset_type == "valid"
-        else cfg.eval_args["test_filename"]
-    )
+    if dataset_type == "valid":
+        target_languages_list = cfg.train_args["target_languages"]
+        target_domains_list = cfg.train_args["target_domains"]
+        filename = cfg.train_args["val_filename"]
+    elif dataset_type == "test":
+        target_languages_list = cfg.eval_args["target_languages"]
+        target_domains_list = cfg.eval_args["target_domains"]
+        filename = cfg.eval_args["test_filename"]
     for target_language in target_languages_list:
         embeddings_dict[target_language] = {}
         for target_domain in target_domains_list:
@@ -372,6 +373,11 @@ def generate_train_val_dataset(cfg: UFDArguments) -> Tuple[Dict[str, float]]:
             with open(train_cache_path, "rb") as handle:
                 train_data = pickle.load(handle)
             logging.info("Train data loaded from cache")
+
+            for source_domain in cfg.train_args["source_domains"]:
+                assert (
+                    source_domain in train_data.keys()
+                ), "Source domain key does not exist in cached data, consider deleting the cache and rerun the code"
         else:
             train_data = create_dataset_embedding(cfg, dataset_type="train")
             if not os.path.isdir(cfg.cache_folder):
@@ -389,11 +395,23 @@ def generate_train_val_dataset(cfg: UFDArguments) -> Tuple[Dict[str, float]]:
             with open(valid_cache_path, "rb") as handle:
                 valid_data = pickle.load(handle)
             logging.info("Validation data loaded from cache")
+
+            for target_language in cfg.train_args["target_languages"]:
+                assert (
+                    target_language in valid_data.keys()
+                ), "Target language key does not exist in cached data, consider deleting the cache and rerun the code"
+
+                for target_domain in cfg.train_args["target_domains"]:
+                    assert (
+                        target_domain in valid_data[target_language].keys()
+                    ), "Target domain key does not exist in cached data, consider deleting the cache and rerun the code"
+
         else:
             valid_data = create_dataset_embedding(cfg, dataset_type="valid")
             with open(valid_cache_path, "wb") as handle:
                 pickle.dump(valid_data, handle)
             logging.info("Validation data saved in cache")
+
     else:
         train_data = create_dataset_embedding(cfg, dataset_type="train")
         valid_data = create_dataset_embedding(cfg, dataset_type="valid")
