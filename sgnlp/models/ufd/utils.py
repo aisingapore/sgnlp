@@ -393,7 +393,7 @@ def parse_args_and_load_config(config_path: str = "config/ufd_config.json"):
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=config_path)
     args = parser.parse_args()
-    with open(args.cfg_path, "r") as cfg_file:
+    with open(args.config, "r") as cfg_file:
         cfg = json.load(cfg_file)
     ufd_args = UFDArguments(**cfg)
     return ufd_args
