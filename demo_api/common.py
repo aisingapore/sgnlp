@@ -1,6 +1,6 @@
 import logging
 import json
-from flask import Flask, jsonify
+from flask import Flask, jsonify, make_response
 
 
 def create_api(app_name, model_card_path):
@@ -22,5 +22,10 @@ def create_api(app_name, model_card_path):
         with open(model_card_path) as f:
             model_card = json.load(f)
         return jsonify(**model_card)
+
+    # Kubernetes health check endpoint
+    @app.route("/healthz", methods=["GET"])
+    def healthz():
+        return make_response(jsonify({"healthy": True}), 200)
 
     return app
