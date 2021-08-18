@@ -5,7 +5,7 @@ Machine learning models from Singapore's natural language processing (NLP) resea
 `sgnlp` is a Python package that allows you to easily get started on using various (NLP) models implemented using the
 Pytorch and Transfromers frameworks.
 
-We have an accompanying [demo site](https://sgnlp.aks.aisingapore.net/) where you can interact with our models and get a
+We have an accompanying [demo site](https://sgnlp.aisingapore.net/) where you can interact with our models and get a
 better understanding on how they work.
 
 ## Installation
@@ -18,7 +18,7 @@ pip install sgnlp
 
 ## Documentation
 
-Visit our [documentation](https://sgnlp.aks.aisingapore.net/docs/) for tutorials.
+Visit our [documentation](https://sgnlp.aisingapore.net/docs/) for tutorials.
 
 ## License
 
