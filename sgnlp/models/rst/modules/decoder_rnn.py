@@ -19,7 +19,8 @@ class DecoderRNN(nn.Module):
 
     def forward(self, input_hidden_states: torch.Tensor, last_hidden: torch.Tensor) -> \
             Tuple[torch.Tensor, torch.Tensor]:
-        """[summary]
+        """
+        Forward pass for decoder RNN.
 
         Args:
             input_hidden_states (torch.Tensor): input hidden tensor from encoder RNN output.
