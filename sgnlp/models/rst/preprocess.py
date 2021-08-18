@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import torch
 from transformers import PreTrainedTokenizer, PreTrainedModel
@@ -42,21 +42,23 @@ class RSTPreprocessor:
             self.embedding_model.to(device)
             self.use_elmo = True
 
-    def __call__(self, data_batch: List[str]) -> BatchEncoding:
+    def __call__(self, data_batch: List[str]) -> Tuple[BatchEncoding, List[int]]:
         """
-        Main method to start preprocessing
+        Main method to start preprocessing for RST.
 
         Args:
             data_batch (List[str]): list of input texts
 
         Returns:
-            BatchEncoding: return a BatchEncoding instance with key 'data_batch' and embedded values of data batch.
+            Tuple[BatchEncoding, List[int]]: return a BatchEncoding instance with key 'data_batch' and embedded values
+            of data batch. Also return a list of lengths of each text in the batch.
         """
+        data_batch_lengths = [len(text) for text in data_batch]
         if self.use_elmo:
             text_embedding = self._get_elmo_embedding(data_batch)
         else:
             text_embedding = self._get_embedding(data_batch)
-        return BatchEncoding(text_embedding)
+        return BatchEncoding(text_embedding), data_batch_lengths
 
     def _get_embedding(self, data_batch: List[str]) -> torch.Tensor:
         raise NotImplementedError('Embedding method call not implemented.')
