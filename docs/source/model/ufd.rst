@@ -91,8 +91,10 @@ the 'dvd' target domain, use the following url:
 | `https://sgnlp.blob.core.windows.net/models/ufd/books_de_dvd_classifier/config.json`.
 | `https://sgnlp.blob.core.windows.net/models/ufd/books_de_dvd_classifier/pytorch_model.bin`.
 
-*Note: In keeping with HuggingFace pretrained models implementation. Each model
-consists of a `config.json` file and the `pytorch_model.bin` model weights file.*
+.. note::
+
+   In keeping with HuggingFace pretrained models implementation. Each model
+   consists of a `config.json` file and the `pytorch_model.bin` model weights file.
 
 
 Getting started
@@ -115,11 +117,13 @@ please refer to the API documentations.
    model_builder = UFDModelBuilder()
    preprocessor = UFDPreprocessor()
 
-Note: By default, :class:`~sgnlp.models.ufd.model_builder.UFDModelBuilder` will include all available pretrained models,
-to target only specific model set, simply define the `source_domains`,
-`target_languages` and `target_domains` input arguments.
-The following shows an example for a single model set for the `books` source
-domains, `German` target language and `dvd` target domain.
+.. note::
+
+   By default, :class:`~sgnlp.models.ufd.model_builder.UFDModelBuilder` will include all available pretrained models,
+   to target only specific model set, simply define the `source_domains`,
+   `target_languages` and `target_domains` input arguments.
+   The following shows an example for a single model set for the `books` source
+   domains, `German` target language and `dvd` target domain.
 
 .. code:: python
 
@@ -218,7 +222,9 @@ the source and target languages split into their respective domains.
 Config Preparation
 ------------------
 
-Aspect of the training could be configure via the `ufd_config.json` file.
+Aspect of the training could be configure via the `ufd_config.json` file. An
+example of the config file can be found
+`here <https://github.com/aimakerspace/sgnlp/blob/main/sgnlp/models/ufd/config/ufd_config.json>`_
 
 +------------------------------------------+--------------------------------------------------------------------------------------+
 | Configuration key                        | Description                                                                          |
@@ -310,7 +316,10 @@ Refer to training section above for dataset example.
 Config Preparation
 ------------------
 
-Aspect of the evaluation could be configure via the `ufd_config.json` file.
+Aspect of the evaluation could be configure via the `ufd_config.json` file. An
+example of the config file can be found
+`here <https://github.com/aimakerspace/sgnlp/blob/main/sgnlp/models/ufd/config/ufd_config.json>`_
+
 
 +---------------------------+---------------------------------------------------------------------------+
 | Configuration key         | Description                                                               |
@@ -377,14 +386,18 @@ Overview
 In this example, we'll demonstrate how to train and evaluate the UFD model on a
 custom dataset.
 
-We will be using a Bengali drama reviews dataset. Assume that we only have a
+We will be using a Bengali drama reviews dataset. The dataset can be found
+`here <https://github.com/sazzadcsedu/BN-Dataset>`_. Assume that we only have a
 small amount of labelled data and we would like to train a sentiment analysis
 model on the Bengali drama review dataset. Instead of using a pretrained model
-and fine-tuning it on this small dataset, we could make use of dataset in another
-language and domain to train this model.
+and fine-tuning it on this small dataset, we could make use of dataset in
+another language and domain to train this model.
 
 As English dataset is easily obtainable, we could use English language
-as the source language to train this model. We will need 2 datasets in English:
+as the source language to train this model. For this example, we will use
+the English data published by the authors of the UFD paper, which can be found
+`here <https://github.com/lijuntaopku/UFD/tree/main/data>`_ We will need 2
+datasets in English.
 
    1. **Labelled data in source language and source domain**: Eg. A labelled English dataset on music reviews
    2. **Unlabelled data in source language and multiple domains, including target domain**: Eg. An unlabelled English dataset of books, movies and drama reviews
@@ -405,7 +418,7 @@ Here is the file structure for the example:
    │   └── ufd_config_train.json
    ├── data
    │   ├── bengali
-   │   │   └── misc
+   │   │   └── drama
    │   │       ├── test.txt
    │   │       └── val.txt
    │   ├── en
@@ -418,7 +431,7 @@ Here is the file structure for the example:
 For our example, we will need the following dataset:
 
    1. **Labelled data in source language and source domain (training)**: A labelled English dataset on music reviews. Eg. *train.txt*
-   2. **Unlablled data in source language across multiple domain, including target domain (training)**: An unlabelled English dataset across movie reviews, books review and music reviews. Eg. *raw_unlabelled.txt*
+   2. **Unlablled data in source language across multiple domain, including target domain (training)**: An unlabelled English dataset across DVD reviews, books review and music reviews. DVD domain is treated as an approximation of the target domain, since they are similar.  Eg. *raw_unlabelled.txt*
    3. **Labelled data in target language and target domain for validation (training)**: A labelled Bengali dataset on drama reviews. Eg. *val.txt*
    4. **Labelled data in target language and target domain as test set (evaluating)**: A labelled Bengali dataset on drama reviews. Eg. *test.txt*
 
@@ -438,7 +451,7 @@ the text with a *tab*. Here are examples of how the dataset needs to look like:
    1	Excellent! I absolutely loved this sequel to Something Borrowed. Just as good as the first in my opinion.
    0	not good science while I appreciate what Tipler was attempting to accomplish, he fails miserabley both from a theological and a scientific perspective. skip this one!
 
-2. An unlabelled English dataset:
+2. An unlabelled English dataset across music, books and DVD domain. (DVD domain is used as an approximation of the target domain):
 
 .. code::
 
@@ -466,7 +479,7 @@ configuration in the config file when there are multiple languages and domains.
    .
    └── data
        ├── bengali
-       │   └── misc
+       │   └── drama
        │       ├── test.txt
        │       └── val.txt
        ├── en
