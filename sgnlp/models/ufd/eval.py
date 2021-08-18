@@ -122,9 +122,7 @@ def evaluate(cfg: UFDArguments) -> None:
                 )
 
                 logging.info(
-                    f"Model trained on {cfg.eval_args['source_language']} {source_domain},\
-                    validated on {target_language} {target_domain} | Test acc: {test_acc},\
-                    Test loss: {test_loss}"
+                    f"Model trained on {cfg.eval_args['source_language']} {source_domain}, validated on {target_language} {target_domain} | Test acc: {test_acc}, Test loss: {test_loss}"
                 )
 
 
