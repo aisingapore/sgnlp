@@ -91,7 +91,7 @@ def predict():
     probabilities = softmax(logits, dim=1)
     predicted_y = torch.argmax(logits, dim=1)[0]
     predicted_y = id_to_string[int(predicted_y)]
-    predicted_prob = round(float(torch.max(probabilities)), 1)
+    predicted_prob = round(float(torch.max(probabilities)) * 100, 1)
 
     return jsonify({"predicted_y": predicted_y, "predicted_prob": predicted_prob})
 
