@@ -24,10 +24,10 @@ run:
   cmd: python -m sgnlp.models.lsr.train \
     --train_file="/polyaxon-data/workspace/jonheng/lsr/docred/train_annotated.json" \
     --validation_file="/polyaxon-data/workspace/jonheng/lsr/docred/dev.json" \
-    --output_dir="/polyaxon-data/workspace/jonheng/lsr/experiment-output/adam_weight_decay" \
+    --output_dir="/polyaxon-data/workspace/jonheng/lsr/experiment-output/bigger_batch" \
     --metadata_dir="/polyaxon-data/workspace/jonheng/lsr/metadata" \
     --pretrained_embeddings_path="/polyaxon-data/workspace/jonheng/lsr/metadata/vec.npy" \
-    --batch_size=4 \
+    --batch_size=16 \
     --num_epoch=100 \
     --seed=64 \
     --evaluate_epoch=20 \
