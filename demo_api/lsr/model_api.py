@@ -28,8 +28,8 @@ postprocessor = LsrPostprocessor.from_file_paths(rel2id_path=rel2id_path, rel_in
                                                  pred_threshold=PRED_THRESHOLD)
 
 # Load model
-config = LsrConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/config.json')
-model = LsrModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/pytorch_model.bin', config=config)
+config = LsrConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/v2/config.json')
+model = LsrModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/v2/pytorch_model.bin', config=config)
 model.eval()
 
 app.logger.info('Preprocessing pipeline and model initialization complete.')
@@ -53,7 +53,7 @@ def predict():
     else:
         tensor_doc = preprocessor([docred_doc])
         output = model(**tensor_doc)
-        return postprocessor(output.prediction[0], docred_doc)
+        return postprocessor(output.prediction, [docred_doc])[0]
 
 
 model_card_path = "model_card/lsr.json"
