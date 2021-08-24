@@ -15,7 +15,7 @@ from .modeling import (
 from .utils import (
     load_trained_models,
     create_dataset_embedding,
-    parse_args_and_load_config
+    parse_args_and_load_config,
 )
 
 
@@ -82,7 +82,10 @@ def evaluate(cfg: UFDArguments) -> None:
     """
 
     logging.basicConfig(
-        filename=str(pathlib.Path(cfg.eval_args["result_folder"]) / cfg.eval_args["result_filename"]),
+        filename=str(
+            pathlib.Path(cfg.eval_args["result_folder"])
+            / cfg.eval_args["result_filename"]
+        ),
         level=logging.INFO,
         force=True,
     )
@@ -93,9 +96,9 @@ def evaluate(cfg: UFDArguments) -> None:
     # load test data
     test_data = create_dataset_embedding(cfg, dataset_type="test")
 
-    for source_domain in cfg.train_args["source_domains"]:
-        for target_language in cfg.train_args["target_languages"]:
-            for target_domain in cfg.train_args["target_domains"]:
+    for source_domain in cfg.eval_args["source_domains"]:
+        for target_language in cfg.eval_args["target_languages"]:
+            for target_domain in cfg.eval_args["target_domains"]:
                 if source_domain == target_domain:
                     continue
 
@@ -119,9 +122,7 @@ def evaluate(cfg: UFDArguments) -> None:
                 )
 
                 logging.info(
-                    f"Model trained on {cfg.train_args['source_language']} {source_domain},\
-                    validated on {target_language} {target_domain} | Test acc: {test_acc},\
-                    Test loss: {test_loss}"
+                    f"Model trained on {cfg.eval_args['source_language']} {source_domain}, validated on {target_language} {target_domain} | Test acc: {test_acc}, Test loss: {test_loss}"
                 )
 
 

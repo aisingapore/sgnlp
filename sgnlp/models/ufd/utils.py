@@ -217,11 +217,12 @@ def create_train_embeddings(
     for source_domain in source_domains_list:
         if source_domain == "raw":
             # assume will only have one source language
-            filepath = f"{cfg.data_folder}/{cfg.train_args['unsupervised_dataset_filename']}"
+            filepath = (
+                f"{cfg.data_folder}/{cfg.train_args['unsupervised_dataset_filename']}"
+            )
             dataset = load_unlabelled(filepath)
         else:
-            filepath = \
-                f"{cfg.data_folder}/{cfg.train_args['source_language']}/{source_domain}/{cfg.train_args['train_filename']}"
+            filepath = f"{cfg.data_folder}/{cfg.train_args['source_language']}/{source_domain}/{cfg.train_args['train_filename']}"
             dataset = load_labelled(filepath)
         dataset_embedding = extract_embeddings(cfg, dataset, tokenizer, model)
         embeddings_dict[source_domain] = dataset_embedding
@@ -229,7 +230,10 @@ def create_train_embeddings(
 
 
 def create_val_test_embeddings(
-    cfg: UFDArguments, tokenizer: UFDTokenizer, model: UFDEmbeddingModel, dataset_type: str
+    cfg: UFDArguments,
+    tokenizer: UFDTokenizer,
+    model: UFDEmbeddingModel,
+    dataset_type: str,
 ) -> Dict:
     """Helper function to generate validation dataset for supervised and unsupervised training.
 
@@ -242,19 +246,18 @@ def create_val_test_embeddings(
         Dict: dictionary of dataset embeddings for supervised and unsupervised dataset
     """
     embeddings_dict = {}
-    target_languages_list = cfg.train_args["target_languages"]
-    target_domains_list = cfg.train_args["target_domains"]
-    filename = (
-        cfg.train_args["val_filename"]
-        if dataset_type == "valid"
-        else cfg.eval_args["test_filename"]
-    )
+    if dataset_type == "valid":
+        target_languages_list = cfg.train_args["target_languages"]
+        target_domains_list = cfg.train_args["target_domains"]
+        filename = cfg.train_args["val_filename"]
+    elif dataset_type == "test":
+        target_languages_list = cfg.eval_args["target_languages"]
+        target_domains_list = cfg.eval_args["target_domains"]
+        filename = cfg.eval_args["test_filename"]
     for target_language in target_languages_list:
         embeddings_dict[target_language] = {}
         for target_domain in target_domains_list:
-            filepath = (
-                f"{cfg.data_folder}/{target_language}/{target_domain}/{filename}"
-            )
+            filepath = f"{cfg.data_folder}/{target_language}/{target_domain}/{filename}"
             dataset = load_labelled(filepath)
             dataset_embedding = extract_embeddings(cfg, dataset, tokenizer, model)
             embeddings_dict[target_language][target_domain] = dataset_embedding
@@ -275,13 +278,11 @@ def create_dataset_embedding(cfg: UFDArguments, dataset_type: str) -> Dict:
         Dict: return dictionary of dataset embeddings.
     """
     device = torch.device(cfg.device)
-    config = UFDEmbeddingConfig.from_pretrained(
-        cfg.train_args["embedding_model_name"]
-    )
+    config = UFDEmbeddingConfig.from_pretrained(cfg.embedding_model_name)
     model = UFDEmbeddingModel.from_pretrained(
-        cfg.train_args["embedding_model_name"], config=config
+        cfg.embedding_model_name, config=config
     ).to(device)
-    tokenizer = UFDTokenizer.from_pretrained(cfg.train_args["embedding_model_name"])
+    tokenizer = UFDTokenizer.from_pretrained(cfg.embedding_model_name)
 
     if dataset_type == "train":
         dataset_embedding_dict = create_train_embeddings(
@@ -329,7 +330,9 @@ def create_classifiers(cfg: UFDArguments) -> Dict:
     return classifiers
 
 
-def get_source2target_domain_mapping(source_domains: List[str], target_domains: List[str]) -> Dict[str, List[str]]:
+def get_source2target_domain_mapping(
+    source_domains: List[str], target_domains: List[str]
+) -> Dict[str, List[str]]:
     """Helper function to return cross domains keys for each domains.
 
     Args:
@@ -355,31 +358,63 @@ def generate_train_val_dataset(cfg: UFDArguments) -> Tuple[Dict[str, float]]:
     Returns:
         Tuple(Dict[str, float]): return the generated train and validation dictionaries.
     """
-    train_cache_path = str(
-        pathlib.Path(cfg.cache_folder).joinpath(
-            cfg.train_args["train_cache_filename"]
-        )
+    use_cache = (
+        "train_cache_filename" in cfg.train_args.keys()
+        and "val_cache_filename" in cfg.train_args.keys()
     )
-    if os.path.isfile(train_cache_path):
-        with open(train_cache_path, "rb") as handle:
-            train_data = pickle.load(handle)
+
+    if use_cache:
+        train_cache_path = str(
+            pathlib.Path(cfg.cache_folder).joinpath(
+                cfg.train_args["train_cache_filename"]
+            )
+        )
+        if os.path.isfile(train_cache_path):
+            with open(train_cache_path, "rb") as handle:
+                train_data = pickle.load(handle)
+            logging.info("Train data loaded from cache")
+
+            for source_domain in cfg.train_args["source_domains"]:
+                assert (
+                    source_domain in train_data.keys()
+                ), "Source domain key does not exist in cached data, consider deleting the cache and rerun the code"
+        else:
+            train_data = create_dataset_embedding(cfg, dataset_type="train")
+            if not os.path.isdir(cfg.cache_folder):
+                os.mkdir(cfg.cache_folder)
+            with open(train_cache_path, "wb") as handle:
+                pickle.dump(train_data, handle)
+            logging.info("Train data saved in cache")
+
+        valid_cache_path = str(
+            pathlib.Path(cfg.cache_folder).joinpath(
+                cfg.train_args["val_cache_filename"]
+            )
+        )
+        if os.path.isfile(valid_cache_path):
+            with open(valid_cache_path, "rb") as handle:
+                valid_data = pickle.load(handle)
+            logging.info("Validation data loaded from cache")
+
+            for target_language in cfg.train_args["target_languages"]:
+                assert (
+                    target_language in valid_data.keys()
+                ), "Target language key does not exist in cached data, consider deleting the cache and rerun the code"
+
+                for target_domain in cfg.train_args["target_domains"]:
+                    assert (
+                        target_domain in valid_data[target_language].keys()
+                    ), "Target domain key does not exist in cached data, consider deleting the cache and rerun the code"
+
+        else:
+            valid_data = create_dataset_embedding(cfg, dataset_type="valid")
+            with open(valid_cache_path, "wb") as handle:
+                pickle.dump(valid_data, handle)
+            logging.info("Validation data saved in cache")
+
     else:
         train_data = create_dataset_embedding(cfg, dataset_type="train")
-        with open(train_cache_path, "wb") as handle:
-            pickle.dump(train_data, handle)
-
-    valid_cache_path = str(
-        pathlib.Path(cfg.cache_folder).joinpath(
-            cfg.train_args["val_cache_filename"]
-        )
-    )
-    if os.path.isfile(valid_cache_path):
-        with open(valid_cache_path, "rb") as handle:
-            valid_data = pickle.load(handle)
-    else:
         valid_data = create_dataset_embedding(cfg, dataset_type="valid")
-        with open(valid_cache_path, "wb") as handle:
-            pickle.dump(valid_data, handle)
 
     return train_data, valid_data
 
@@ -393,8 +428,7 @@ def parse_args_and_load_config(config_path: str = "config/ufd_config.json"):
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=config_path)
     args = parser.parse_args()
-    with open(args.cfg_path, "r") as cfg_file:
+    with open(args.config, "r") as cfg_file:
         cfg = json.load(cfg_file)
     ufd_args = UFDArguments(**cfg)
     return ufd_args
-
