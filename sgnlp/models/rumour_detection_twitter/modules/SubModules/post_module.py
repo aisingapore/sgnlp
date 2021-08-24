@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..Transformer import Transformer
-from ..Encoder import LearnedPositionEncoder
+from ..transformer import transformer
+from ..encoder import learned_position_encoder
 
 __author__ = "Serena Khoo"
 
@@ -22,17 +22,21 @@ class PostModule(nn.Module):
 
         # <----------- Key and val structure encoder ----------->
         if self.config.include_key_structure:
-            self.key_structure_encoder = LearnedPositionEncoder.LearnedPositionEncoder(
-                self.config, self.config.n_head
+            self.key_structure_encoder = (
+                learned_position_encoder.LearnedPositionEncoder(
+                    self.config, self.config.n_head
+                )
             )
 
         if self.config.include_val_structure:
-            self.val_structure_encoder = LearnedPositionEncoder.LearnedPositionEncoder(
-                self.config, self.config.n_head
+            self.val_structure_encoder = (
+                learned_position_encoder.LearnedPositionEncoder(
+                    self.config, self.config.n_head
+                )
             )
 
         # <----------- Getting a transformer for each level (word & post level) ----------->
-        self.transformer_post = Transformer.Transformer(
+        self.transformer_post = transformer.Transformer(
             self.config,
             self.config.n_mha_layers,
             self.config.d_model,

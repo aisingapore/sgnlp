@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 import numpy as np
 
-from ..Transformer import Transformer
+from ..transformer import transformer
 
 __author__ = "Serena Khoo"
 
@@ -25,7 +25,7 @@ class WordModule(nn.Module):
         if config.word_module_version in [2, 3, 4]:
 
             # <----------- Word Level Transformer ----------->
-            self.transformer_word = Transformer.Transformer(
+            self.transformer_word = transformer.Transformer(
                 self.config,
                 self.config.n_mha_layers_word,
                 self.config.d_model,

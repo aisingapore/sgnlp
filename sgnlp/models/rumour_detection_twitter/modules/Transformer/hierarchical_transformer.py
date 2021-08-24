@@ -1,9 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .Transformer import Transformer
-from ..SubModules import WordModule
-from ..SubModules import PostModule
+from ..submodules import word_module
+from ..submodules import post_module
 
 __author__ = "Serena Khoo"
 
@@ -22,8 +21,8 @@ class HierarchicalTransformer(nn.Module):
         self.config = config
 
         # <----------- Both word and post modules ----------->
-        self.word_module = WordModule.WordModule(config)
-        self.post_module = PostModule.PostModule(config)
+        self.word_module = word_module.WordModule(config)
+        self.post_module = post_module.PostModule(config)
 
     def forward(
         self,

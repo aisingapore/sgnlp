@@ -5,8 +5,8 @@ import torch.nn.functional as F
 import os
 import numpy as np
 
-from . import FeedForwardNetwork
-from . import MultiHeadAttention
+from . import feedforward_network
+from . import multi_head_attention
 
 __author__ = "Serena Khoo"
 
@@ -18,10 +18,10 @@ class Layer(nn.Module):
         self.config = config
         self.d_model = d_model
         self.n_head = n_head
-        self.attn_network = MultiHeadAttention.MultiHeadAttention(
+        self.attn_network = multi_head_attention.MultiHeadAttention(
             config, d_model, n_head
         )
-        self.ffn = FeedForwardNetwork.FeedForwardNetwork(config)
+        self.ffn = feedforward_network.FeedForwardNetwork(config)
 
     def forward(
         self,

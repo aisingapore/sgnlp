@@ -9,7 +9,7 @@ from transformers import set_seed
 
 from .config import RumourDetectionTwitterConfig
 from .modeling import RumourDetectionTwitterModel
-from .modules.Optimizer.scheduler import WarmupScheduler
+from .modules.optimizer.scheduler import WarmupScheduler
 from .tokenization import RumourDetectionTwitterTokenizer
 from .utils import load_datasets
 

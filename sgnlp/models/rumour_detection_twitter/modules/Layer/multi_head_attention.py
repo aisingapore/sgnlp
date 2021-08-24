@@ -3,8 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from torch.autograd import Variable
-from ..Encoder import PositionEncoder
-from . import Attention
+from . import attention
 
 __author__ = "Serena Khoo"
 
@@ -65,7 +64,7 @@ class MultiHeadAttention(nn.Module):
         )
 
         # <----------- Attention Layer ----------->
-        self.attention = Attention.Attention(self.config, self.d_model, self.n_head)
+        self.attention = attention.Attention(self.config, self.d_model, self.n_head)
 
         # <----------- Layer Norm and FC Layer ----------->
         self.layer_norm = nn.LayerNorm(self.d_model)
