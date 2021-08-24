@@ -5,7 +5,6 @@ WORKDIR /demo_api/ufd
 RUN mkdir -p models
 
 RUN pip install -r requirements.txt
-
 RUN python -m download_pretrained
 
-CMD PYTHONPATH=../../ gunicorn --bind 0.0.0.0:8000 api:app --timeout 180
+CMD PYTHONPATH=../../ gunicorn -c ../gunicorn.conf.py

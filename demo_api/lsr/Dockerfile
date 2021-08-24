@@ -7,4 +7,4 @@ WORKDIR /demo_api/lsr
 RUN pip install -r requirements.txt
 RUN python -m download_pretrained
 
-CMD PYTHON_PATH=../../ gunicorn -c ../gunicorn.conf.py
+CMD PYTHONPATH=../../ gunicorn -c ../gunicorn.conf.py
