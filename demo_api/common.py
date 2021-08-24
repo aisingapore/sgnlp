@@ -3,7 +3,7 @@ import json
 from flask import Flask, jsonify, make_response
 
 
-def create_api(app_name, model_card_path):
+def create_api(app_name, model_card_path, model_usage_path="usage.py"):
     app = Flask(app_name)
 
     # setup gunicorn logging
@@ -22,6 +22,15 @@ def create_api(app_name, model_card_path):
         with open(model_card_path) as f:
             model_card = json.load(f)
         return jsonify(**model_card)
+
+    @app.route("/model-usage", methods=["GET"])
+    def get_model_usage():
+        try:
+            with open(model_usage_path) as f:
+                model_usage = f.read()
+            return jsonify(usage=model_usage)
+        except FileNotFoundError:
+            return make_response("Model usage not available.", 404)
 
     # Kubernetes health check endpoint
     @app.route("/healthz", methods=["GET"])
