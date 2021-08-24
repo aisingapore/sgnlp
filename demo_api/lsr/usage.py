@@ -13,8 +13,8 @@ postprocessor = LsrPostprocessor.from_file_paths(rel2id_path=rel2id_path, rel_in
                                                  pred_threshold=PRED_THRESHOLD)
 
 # Load model
-config = LsrConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/config.json')
-model = LsrModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/pytorch_model.bin', config=config)
+config = LsrConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/v2/config.json')
+model = LsrModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/v2/pytorch_model.bin', config=config)
 model.eval()
 
 # DocRED-like instance
