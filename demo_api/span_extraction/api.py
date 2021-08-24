@@ -1,8 +1,8 @@
-import pathlib
 import json
 
-from flask import Flask, request, jsonify
+from flask import request, jsonify
 
+from demo_api.common import create_api
 from sgnlp.models.span_extraction import (
     RecconSpanExtractionConfig,
     RecconSpanExtractionModel,
@@ -14,8 +14,7 @@ from sgnlp.models.span_extraction.utils import (
     get_all_evidence_utterance_from_conversation,
 )
 
-
-app = Flask(__name__)
+app = create_api(app_name=__name__, model_card_path="model_card/span_extraction.json")
 
 config = RecconSpanExtractionConfig.from_pretrained(
     "https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/config.json"
@@ -29,21 +28,6 @@ model = RecconSpanExtractionModel.from_pretrained(
 )
 preprocessor = RecconSpanExtractionPreprocessor(tokenizer)
 postprocessor = RecconSpanExtractionPostprocessor()
-
-
-@app.route("/model-card", methods=["GET"])
-def get_model_card():
-    """GET method for model card
-
-    Returns:
-        json: return the model card in json format
-    """
-    model_card_path = str(
-        pathlib.Path(__file__).parent.joinpath("model_card/span_extraction.json")
-    )
-    with open(model_card_path) as f:
-        model_card = json.load(f)
-    return jsonify(**model_card)
 
 
 @app.route("/predict", methods=["POST"])
@@ -98,4 +82,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run()

@@ -1,31 +1,17 @@
-import pathlib
-import json
+from flask import jsonify, request
 
-from flask import Flask, jsonify, request
-
+from demo_api.common import create_api
 from sgnlp.models.nea import NEAConfig, NEARegPoolingModel, NEATokenizer, NEAPreprocessor
 from sgnlp.models.nea.utils import convert_to_dataset_friendly_scores
 
-app = Flask(__name__)
+
+app = create_api(app_name=__name__, model_card_path="model_card/nea.json")
 
 nea_config = NEAConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/nea/config.json')
 nea_model = NEARegPoolingModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/nea/pytorch_model.bin',
                                                config=nea_config)
 nea_tokenizer = NEATokenizer.from_pretrained('nea_tokenizer')
 nea_preprocessor = NEAPreprocessor(tokenizer=nea_tokenizer)
-
-
-@app.route("/model-card", methods=["GET"])
-def get_model_card():
-    """GET method for model card
-
-    Returns:
-        json: return the model card in json format
-    """
-    model_card_path = pathlib.Path(__file__).parent / "model_card/nea.json"
-    with open(model_card_path) as f:
-        model_card = json.load(f)
-    return jsonify(**model_card)
 
 
 @app.route("/predict", methods=["POST"])
@@ -44,4 +30,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run()

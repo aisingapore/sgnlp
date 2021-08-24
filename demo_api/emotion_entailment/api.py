@@ -1,9 +1,7 @@
 import json
+from flask import request, jsonify
 
-import torch
-import numpy as np
-from flask import Flask, request, jsonify
-
+from demo_api.common import create_api
 from sgnlp.models.emotion_entailment import (
     RecconEmotionEntailmentConfig,
     RecconEmotionEntailmentTokenizer,
@@ -15,10 +13,7 @@ from sgnlp.models.emotion_entailment.utils import (
     get_all_evidence_utterance_from_conversation,
 )
 
-
-app = Flask(__name__)
-
-model_card_path = "model_card/emotion_entailment.json"
+app = create_api(app_name=__name__, model_card_path="model_card/emotion_entailment.json")
 
 config = RecconEmotionEntailmentConfig.from_pretrained(
     "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/config.json"
@@ -30,18 +25,6 @@ model = RecconEmotionEntailmentModel.from_pretrained(
 )
 preprocessor = RecconEmotionEntailmentPreprocessor(tokenizer)
 postprocessor = RecconEmotionEntailmentPostprocessor()
-
-
-@app.route("/model-card", methods=["GET"])
-def get_model_card():
-    """GET method for model card
-
-    Returns:
-        json: return model card in json format
-    """
-    with open(model_card_path) as f:
-        model_card = json.load(f)
-    return jsonify(**model_card)
 
 
 @app.route("/predict", methods=["POST"])
@@ -100,4 +83,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run()
