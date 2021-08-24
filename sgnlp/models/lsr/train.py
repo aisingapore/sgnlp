@@ -335,8 +335,8 @@ def train(args):
     train_dataset = DocredDataset(json_file=args.train_file, preprocessor=train_preprocessor)
     val_dataset = DocredDataset(json_file=args.validation_file, preprocessor=val_preprocessor)
 
-    train_dataloader = DataLoader(train_dataset, shuffle=False, batch_size=args.batch_size, collate_fn=lsr_collate_fn)
-    val_dataloader = DataLoader(val_dataset, shuffle=False, batch_size=args.batch_size, collate_fn=lsr_collate_fn)
+    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size, collate_fn=lsr_collate_fn)
+    val_dataloader = DataLoader(val_dataset, shuffle=True, batch_size=args.batch_size, collate_fn=lsr_collate_fn)
 
     # Optimizer and parameters
     if config.use_bert:
