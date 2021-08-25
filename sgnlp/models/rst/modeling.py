@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,13 +7,13 @@ import torch.nn.functional as F
 import torch.nn.utils.rnn as R
 
 # Using ELMo contextual word embeddings
-from allennlp.modules.elmo import batch_to_ids
+# from allennlp.modules.elmo import batch_to_ids
 
 from torch.autograd import Variable
 from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
 
-from .config import RSTPointerNetworkConfig
+from .config import RSTPointerNetworkConfig, RSTParsingNetConfig
 
 
 @dataclass
@@ -109,16 +108,17 @@ class RSTPointerNetworkModel(RSTPointerNetworkPreTrainedModel):
 
         batch_size = len(batch_x)
 
-        # to convert input to ELMo embeddings
-        character_ids = batch_to_ids(batch_x)
-        if self.use_cuda:
-            character_ids = character_ids.cuda()
-        embeddings = self.elmo(character_ids)
-        batch_x_elmo = embeddings['elmo_representations'][0]  # two layers output  [batch,length,d_elmo]
-        if self.use_cuda:
-            batch_x_elmo = batch_x_elmo.cuda()
+        # # to convert input to ELMo embeddings
+        # character_ids = batch_to_ids(batch_x)
+        # if self.use_cuda:
+        #     character_ids = character_ids.cuda()
+        # embeddings = self.elmo(character_ids)
+        # batch_x_elmo = embeddings['elmo_representations'][0]  # two layers output  [batch,length,d_elmo]
+        # if self.use_cuda:
+        #     batch_x_elmo = batch_x_elmo.cuda()
 
-        X = batch_x_elmo
+        # X = batch_x_elmo
+        X = batch_x
         if self.is_batch_norm:
             X = X.permute(0, 2, 1)  # N C L
             X = batch_norm(X)
@@ -148,73 +148,6 @@ class RSTPointerNetworkModel(RSTPointerNetworkPreTrainedModel):
         logits = F.log_softmax(attention_pointer)
 
         return logits, att_weights
-
-    def training_decoder(self, hn, hend, Xindex, Yindex, lens):
-        """
-        Here, we use encoder hidden states as the input of decoder, instead of 
-        corresponding word embedding.
-        """
-
-        loss_function = nn.NLLLoss()
-        batch_loss = 0
-        LoopN = 0
-        batch_size = len(lens)
-        for i in range(len(lens)):  # Loop batch size
-
-            curX_index = Xindex[i]
-            curY_index = Yindex[i]
-            curL = lens[i]
-            curencoder_hn = hn[i, 0:curL, :]  # [length, encoder_hidden_size]
-
-            # x_index_var = Variable(torch.from_numpy(curX_index.astype(np.int64)))
-            x_index_var = torch.tensor(curX_index)
-            if self.use_cuda:
-                x_index_var = x_index_var.cuda()
-
-            curEncoder_Hidden_states = curencoder_hn[x_index_var]  # [no_segmentation, encoder_hidden_size]
-            curEncoder_Hidden_states = curEncoder_Hidden_states.unsqueeze(0)
-
-            if self.rnn_type == 'LSTM':  # need h_end,c_end
-
-                h_end = hend[0].permute(1, 0, 2).contiguous().view(batch_size, self.num_rnn_layers, -1)
-                c_end = hend[1].permute(1, 0, 2).contiguous().view(batch_size, self.num_rnn_layers, -1)
-
-                curh0 = h_end[i].unsqueeze(0).permute(1, 0, 2)
-                curc0 = c_end[i].unsqueeze(0).permute(1, 0, 2)
-
-                h_pass = (curh0, curc0)
-            else:
-
-                h_end = hend.permute(1, 0, 2).contiguous().view(batch_size, self.num_rnn_layers, -1)
-                curh0 = h_end[i].unsqueeze(0).permute(1, 0, 2)
-                h_pass = curh0
-
-            decoder_out, _ = self.decoder_rnn(curEncoder_Hidden_states, h_pass)
-            decoder_out = decoder_out.squeeze(0)  # [no_segmentation,decoder_hidden_size]
-
-            for j in range(len(decoder_out)):  # Loop every decoder hidden states
-                cur_dj = decoder_out[j]
-                cur_groundy = curY_index[j]
-
-                cur_start_index = curX_index[j]
-                predict_range = list(range(cur_start_index, curL))
-
-                # TODO: make it point backward, only consider predict_range in current time step
-                # align groundtruth
-                cur_groundy_var = Variable(torch.LongTensor([int(cur_groundy) - int(cur_start_index)]))
-                if self.use_cuda:
-                    cur_groundy_var = cur_groundy_var.cuda()
-
-                curencoder_hn_back = curencoder_hn[predict_range, :]
-
-                cur_logists, cur_weights = self.pointer_layer(curencoder_hn_back, cur_dj)
-
-                batch_loss = batch_loss + loss_function(cur_logists, cur_groundy_var)
-                LoopN = LoopN + 1
-
-        batch_loss = batch_loss / LoopN
-
-        return batch_loss
 
     def neg_log_likelihood(self, BatchX, IndexX, IndexY, lens):
         encoder_hn, encoder_h_end = self.pointer_encoder(BatchX, lens)
@@ -337,9 +270,22 @@ class RSTPointerNetworkModel(RSTPointerNetworkPreTrainedModel):
 
         return batch_start_boundaries, batch_end_boundaries, batch_align_matrix, batch_loss
 
-    def predict(self, x_batch, x_lens, y_batch=None):
+    def forward(self, x_batch, x_lens, y_batch=None):
         encoder_h_n, encoder_h_end = self.pointer_encoder(x_batch, x_lens)
         batch_start_boundaries, batch_end_boundaries, _, batch_loss = self.test_decoder(encoder_h_n, encoder_h_end,
                                                                                         x_lens, y_batch)
-
         return batch_loss, batch_start_boundaries, batch_end_boundaries
+
+
+@dataclass
+class RSTParsingNetModelOutput(ModelOutput):
+    pass
+
+
+class RSTParsingNetPreTrainedModel(PreTrainedModel):
+    config_class = RSTParsingNetConfig
+    base_model_prefix = "RSTPointerNetwork"
+
+
+class RSTParsingNetModel(RSTParsingNetPreTrainedModel):
+    pass
