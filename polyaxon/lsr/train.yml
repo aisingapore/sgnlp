@@ -7,6 +7,7 @@ build:
   dockerfile: polyaxon/lsr/experiment.Dockerfile
 
 environment:
+  configmap_refs: ["sgnlp-wandb-api-key"]
   persistence:
     data: ["100e-nlp-lab-data"]
   resources:
@@ -20,12 +21,14 @@ logging:
   level: INFO
 
 run:
-  cmd: python -m sgnlp_models.models.lsr.train \
+  cmd: python -m sgnlp.models.lsr.train \
     --train_file="/polyaxon-data/workspace/jonheng/lsr/docred/train_annotated.json" \
     --validation_file="/polyaxon-data/workspace/jonheng/lsr/docred/dev.json" \
-    --output_dir="/polyaxon-data/workspace/jonheng/lsr/experiment-output/bert" \
+    --output_dir="/polyaxon-data/workspace/jonheng/lsr/experiment-output/bigger_batch" \
     --metadata_dir="/polyaxon-data/workspace/jonheng/lsr/metadata" \
-    --batch_size=4 \
+    --pretrained_embeddings_path="/polyaxon-data/workspace/jonheng/lsr/metadata/vec.npy" \
+    --batch_size=16 \
     --num_epoch=100 \
     --seed=64 \
-    --model_config_path="/polyaxon-data/workspace/jonheng/lsr/config/config_bert.json"
+    --evaluate_epoch=20 \
+    --weight_decay=0.01

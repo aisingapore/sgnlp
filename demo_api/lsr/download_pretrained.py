@@ -17,5 +17,5 @@ word2id_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/word2
 ner2id_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/ner2id.json')
 rel_info_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/rel_info.json')
 
-config = LsrConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/config.json')
-model = LsrModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/pytorch_model.bin', config=config)
+config = LsrConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/v2/config.json')
+model = LsrModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/v2/pytorch_model.bin', config=config)
