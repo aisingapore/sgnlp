@@ -1,19 +1,21 @@
 import pathlib
 import json
 
-from flask import Flask, jsonify, request
+from flask import jsonify, request
+import torch
+from torch.nn.functional import softmax
+
+from demo_api.common import create_api
+from create_inputs import generate_structure
 from sgnlp.models.rumour_detection_twitter import (
     RumourDetectionTwitterConfig,
     RumourDetectionTwitterModel,
     RumourDetectionTwitterTokenizer,
     download_tokenizer_files_from_azure,
 )
-import torch
-from torch.nn.functional import softmax
 
-from create_inputs import generate_structure
 
-app = Flask(__name__)
+app = create_api(app_name=__name__, model_card_path="model_card/rumour.json")
 
 config = RumourDetectionTwitterConfig.from_pretrained(
     "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/config.json"
@@ -34,19 +36,6 @@ id_to_string = {
     2: "an unverified rumour",
     3: "a non-rumour",
 }
-
-
-@app.route("/model-card", methods=["GET"])
-def get_model_card():
-    """GET method for model card
-
-    Returns:
-        json: return the model card in json format
-    """
-    model_card_path = pathlib.Path(__file__).parent / "model_card/rumour.json"
-    with open(model_card_path) as f:
-        model_card = json.load(f)
-    return jsonify(**model_card)
 
 
 @app.route("/predict", methods=["POST"])
