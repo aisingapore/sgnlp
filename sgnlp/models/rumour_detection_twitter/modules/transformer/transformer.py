@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..Layer import Layer
+from ..layer import layer
 
 __author__ = "Serena Khoo"
 
@@ -26,7 +26,7 @@ class Transformer(nn.Module):
 
         # <----------- Stack of Attention layers ----------->
         self.input_stack = nn.ModuleList(
-            [Layer.Layer(config, d_model, n_heads) for _ in range(n_layers)]
+            [layer.Layer(config, d_model, n_heads) for _ in range(n_layers)]
         )
 
     def forward(
