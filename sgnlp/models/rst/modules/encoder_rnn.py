@@ -9,9 +9,8 @@ class EncoderRNN(nn.Module):
     """
     EncoderRNN model to be used in the encoder of the RST Parser network.
     """
-    def __init__(self, embedding_model, word_dim, hidden_size, device, rnn_layers=6, dropout=0.2):
+    def __init__(self, word_dim, hidden_size, device, rnn_layers=6, dropout=0.2):
         super(EncoderRNN, self).__init__()
-        self.embedding_model = embedding_model.to(device)
         self.word_dim = word_dim
         self.hidden_size = hidden_size
         self.device = device
