@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, List, Tuple
 
+import numpy as np
 import torch
 from transformers import PreTrainedTokenizer, PreTrainedModel
 from transformers.tokenization_utils_base import BatchEncoding
@@ -24,11 +25,17 @@ class RSTPreprocessor:
             self.tokenizer = tokenizer
         else:
             try:
-                from allennlp.modules.elmo import batch_to_ids
-                self.tokenizer = batch_to_ids
+                import allennlp  # noqa: F401
             except ModuleNotFoundError:
                 logging.warning('The package "allennlp" is not installed!')
                 logging.warning('To use elmo embedding, please install "allennlp" with "pip install allennlp"')
+
+            try:
+                import nltk
+                self.tokenizer = nltk.word_tokenize
+            except ModuleNotFoundError:
+                logging.warning('The package "nltk" is not installed!')
+                logging.warning('Please install "nltk" with "pip install nltk"')
 
         if embedding_model is not None:
             self.embedding_model = embedding_model
@@ -53,11 +60,10 @@ class RSTPreprocessor:
             Tuple[BatchEncoding, List[int]]: return a BatchEncoding instance with key 'data_batch' and embedded values
             of data batch. Also return a list of lengths of each text in the batch.
         """
-        data_batch_lengths = [len(text) for text in data_batch]
         if self.use_elmo:
-            text_embedding = self._get_elmo_embedding(data_batch)
+            text_embedding, data_batch_lengths = self._get_elmo_embedding(data_batch)
         else:
-            text_embedding = self._get_embedding(data_batch)
+            text_embedding, data_batch_lengths = self._get_embedding(data_batch)
         return BatchEncoding(text_embedding), data_batch_lengths
 
     def _get_embedding(self, data_batch: List[str]) -> torch.Tensor:
@@ -73,8 +79,11 @@ class RSTPreprocessor:
         Returns:
             Dict[str, List]: return a dictionary of elmo embeddings
         """
-        character_ids = self.tokenizer(data_batch)
+        from allennlp.modules.elmo import batch_to_ids
+        tokens = [np.array(self.tokenizer(data)) for data in data_batch]
+        tokens_length = [len(token) for token in tokens]
+        character_ids = batch_to_ids(tokens)  # noqa: F841
         character_ids.to(self.device)
         embeddings = self.embedding_model(character_ids)
         embeddings['data_batch'] = embeddings.pop('elmo_representations')  # Rename key to data_batch
-        return embeddings
+        return embeddings, tokens_length
