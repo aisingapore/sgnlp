@@ -1,7 +1,7 @@
 {
   "name": "LSR",
   "languages": "English",
-  "description": "This is a neural network that induces a latent document-level graph and uses a refinement strategy that allows the model to incrementally aggregate relevant information for multi-hop reasoning.",
+  "description": "This is a neural network that induces a latent document-level graph and uses a refinement strategy that allows the model to incrementally aggregate relevant information for multi-hop reasoning. This particular model corresponds to the GloVe+LSR model described in the paper.",
   "paper": {
     "text": "Nan, G., Guo, Z., Sekulić, I., & Lu, W. (2020). Reasoning with Latent Structure Refinement for Document-Level Relation Extraction. Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, July 2020 (pp. 1546-1557).",
     "url": "https://aclanthology.org/2020.acl-main.141/"
@@ -14,7 +14,7 @@
     "text": "DocRED",
     "url": "https://github.com/thunlp/DocRED/tree/master/data"
   },
-  "evaluationScores": "0.55 F1 on development set. 0.59 F1 reported by authors in paper on development set.",
+  "evaluationScores": "0.55 F1 on development set. 0.55 F1 reported by authors in paper on development set.",
   "trainingConfig": {
     "text": "Not available."
   },
