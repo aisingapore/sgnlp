@@ -14,6 +14,10 @@ from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
 
 from .config import RSTPointerNetworkConfig, RSTParsingNetConfig
+from .modules.encoder_rnn import EncoderRNN
+from .modules.decoder_rnn import DecoderRNN
+from .modules.pointer_attention import PointerAtten
+from .modules.classifier import LabelClassifier
 
 
 @dataclass
@@ -27,7 +31,7 @@ class RSTPointerNetworkPreTrainedModel(PreTrainedModel):
 
 
 class RSTPointerNetworkModel(RSTPointerNetworkPreTrainedModel):
-    def __init__(self, config, elmo):
+    def __init__(self, config: RSTPointerNetworkConfig):
         super(RSTPointerNetworkModel, self).__init__()
 
         self.word_dim = config.word_dim
@@ -66,8 +70,6 @@ class RSTPointerNetworkModel(RSTPointerNetworkPreTrainedModel):
             self.num_encoder_bi = 2
         else:
             self.num_encoder_bi = 1
-
-        self.elmo = elmo
 
     def init_hidden(self, hsize, batchsize):
 
@@ -288,4 +290,31 @@ class RSTParsingNetPreTrainedModel(PreTrainedModel):
 
 
 class RSTParsingNetModel(RSTParsingNetPreTrainedModel):
-    pass
+    def __init__(self, config):
+        super(RSTParsingNetModel, self).__init__()
+        self.batch_size = config.batch_size
+        self.word_dim = config.word_dim
+        self.hidden_size = config.hidden_size
+        self.decoder_input_size = config.decoder_input_size
+        self.atten_model = config.atten_model
+        self.device = config.device
+        self.classifier_input_size = config.classifier_input_size
+        self.classifier_hidden_size = config.classifier_hidden_size
+        self.highorder = config.highorder
+        self.classes_label = config.classes_label
+        self.classifier_bias = config.classifier_bias
+        self.rnn_layers = config.rnn_layers
+        self.encoder = EncoderRNN(
+            word_dim=self.word_dim,
+            hidden_size=self.hidden_size,
+            device=self.device,
+            rnn_layers=self.rnn_layers,
+            nnDropout=config.dropout_e)
+        self.decoder = DecoderRNN(
+            input_size=self.decoder_input_size,
+            hidden_size=self.hidden_size,
+            rnn_layers=self.rnn_layers,
+            dropout=config.dropout_d)
+        self.pointer = PointerAtten(
+            atten_model=self.atten_model,
+            hidden_size=self.hidden_size)
