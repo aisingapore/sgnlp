@@ -18,6 +18,8 @@ from .modules.encoder_rnn import EncoderRNN
 from .modules.decoder_rnn import DecoderRNN
 from .modules.pointer_attention import PointerAtten
 from .modules.classifier import LabelClassifier
+from .modules.type import DiscourseTreeNode, DiscourseTreeSplit
+from .utils import get_relation_and_nucleus
 
 
 @dataclass
@@ -318,3 +320,255 @@ class RSTParsingNetModel(RSTParsingNetPreTrainedModel):
         self.pointer = PointerAtten(
             atten_model=self.atten_model,
             hidden_size=self.hidden_size)
+        self.getlabel = LabelClassifier(
+            input_size=self.classifier_input_size,
+            hidden_size=self.classifier_hidden_size,
+            classes_label=self.classes_label,
+            bias=self.classifier_bias,
+            dropout=config.dropout_c)
+
+    def forward(self, input_sentence, edu_breaks, label_index, parsing_index, generate_splits=True):
+        # Obtain encoder outputs and last hidden states
+        encoder_outputs, last_hidden_states = self.encoder(input_sentence)
+
+        loss_function = nn.NLLLoss()
+        loss_label_batch = 0
+        loss_tree_batch = 0
+        loop_label_batch = 0
+        loop_tree_batch = 0
+        cur_label = []
+        label_batch = []
+        cur_tree = []
+        tree_batch = []
+
+        if generate_splits:
+            splits_batch = []
+
+        for i in range(len(edu_breaks)):
+
+            cur_label_index = label_index[i]
+            cur_label_index = torch.tensor(cur_label_index)
+            cur_label_index = cur_label_index.to(self.device)
+            cur_parsing_index = parsing_index[i]
+
+            if len(edu_breaks[i]) == 1:
+                # For a sentence containing only ONE EDU, it has no
+                # corresponding relation label and parsing tree break.
+                tree_batch.append([])
+                label_batch.append([])
+
+                if generate_splits:
+                    splits_batch.append([])
+
+            elif len(edu_breaks[i]) == 2:
+                # Take the last hidden state of an EDU as the representation of
+                # this EDU. The dimension: [2,hidden_size]
+                cur_encoder_outputs = encoder_outputs[i][edu_breaks[i]]
+
+                #  Directly run the classifier to obain predicted label
+                input_left = cur_encoder_outputs[0].unsqueeze(0)
+                input_right = cur_encoder_outputs[1].unsqueeze(0)
+                relation_weights, log_relation_weights = self.getlabel(input_left, input_right)
+                _, topindex = relation_weights.topk(1)
+                label_predict = int(topindex[0][0])
+                tree_batch.append([0])
+                label_batch.append([label_predict])
+
+                loss_label_batch = loss_label_batch + loss_function(log_relation_weights, cur_label_index)
+                loop_label_batch = loop_label_batch + 1
+
+                if generate_splits:
+                    nuclearity_left, nuclearity_right, relation_left, relation_right = \
+                        get_relation_and_nucleus(label_predict)
+
+                    split = DiscourseTreeSplit(
+                        left=DiscourseTreeNode(span=(0, 0), ns_type=nuclearity_left, label=relation_left),
+                        right=DiscourseTreeNode(span=(1, 1), ns_type=nuclearity_right, label=relation_right)
+                    )
+
+                    splits_batch.append([split])
+
+            else:
+                # Take the last hidden state of an EDU as the representation of this EDU
+                # The dimension: [NO_EDU,hidden_size]
+                cur_encoder_outputs = encoder_outputs[i][edu_breaks[i]]
+
+                edu_index = [x for x in range(len(cur_encoder_outputs))]
+                stacks = ['__StackRoot__', edu_index]
+
+                # cur_decoder_input: [1,1,hidden_size]
+                # Alternative way is to take the last one as the input. You need to prepare data accordingly for training
+                cur_decoder_input = cur_encoder_outputs[0].unsqueeze(0).unsqueeze(0)
+
+                # Obtain last hidden state
+                temptest = torch.transpose(last_hidden_states, 0, 1)[i].unsqueeze(0)
+                cur_last_hidden_states = torch.transpose(temptest, 0, 1)
+                cur_last_hidden_states = cur_last_hidden_states.contiguous()
+
+                cur_decoder_hidden = cur_last_hidden_states
+                loop_index = 0
+
+                if generate_splits:
+                    splits = []
+                if self.highorder:
+                    cur_sibling = {}
+
+                while stacks[-1] != '__StackRoot__':
+                    stack_head = stacks[-1]
+
+                    if len(stack_head) < 3:
+
+                        # Predict relation label
+                        input_left = cur_encoder_outputs[stack_head[0]].unsqueeze(0)
+                        input_right = cur_encoder_outputs[stack_head[-1]].unsqueeze(0)
+                        relation_weights, log_relation_weights = self.getlabel(input_left, input_right)
+                        _, topindex = relation_weights.topk(1)
+                        label_predict = int(topindex[0][0])
+                        cur_label.append(label_predict)
+
+                        # For 2 EDU case, we directly point the first EDU
+                        # as the current parsing tree break
+                        cur_tree.append(stack_head[0])
+
+                        # To keep decoder hidden states consistent
+                        _, cur_decoder_hidden = self.decoder(cur_decoder_input, cur_decoder_hidden)
+
+                        # Align ground truth label
+                        if loop_index > (len(cur_parsing_index) - 1):
+                            cur_label_true = cur_label_index[-1]
+                        else:
+                            cur_label_true = cur_label_index[loop_index]
+
+                        loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
+                                                                            cur_label_true.unsqueeze(0))
+                        loop_label_batch = loop_label_batch + 1
+                        loop_index = loop_index + 1
+                        del stacks[-1]
+
+                        if generate_splits:
+                            # To generate a tree structure
+                            nuclearity_left, nuclearity_right, relation_left, relation_right = \
+                                get_relation_and_nucleus(label_predict)
+
+                            cur_split = DiscourseTreeSplit(
+                                left=DiscourseTreeNode(span=(stack_head[0], stack_head[0]), ns_type=nuclearity_left,
+                                                       label=relation_left),
+                                right=DiscourseTreeNode(span=(stack_head[-1], stack_head[-1]), ns_type=nuclearity_right,
+                                                        label=relation_right)
+                            )
+
+                            splits.append(cur_split)
+
+                    else:
+                        # Length of stack_head >= 3
+                        # Alternative way is to take the last one as the input. You need to prepare data accordingly for training
+                        cur_decoder_input = cur_encoder_outputs[stack_head[0]].unsqueeze(0).unsqueeze(0)
+
+                        if self.highorder:
+                            if loop_index != 0:
+                                # Incoperate Parents information
+                                cur_decoder_input_P = cur_encoder_outputs[stack_head[-1]]
+                                # To incorperate Sibling information
+                                if str(stack_head) in cur_sibling.keys():
+                                    cur_decoder_input_S = cur_encoder_outputs[cur_sibling[str(stack_head)]]
+
+                                    inputs_all = torch.cat(
+                                        (cur_decoder_input.squeeze(0), cur_decoder_input_S.unsqueeze(0), \
+                                         cur_decoder_input_P.unsqueeze(0)), 0)
+                                    new_inputs_all = torch.matmul(
+                                        F.softmax(torch.matmul(inputs_all, inputs_all.transpose(0, 1)), 0), inputs_all)
+                                    cur_decoder_input = new_inputs_all[0, :] + new_inputs_all[1, :] + new_inputs_all[2,
+                                                                                                      :]
+                                    cur_decoder_input = cur_decoder_input.unsqueeze(0).unsqueeze(0)
+
+                                    # cur_decoder_input = cur_decoder_input + cur_decoder_input_P + cur_decoder_input_S
+                                else:
+                                    inputs_all = torch.cat(
+                                        (cur_decoder_input.squeeze(0), cur_decoder_input_P.unsqueeze(0)), 0)
+                                    new_inputs_all = torch.matmul(
+                                        F.softmax(torch.matmul(inputs_all, inputs_all.transpose(0, 1)), 0), inputs_all)
+                                    cur_decoder_input = new_inputs_all[0, :] + new_inputs_all[1, :]
+                                    cur_decoder_input = cur_decoder_input.unsqueeze(0).unsqueeze(0)
+
+                        # Predict the parsing tree break
+                        cur_decoder_output, cur_decoder_hidden = self.decoder(cur_decoder_input, cur_decoder_hidden)
+                        atten_weights, log_atten_weights = self.pointer(cur_encoder_outputs[stack_head[:-1]],
+                                                                        cur_decoder_output.squeeze(0).squeeze(0))
+                        _, topindex_tree = atten_weights.topk(1)
+                        tree_predict = int(topindex_tree[0][0]) + stack_head[0]
+                        cur_tree.append(tree_predict)
+
+                        # Predict the Label
+                        input_left = cur_encoder_outputs[tree_predict].unsqueeze(0)
+                        input_right = cur_encoder_outputs[stack_head[-1]].unsqueeze(0)
+                        relation_weights, log_relation_weights = self.getlabel(input_left, input_right)
+                        _, topindex_label = relation_weights.topk(1)
+                        label_predict = int(topindex_label[0][0])
+                        cur_label.append(label_predict)
+
+                        # Align ground true label and tree
+                        if loop_index > (len(cur_parsing_index) - 1):
+                            cur_label_true = cur_label_index[-1]
+                            cur_tree_true = cur_parsing_index[-1]
+                        else:
+                            cur_label_true = cur_label_index[loop_index]
+                            cur_tree_true = cur_parsing_index[loop_index]
+
+                        temp_ground = max(0, (int(cur_tree_true) - int(stack_head[0])))
+                        if temp_ground >= (len(stack_head) - 1):
+                            temp_ground = stack_head[-2] - stack_head[0]
+                        # Compute Tree Loss
+                        cur_ground_index = torch.tensor([temp_ground])
+                        cur_ground_index = cur_ground_index.to(self.device)
+                        loss_tree_batch = loss_tree_batch + loss_function(log_atten_weights, cur_ground_index)
+
+                        # Compute Classifier Loss
+                        loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
+                                                                            cur_label_true.unsqueeze(0))
+
+                        # Stacks stuff
+                        stack_down = stack_head[(tree_predict - stack_head[0] + 1):]
+                        stack_top = stack_head[:(tree_predict - stack_head[0] + 1)]
+                        del stacks[-1]
+                        loop_label_batch = loop_label_batch + 1
+                        loop_tree_batch = loop_tree_batch + 1
+                        loop_index = loop_index + 1
+
+                        # Sibling information
+                        if self.highorder:
+                            if len(stack_down) > 2:
+                                cur_sibling.update({str(stack_down): stack_top[-1]})
+
+                        # Remove ONE-EDU part
+                        if len(stack_down) > 1:
+                            stacks.append(stack_down)
+                        if len(stack_top) > 1:
+                            stacks.append(stack_top)
+
+                        if generate_splits:
+                            nuclearity_left, nuclearity_right, relation_left, relation_right = \
+                                get_relation_and_nucleus(label_predict)
+
+                            cur_split = DiscourseTreeSplit(
+                                left=DiscourseTreeNode(span=(stack_head[0], tree_predict), ns_type=nuclearity_left,
+                                                       label=relation_left),
+                                right=DiscourseTreeNode(span=(tree_predict + 1, stack_head[-1]),
+                                                        ns_type=nuclearity_right, label=relation_right)
+                            )
+
+                            splits.append(cur_split)
+
+                tree_batch.append(cur_tree)
+                label_batch.append(cur_label)
+                if generate_splits:
+                    splits_batch.append(splits)
+
+        if loop_label_batch != 0:
+            loss_label_batch = loss_label_batch / loop_label_batch
+            loss_label_batch = loss_label_batch.detach().cpu().numpy()
+
+        if loss_tree_batch != 0:
+            loss_tree_batch = loss_tree_batch / loop_tree_batch
+            loss_tree_batch = loss_tree_batch.detach().cpu().numpy()
+
+        return loss_tree_batch, loss_label_batch, (splits_batch if generate_splits else None)
