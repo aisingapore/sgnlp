@@ -95,20 +95,10 @@ local api_names = {
     image_name: "reccon-emotion-entailment",
     deployment_name: "emotion-entailment"
   },
-  "lif_3way_ap": {
-    module_name: "lif_3way_ap",
-    image_name: "lif-3way-ap",
-    deployment_name: "lif-3way-ap"
-  },
   "lsr": {
     module_name: "lsr",
     image_name: "lsr",
     deployment_name: "lsr"
-  },
-  "nea": {
-    module_name: "nea",
-    image_name: "nea",
-    deployment_name: "nea"
   },
   "span_extraction": {
     module_name: "span_extraction",
