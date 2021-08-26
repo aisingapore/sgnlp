@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 import torch
@@ -24,7 +25,9 @@ from .utils import get_relation_and_nucleus
 
 @dataclass
 class RSTPointerNetworkModelOutput(ModelOutput):
-    pass
+    batch_loss: float = None
+    batch_start_boundaries: np.array = None
+    batch_end_boundaries: np.array = None
 
 
 class RSTPointerNetworkPreTrainedModel(PreTrainedModel):
@@ -278,12 +281,14 @@ class RSTPointerNetworkModel(RSTPointerNetworkPreTrainedModel):
         encoder_h_n, encoder_h_end = self.pointer_encoder(x_batch, x_lens)
         batch_start_boundaries, batch_end_boundaries, _, batch_loss = self.test_decoder(encoder_h_n, encoder_h_end,
                                                                                         x_lens, y_batch)
-        return batch_loss, batch_start_boundaries, batch_end_boundaries
+        return RSTPointerNetworkModelOutput(batch_loss, batch_start_boundaries, batch_end_boundaries)
 
 
 @dataclass
 class RSTParsingNetModelOutput(ModelOutput):
-    pass
+    loss_tree_batch: np.array = None
+    loss_label_batch: np.array = None
+    split_batch: List[List[DiscourseTreeSplit]] = None
 
 
 class RSTParsingNetPreTrainedModel(PreTrainedModel):
@@ -571,4 +576,4 @@ class RSTParsingNetModel(RSTParsingNetPreTrainedModel):
             loss_tree_batch = loss_tree_batch / loop_tree_batch
             loss_tree_batch = loss_tree_batch.detach().cpu().numpy()
 
-        return loss_tree_batch, loss_label_batch, (splits_batch if generate_splits else None)
+        return RSTParsingNetModelOutput(loss_tree_batch, loss_label_batch, (splits_batch if generate_splits else None))
