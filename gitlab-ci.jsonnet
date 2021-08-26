@@ -115,11 +115,6 @@ local api_names = {
     image_name: "reccon-span-extraction",
     deployment_name: "span-extraction"
   },
-  "ufd": {
-    module_name: "ufd",
-    image_name: "ufd",
-    deployment_name: "ufd"
-  },
   "rumour_detection_twitter": {
     module_name: "rumour_detection_twitter",
     image_name: "rumour-detection-twitter",

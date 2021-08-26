@@ -213,9 +213,11 @@ def get_optimizer(name, parameters, lr, l2=0):
         # use custom adagrad to allow for init accumulator value
         return MyAdagrad(parameters, lr=lr, init_accu_value=0.1, weight_decay=l2)
     elif name == 'adam':
-        return torch.optim.Adam(parameters, lr, weight_decay=l2)  # use default lr
+        return torch.optim.Adam(parameters, lr, weight_decay=l2)
+    elif name == 'adamw':
+        return torch.optim.AdamW(parameters, lr=lr, weight_decay=l2)
     elif name == 'adamax':
-        return torch.optim.Adamax(parameters, weight_decay=l2)  # use default lr
+        return torch.optim.Adamax(parameters, weight_decay=l2)
     elif name == 'adadelta':
         return torch.optim.Adadelta(parameters, lr=lr, weight_decay=l2)
     else:
@@ -245,14 +247,18 @@ def parse_args():
     parser.add_argument('--lr_decay', type=float, default=0.98, help='Learning rate decay rate.')
     parser.add_argument('--decay_epoch', type=int, default=20, help='Decay learning rate after this epoch.')
     parser.add_argument('--evaluate_epoch', type=int, default=30, help='Evaluate after this epoch.')
-    parser.add_argument('--optim', choices=['sgd', 'adagrad', 'adam', 'adamax'], default='adam',
+    parser.add_argument('--optim', choices=['sgd', 'adagrad', 'adam', 'adamw', 'adamax'], default='adam',
                         help='Choice of optimizer.')
+    parser.add_argument('--weight_decay', type=float, default=0, help='L2 weight decay.')
     parser.add_argument('--num_epoch', type=int, default=200, help='Number of total training epochs.')
     parser.add_argument('--batch_size', type=int, default=20, help='Training batch size.')
     parser.add_argument('--max_grad_norm', type=float, default=5.0, help='Gradient clipping.')
 
     parser.add_argument('--seed', type=int, default=0, help="A seed for reproducible training.")
     parser.add_argument('--use_gpu', type=bool, default=True, help="Whether you want to use GPU for training.")
+
+    parser.add_argument('--use_wandb', type=bool, default=False, help="Whether to use wandb to monitor training.")
+    parser.add_argument('--wandb_run_name', type=str, default=None, help="Wandb run name.")
 
     args = parser.parse_args()
 
@@ -303,6 +309,11 @@ def train(args):
     else:
         model = LsrModel(config)
 
+    if args.use_wandb:
+        import wandb
+        wandb.init(project="lsr", name=args.wandb_run_name)
+        wandb.watch(model, log="all")
+
     # Note: this will override the provided model weights
     if args.pretrained_embeddings_path is not None and not config.use_bert:
         pretrained_embeddings = np.load(args.pretrained_embeddings_path)
@@ -318,9 +329,9 @@ def train(args):
     word2id_path = os.path.join(args.metadata_dir, "word2id.json")
     ner2id_path = os.path.join(args.metadata_dir, "ner2id.json")
     train_preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path,
-                                         is_train=True, device=torch.device("cpu"), use_bert=config.use_bert)
+                                         is_train=True, device=torch.device("cpu"), config=config)
     val_preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path,
-                                       device=torch.device("cpu"), use_bert=config.use_bert)
+                                       device=torch.device("cpu"), config=config)
     train_dataset = DocredDataset(json_file=args.train_file, preprocessor=train_preprocessor)
     val_dataset = DocredDataset(json_file=args.validation_file, preprocessor=val_preprocessor)
 
@@ -358,6 +369,11 @@ def train(args):
 
             # Backpropagation
             loss = outputs.loss
+            # TODO: Remove debug logs below
+            if np.isnan(loss.item()):
+                logger.info("Skipping backward prop.")
+                continue
+
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
@@ -372,6 +388,16 @@ def train(args):
         avg_epoch_train_loss = total_epoch_train_loss / (step + 1)
         logger.info(f"Train loss: {avg_epoch_train_loss:.3f}, best theta: {best_theta:.3f}, "
                     f"f1: {f1:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, auc: {auc:.5f}")
+
+        if args.use_wandb:
+            wandb.log({
+                "train_loss": avg_epoch_train_loss,
+                "train_best_theta": best_theta,
+                "train_f1": f1,
+                "train_precision": precision,
+                "train_recall": recall,
+                "train_auc": auc
+            }, step=epoch)
 
         # Write train metrics
         if args.output_dir is not None:
@@ -400,6 +426,16 @@ def train(args):
             avg_epoch_val_loss = total_epoch_val_loss / (step + 1)
             logger.info(f"Val loss: {avg_epoch_val_loss:.3f}, best theta: {best_theta:.3f}, "
                         f"f1: {f1:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, auc: {auc:.5f}")
+
+            if args.use_wandb:
+                wandb.log({
+                    "val_loss": avg_epoch_val_loss,
+                    "val_best_theta": best_theta,
+                    "val_f1": f1,
+                    "val_precision": precision,
+                    "val_recall": recall,
+                    "val_auc": auc
+                }, step=epoch)
 
             # Write val metrics
             if args.output_dir is not None:

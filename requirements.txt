@@ -1,0 +1,11 @@
+datasets
+nltk
+numpy
+pandas
+scikit-learn
+sentencepiece
+spacy>=3
+tokenizers
+torch>=1.6,<2
+torchtext
+transformers

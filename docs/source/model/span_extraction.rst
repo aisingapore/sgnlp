@@ -129,7 +129,9 @@ Config Preparation
 ------------------
 Create a copy of the config file. Update the following parameters:
 `train_data_path`, `val_data_path` and `train_args/output_dir`. For the other parameters,
-you can either use the default values or modify it.
+you can either use the default values or modify it. You can refer to an example
+of the config file
+`here <https://github.com/aimakerspace/sgnlp/blob/main/sgnlp/models/span_extraction/config/span_extraction_config.json>`_.
 
 +----------------------------------------+---------------------------------------------------------------------------------------------------+
 | Configuration key                      | Description                                                                                       |
@@ -192,6 +194,9 @@ Config Preparation
 Create a copy of the config file. Update the following parameters:
 `eval_args/trained_model_dir` , `eval_args/x_test_path` and `results_path`.
 For the other parameters, you can either use the default values or modify it.
+You can refer to an example of the config file
+`here <https://github.com/aimakerspace/sgnlp/blob/main/sgnlp/models/span_extraction/config/span_extraction_config.json>`_.
+
 
 +-------------------------------------+---------------------------------------------------------------------------------------------------+
 | Configuration key                   | Description                                                                                       |
