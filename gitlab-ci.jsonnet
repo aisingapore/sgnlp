@@ -5,9 +5,8 @@ local build_and_push_staging(module_name, image_name) = {
   script: [
     "echo 'Logging in to AISG Docker Registry...'",
     "echo $STG_REGISTRY_PASSWORD | docker login registry.aisingapore.net -u $STG_DOCKER_USER --password-stdin",
-    "cd demo_api/%s" % module_name,
     "echo 'Building and pushing image...'",
-    "docker build --no-cache -t %s ." % module_name,
+    "docker build --no-cache -t %s -f demo_api/%s/Dockerfile demo_api/" % [module_name, module_name],
     "docker tag %s registry.aisingapore.net/sg-nlp/%s:latest" % [module_name, image_name],
     "docker push registry.aisingapore.net/sg-nlp/%s:latest" % image_name,
   ],
