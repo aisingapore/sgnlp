@@ -6,10 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.utils.rnn as R
-
-# Using ELMo contextual word embeddings
-# from allennlp.modules.elmo import batch_to_ids
-
 from torch.autograd import Variable
 from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
