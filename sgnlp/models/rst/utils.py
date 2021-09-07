@@ -1,7 +1,8 @@
+import numpy as np
+import re
 import argparse
 import json
 from typing import Union
-
 
 from .data_class import RSTParserArguments, RSTSegmenterArguments
 
