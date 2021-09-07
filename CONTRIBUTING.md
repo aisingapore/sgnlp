@@ -4,10 +4,20 @@ Thank you for considering contributing to SG-NLP! We believe that SG-NLP's futur
 
 ## How can I contribute?
 
-- [Add a new model to the `sgnlp` package](#adding-a-new-model-to-sgnlp)
-- Add a new demo for an existing model to the SG-NLP demo website - refer to the contributing guide for the NLP Hub demo.
-- [Submit bug fixes](#submitting-bug-fixes)
-- [Add documentation](#adding-documentation)
+- [Add a new model to `sgnlp`](#adding-a-new-model-to-sgnlp)
+  - [Pre-requisites](#pre-requisites)
+  - [Required Components](#required-components)
+  - [Config](#config)
+  - [Preprocess](#preprocess)
+  - [Tokenizer](#tokenizer-optional)
+  - [Modeling](#modeling)
+  - [Train](#train)
+  - [Eval](#eval)
+  - [Utils](#utils)
+  - [README](#readme)
+  - [Model weights and artefacts](#model-weights-and-artefacts)
+- [Submit Bug Fixes](#submitting-bug-fixes)
+- [Add Documentation](#adding-documentation)
 
 ## Adding a new model to `sgnlp`
 
@@ -41,43 +51,21 @@ Before you create a pull request to add your model to `sgnlp`, please ensure tha
   - config.json
   - tokenizer_config.json (optional)
 
-### Project Structure
+To contribute a model, add a folder for the model at `sgnlp/sgnlp/models/<model_name>`. The following components are required within this folder.
 
-The code for your model should follow this structure.
+To manage the number of dependencies in `sgnlp`, contributors are strongly recommended to limit their code to use the packages listed in `setup.py`. If additional dependencies are required, please specify them in the `__init__.py` file at `sgnlp/sgnlp/models/<model_name>/__init__.py`.
 
-`sgnlp`  
-`---- sgnlp`  
-`-------- models`  
-`------------ model_name`  
-`---------------- config`  
-`---------------- modules (optional)`  
-`---------------- README.md`  
-`---------------- __init__.py`  
-`---------------- config.py`  
-`---------------- eval.py`  
-`---------------- modeling.py`  
-`---------------- tokenization.py (optional)`  
-`---------------- train.py`  
-`---------------- utils.py (optional)`  
-`---------------- requirements.txt (optional)`
-
-### Description
-
-| Folder / File                           | Description                                                                                                                                                                                                                                     |
-| :-------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| _sgnlp_                                 | Root folder for the repository.                                                                                                                                                                                                                 |
-| _sgnlp/sgnlp_                           | Main folder for the `sgnlp` Python package.                                                                                                                                                                                                     |
-| _models_                                | Folder containing the source code for all models.                                                                                                                                                                                               |
-| _model_name_                            | Folder containing the modeling, preprocess, config, train, and eval scripts.                                                                                                                                                                    |
-| _model_name/config_                     | Folder containing the JSON configuration files used for the train and eval scripts.                                                                                                                                                             |
-| _model_name/config.py_                  | Script containing the model config class which inherits from HuggingFace's [`PretrainedConfig`](https://huggingface.co/transformers/main_classes/configuration.html#transformers.PretrainedConfig) or its family of derived classes.            |
-| _model_name/eval.py_                    | Script containing code to evaluate the model performance.                                                                                                                                                                                       |
-| _model_name/modeling.py_                | Script containing the model class which inherits from HuggingFace's [`PretrainedModel`](https://huggingface.co/transformers/main_classes/model.html#transformers.PreTrainedModel) class or its family of derived classes.                       |
-| _model_name/preprcoess.py_              | Script containing code to preprocess the input text into the model's required input tensors.                                                                                                                                                    |
-| _model_name/tokenization.py_ (optional) | Script containing the model tokenizer class which inherits from HuggingFace's [`PretrainedTokenizer`](https://huggingface.co/transformers/main_classes/tokenizer.html#transformers.PreTrainedTokenizer) class or its family of derived classes. |
-| _model_name/train.py_                   | Script containing code to train the model. It is recommended to utilize the [`Trainer`](https://huggingface.co/transformers/main_classes/trainer.html#transformers.Trainer) class from HuggingFace.                                             |
-| _model_name/README.md_                  | README markdown file containing model information such as model source, architecture, evaluation datasets and metrics, model size, and training information.                                                                                    |
-| _model_name/requirements.txt_           | Text file containing package dependencies for model serving. To manage the full list of dependencies in `sgnlp`, contributors are strongly recommended to limit their code to use the packages listed in `setup.py`.                            |
+| Folder / File                             | Description                                                                                                                                                                                                                                     |
+| :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| _<model_name>_                            | Folder containing the modeling, preprocess, config, train, and eval scripts.                                                                                                                                                                    |
+| _<model_name>/config_                     | Folder containing the JSON configuration files used for the train and eval scripts.                                                                                                                                                             |
+| _<model_name>/config.py_                  | Script containing the model config class which inherits from HuggingFace's [`PretrainedConfig`](https://huggingface.co/transformers/main_classes/configuration.html#transformers.PretrainedConfig) or its family of derived classes.            |
+| _<model_name>/eval.py_                    | Script containing code to evaluate the model performance.                                                                                                                                                                                       |
+| _<model_name>/modeling.py_                | Script containing the model class which inherits from HuggingFace's [`PretrainedModel`](https://huggingface.co/transformers/main_classes/model.html#transformers.PreTrainedModel) class or its family of derived classes.                       |
+| _<model_name>/preprocess.py_              | Script containing code to preprocess the input text into the model's required input tensors.                                                                                                                                                    |
+| _<model_name>/tokenization.py_ (optional) | Script containing the model tokenizer class which inherits from HuggingFace's [`PretrainedTokenizer`](https://huggingface.co/transformers/main_classes/tokenizer.html#transformers.PreTrainedTokenizer) class or its family of derived classes. |
+| _<model_name>/train.py_                   | Script containing code to train the model. It is recommended to utilize the [`Trainer`](https://huggingface.co/transformers/main_classes/trainer.html#transformers.Trainer) class from HuggingFace.                                             |
+| _<model_name>/README.md_                  | README markdown file containing model information such as model source, architecture, evaluation datasets and metrics, model size, and training information.                                                                                    |
 
 ### Config
 
@@ -109,7 +97,7 @@ class NewModelConfig(BertConfig):
 
 ### Preprocess
 
-The `preprocess.py` script and its associated preprocessor class is an addition in `sgnlp`. When implementing various models, the team found that more complex models required more complex preprocessing. For example, some NLP models take in multiple different text inputs (ie, different utterances, multiple tweets, a single question and multiple possible answers, etc) which require different preprocessing steps. The `preprocess.py` and the preprocessor class is the team's solution to packaging all of these different steps into a single and consistent (across different models) step.
+The `preprocess.py` script and its associated preprocessor class is an addition in `sgnlp`. When implementing various models, the team found that some models required more complex preprocessing. For example, some NLP models take in multiple different text inputs (ie, different utterances, multiple tweets, a single question and multiple possible answers, etc) which require different preprocessing steps. The `preprocess.py` and the preprocessor class is the team's solution to packaging all of these different steps into a single and consistent (across different models) step.
 
 The preprocessor class inherits from the default `object` class. All preprocessing steps should be executed in the class' `__call__` method. The `__call__` method should return a dictionary containing all the necessary input tensors required by the model. The following code snippet illustrates the `__call__` method from the RECCON Span Extraction model's `RecconSpanExtractionPreprocessor`.
 
@@ -321,4 +309,4 @@ If you spotted a bug, please follow these steps to report them.
 
 ## Adding Documentation
 
-One easy way to contribute is to add or refine documentation / docstrings to the models that are currently available. `sgnlp` uses [Sphinx](https://www.sphinx-doc.org/en/master/) to generate our documentation pages. Please refer to the Sphinx documentation on the formatting expected in the docstrings. Once the docstrings have been added or edited, please submit a pull request.
+One easy way to contribute is to add or refine documentation / docstrings to the models that are currently available. `sgnlp` uses the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html) for our docstrings. Once the docstrings have been added or edited, please submit a pull request.
