@@ -10,7 +10,7 @@ from torch.autograd import Variable
 from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
 
-from .config import RSTPointerNetworkConfig, RSTParsingNetConfig
+from .config import RstPointerSegmenterConfig, RstPointerParserConfig
 from .modules.encoder_rnn import EncoderRNN
 from .modules.decoder_rnn import DecoderRNN
 from .modules.pointer_attention import PointerAtten
@@ -20,20 +20,20 @@ from .utils import get_relation_and_nucleus
 
 
 @dataclass
-class RSTPointerNetworkModelOutput(ModelOutput):
+class RstPointerSegmenterModelOutput(ModelOutput):
     batch_loss: float = None
     batch_start_boundaries: np.array = None
     batch_end_boundaries: np.array = None
 
 
-class RSTPointerNetworkPreTrainedModel(PreTrainedModel):
-    config_class = RSTPointerNetworkConfig
+class RstPointerSegmenterPreTrainedModel(PreTrainedModel):
+    config_class = RstPointerSegmenterConfig
     base_model_prefix = "RSTPointerNetwork"
 
 
-class RSTPointerNetworkModel(RSTPointerNetworkPreTrainedModel):
-    def __init__(self, config: RSTPointerNetworkConfig):
-        super(RSTPointerNetworkModel, self).__init__()
+class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
+    def __init__(self, config: RstPointerSegmenterConfig):
+        super(RstPointerSegmenterModel, self).__init__()
 
         self.word_dim = config.word_dim
         self.hidden_dim = config.hidden_dim
@@ -277,24 +277,24 @@ class RSTPointerNetworkModel(RSTPointerNetworkPreTrainedModel):
         encoder_h_n, encoder_h_end = self.pointer_encoder(x_batch, x_lens)
         batch_start_boundaries, batch_end_boundaries, _, batch_loss = self.test_decoder(encoder_h_n, encoder_h_end,
                                                                                         x_lens, y_batch)
-        return RSTPointerNetworkModelOutput(batch_loss, batch_start_boundaries, batch_end_boundaries)
+        return RstPointerSegmenterModelOutput(batch_loss, batch_start_boundaries, batch_end_boundaries)
 
 
 @dataclass
-class RSTParsingNetModelOutput(ModelOutput):
+class RstPointerParserModelOutput(ModelOutput):
     loss_tree_batch: np.array = None
     loss_label_batch: np.array = None
     split_batch: List[List[DiscourseTreeSplit]] = None
 
 
-class RSTParsingNetPreTrainedModel(PreTrainedModel):
-    config_class = RSTParsingNetConfig
+class RstPointerParserPreTrainedModel(PreTrainedModel):
+    config_class = RstPointerParserConfig
     base_model_prefix = "RSTPointerNetwork"
 
 
-class RSTParsingNetModel(RSTParsingNetPreTrainedModel):
+class RstPointerParserModel(RstPointerParserPreTrainedModel):
     def __init__(self, config):
-        super(RSTParsingNetModel, self).__init__()
+        super(RstPointerParserModel, self).__init__()
         self.batch_size = config.batch_size
         self.word_dim = config.word_dim
         self.hidden_size = config.hidden_size
@@ -572,4 +572,4 @@ class RSTParsingNetModel(RSTParsingNetPreTrainedModel):
             loss_tree_batch = loss_tree_batch / loop_tree_batch
             loss_tree_batch = loss_tree_batch.detach().cpu().numpy()
 
-        return RSTParsingNetModelOutput(loss_tree_batch, loss_label_batch, (splits_batch if generate_splits else None))
+        return RstPointerParserModelOutput(loss_tree_batch, loss_label_batch, (splits_batch if generate_splits else None))

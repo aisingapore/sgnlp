@@ -1,9 +1,7 @@
 from transformers import PretrainedConfig
 
 
-class RSTPointerNetworkConfig(PretrainedConfig):
-    model_type = "rst_pointer_network"
-
+class RstPointerSegmenterConfig(PretrainedConfig):
     def __init__(
         self,
         word_dim,
@@ -28,9 +26,7 @@ class RSTPointerNetworkConfig(PretrainedConfig):
         self.use_cuda = use_cuda
 
 
-class RSTParsingNetConfig(PretrainedConfig):
-    model_type = "rst_parsing_net"
-
+class RstPointerParserConfig(PretrainedConfig):
     def __init__(
         self,
         word_dim,
