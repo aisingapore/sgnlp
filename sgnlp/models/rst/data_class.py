@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class RSTSegmenterArguments:
+class RstPointerSegmenterTrainArgs:
     train_data_dir: str = field(default=None, metadata={"help": "Training data directory."})
     test_data_dir: str = field(default=None, metadata={"help": "Test data directory."})
     save_dir: str = field(default=None, metadata={"help": "Directory to save the model."})
@@ -36,7 +36,7 @@ class RSTSegmenterArguments:
 
 
 @dataclass
-class RSTParserArguments:
+class RstPointerParserTrainArgs:
     train_data_dir: str = field(default=None, metadata={"help": "Training data directory."})
     test_data_dir: str = field(default=None, metadata={"help": "Test data directory."})
     save_dir: str = field(default=None, metadata={"help": "Directory to save the model."})

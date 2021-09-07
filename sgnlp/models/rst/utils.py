@@ -4,14 +4,14 @@ import argparse
 import json
 from typing import Union
 
-from .data_class import RSTParserArguments, RSTSegmenterArguments
+from .data_class import RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs
 
 
-def parse_args_and_load_config() -> Union[RSTParserArguments, RSTSegmenterArguments]:
+def parse_args_and_load_config() -> Union[RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs]:
     """Helper method to parse input arguments
 
     Returns:
-        Union[RSTParserArguments, RSTSegmenterArguments]: return either a RSTParserArguments or RSTSegmenterArguments
+        Union[RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs]: returns the corresponding TrainArgs object
         depending on the input arguments.
     """
     parser = argparse.ArgumentParser(description="RST Training")
@@ -22,9 +22,9 @@ def parse_args_and_load_config() -> Union[RSTParserArguments, RSTSegmenterArgume
     with open(args.config_path, 'r') as f:
         config = json.load(f)
     if args.train_type == 'parser':
-        data_class = RSTParserArguments(**config)
+        data_class = RstPointerParserTrainArgs(**config)
     elif args.train_type == 'segmenter':
-        data_class = RSTSegmenterArguments(**config)
+        data_class = RstPointerSegmenterTrainArgs(**config)
     else:
         raise ValueError(f'Invalid train_type: {args.train_type}')
     return data_class
