@@ -53,8 +53,6 @@ Before you create a pull request to add your model to `sgnlp`, please ensure tha
 
 To contribute a model, add a folder for the model at `sgnlp/sgnlp/models/<model_name>`. The following components are required within this folder.
 
-To manage the number of dependencies in `sgnlp`, contributors are strongly recommended to limit their code to use the packages listed in `setup.py`. If additional dependencies are required, please specify them in the `__init__.py` file at `sgnlp/sgnlp/models/<model_name>/__init__.py`.
-
 | Folder / File                             | Description                                                                                                                                                                                                                                     |
 | :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | _<model_name>_                            | Folder containing the modeling, preprocess, config, train, and eval scripts.                                                                                                                                                                    |
@@ -66,6 +64,15 @@ To manage the number of dependencies in `sgnlp`, contributors are strongly recom
 | _<model_name>/tokenization.py_ (optional) | Script containing the model tokenizer class which inherits from HuggingFace's [`PretrainedTokenizer`](https://huggingface.co/transformers/main_classes/tokenizer.html#transformers.PreTrainedTokenizer) class or its family of derived classes. |
 | _<model_name>/train.py_                   | Script containing code to train the model. It is recommended to utilize the [`Trainer`](https://huggingface.co/transformers/main_classes/trainer.html#transformers.Trainer) class from HuggingFace.                                             |
 | _<model_name>/README.md_                  | README markdown file containing model information such as model source, architecture, evaluation datasets and metrics, model size, and training information.                                                                                    |
+
+To manage the number of dependencies in `sgnlp`, contributors are strongly recommended to limit their code to use the packages listed in `setup.py`. If additional dependencies are required, please introduce a check in the `__init__.py` at `sgnlp/sgnlp/models/<model_name>/__init__.py`. For example, the Latent Structure Refinement model for Relation Extraction requires the `networkx` package. The code snippet from LSR's `__init__.py` checks if `networkx` is installed when the model is imported.
+
+```
+from ...utils.requirements import check_requirements
+
+requirements = ["networkx"]
+check_requirements(requirements)
+```
 
 ### Config
 
@@ -132,7 +139,7 @@ class RecconSpanExtractionPreprocessor:
         return output, evidences, examples, features
 ```
 
-In the RECCON Span Extraciton model, `output` is a dictionary with the token ids, attention masks and token type ids for the input utterance. `evidences`, `examples` and `features` are other features required in the RECCON model. The key idea here is to consolidate all the necessary preprocessing steps into a single method to reduce the effort needed to start using the models.
+In the RECCON Span Extraction model, `output` is a dictionary with the token ids, attention masks and token type ids for the input utterance. `evidences`, `examples` and `features` are other features required in the RECCON model. The key idea here is to consolidate all the necessary preprocessing steps into a single method to reduce the effort needed to start using the models.
 
 ### Tokenizer (optional)
 
