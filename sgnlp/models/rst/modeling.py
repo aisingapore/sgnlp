@@ -312,7 +312,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
             hidden_size=self.hidden_size,
             device=self.device,
             rnn_layers=self.rnn_layers,
-            nnDropout=config.dropout_e)
+            dropout=config.dropout_e)
         self.decoder = DecoderRNN(
             input_size=self.decoder_input_size,
             hidden_size=self.hidden_size,
@@ -323,7 +323,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
             hidden_size=self.hidden_size)
         self.getlabel = LabelClassifier(
             input_size=self.classifier_input_size,
-            hidden_size=self.classifier_hidden_size,
+            classifier_hidden_size=self.classifier_hidden_size,
             classes_label=self.classes_label,
             bias=self.classifier_bias,
             dropout=config.dropout_c)
@@ -467,9 +467,9 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
 
                         if self.highorder:
                             if loop_index != 0:
-                                # Incoperate Parents information
+                                # Incorporate Parents information
                                 cur_decoder_input_P = cur_encoder_outputs[stack_head[-1]]
-                                # To incorperate Sibling information
+                                # To incorporate Sibling information
                                 if str(stack_head) in cur_sibling.keys():
                                     cur_decoder_input_S = cur_encoder_outputs[cur_sibling[str(stack_head)]]
 
@@ -572,4 +572,146 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
             loss_tree_batch = loss_tree_batch / loop_tree_batch
             loss_tree_batch = loss_tree_batch.detach().cpu().numpy()
 
-        return RstPointerParserModelOutput(loss_tree_batch, loss_label_batch, (splits_batch if generate_splits else None))
+        return RstPointerParserModelOutput(loss_tree_batch, loss_label_batch,
+                                           (splits_batch if generate_splits else None))
+
+    def forward_train(self, input_sentence, edu_breaks_batch, label_index_batch, parsing_index_batch,
+                      decoder_input_index_batch, parents_index_batch, sibling_index_batch):
+        # TODO: This function should ideally be combined with the forward function.
+        #   There are significant overlap in code, but also some significant differences in the logic
+        #   which makes refactoring them difficult.
+        #   To retain the original code's fidelity, this function is used for the training forward pass.
+
+        # Obtain encoder outputs and last hidden states
+        encoder_outputs, last_hiddenstates = self.encoder(input_sentence)
+        loss_function = nn.NLLLoss()
+        loss_label_batch = 0
+        loss_tree_batch = 0
+        loop_label_batch = 0
+        loop_tree_batch = 0
+
+        for i in range(self.batch_size):
+            cur_label_index = label_index_batch[i]
+            cur_label_index = torch.tensor(cur_label_index)
+            cur_label_index = cur_label_index.to(self.device)
+            cur_parsing_index = parsing_index_batch[i]
+            cur_decoder_input_index = decoder_input_index_batch[i]
+            cur_parents_index = parents_index_batch[i]
+            cur_sibling_index = sibling_index_batch[i]
+
+            if len(edu_breaks_batch[i]) == 1:
+                continue
+
+            elif len(edu_breaks_batch[i]) == 2:
+                # Take the last hidden state of an EDU as the representation of
+                # this EDU. The dimension: [2,hidden_size]
+                cur_encoder_outputs = encoder_outputs[i][edu_breaks_batch[i]]
+
+                # Use the last hidden state of a span to predict the relation
+                # beween these two span.
+                input_left = cur_encoder_outputs[0].unsqueeze(0)
+                input_right = cur_encoder_outputs[1].unsqueeze(0)
+                _, log_relation_weights = self.getlabel(input_left, input_right)
+
+                loss_label_batch = loss_label_batch + loss_function(log_relation_weights, cur_label_index)
+                loop_label_batch = loop_label_batch + 1
+
+            else:
+                # Take the last hidden state of an EDU as the representation of this EDU
+                # The dimension: [NO_EDU,hidden_size]
+                cur_encoder_outputs = encoder_outputs[i][edu_breaks_batch[i]].to(self.device)
+
+                # Obtain last hidden state of encoder
+                temp = torch.transpose(last_hiddenstates, 0, 1)[i].unsqueeze(0)
+                cur_last_hiddenstates = torch.transpose(temp, 0, 1)
+                cur_last_hiddenstates = cur_last_hiddenstates.contiguous()
+
+                if self.highorder:
+                    # Incorporate parents information
+                    cur_decoder_inputs_P = cur_encoder_outputs[cur_parents_index]
+                    cur_decoder_inputs_P[0] = 0
+
+                    # Incorporate sibling information
+                    cur_decoder_inputs_S = torch.zeros([len(cur_sibling_index), cur_encoder_outputs.shape[1]]).to(
+                        self.device)
+                    for n, s_idx in enumerate(cur_sibling_index):
+                        if s_idx != 99:
+                            cur_decoder_inputs_S[n] = cur_encoder_outputs[s_idx]
+
+                    # Original input
+                    cur_decoder_inputs = cur_encoder_outputs[cur_decoder_input_index]
+
+                    # One-layer self attention
+                    inputs_all = torch.cat((cur_decoder_inputs.unsqueeze(0).transpose(0, 1),
+                                            cur_decoder_inputs_S.unsqueeze(0).transpose(0, 1),
+                                            cur_decoder_inputs_P.unsqueeze(0).transpose(0, 1)), 1)
+                    new_inputs_all = torch.matmul(F.softmax(torch.matmul(inputs_all, inputs_all.transpose(1, 2)), 1),
+                                                  inputs_all)
+                    cur_decoder_inputs = new_inputs_all[:, 0, :] + new_inputs_all[:, 1, :] + new_inputs_all[:, 2, :]
+
+
+                else:
+                    cur_decoder_inputs = cur_encoder_outputs[cur_decoder_input_index]
+
+                # Obtain decoder outputs
+                cur_decoder_outputs, _ = self.decoder(cur_decoder_inputs.unsqueeze(0), cur_last_hiddenstates)
+                cur_decoder_outputs = cur_decoder_outputs.squeeze(0)
+
+                edu_index = [x for x in range(len(cur_encoder_outputs))]
+                stacks = ['__StackRoot__', edu_index]
+
+                for j in range(len(cur_decoder_outputs)):
+
+                    if stacks[-1] != '__StackRoot__':
+                        stack_head = stacks[-1]
+
+                        if len(stack_head) < 3:
+
+                            # We remove this from stacks after compute the
+                            # relation between these two EDUS
+
+                            # Compute Classifier Loss
+                            input_left = cur_encoder_outputs[cur_parsing_index[j]].unsqueeze(0)
+                            input_right = cur_encoder_outputs[stack_head[-1]].unsqueeze(0)
+                            _, log_relation_weights = self.getlabel(input_left, input_right)
+
+                            loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
+                                                                                cur_label_index[j].unsqueeze(0))
+
+                            del stacks[-1]
+                            loop_label_batch = loop_label_batch + 1
+
+                        else:  # Length of stack_head >= 3
+                            # Compute Tree Loss
+                            # We don't attend to the last EDU of a span to be parsed
+                            _, log_atten_weights = self.pointer(cur_encoder_outputs[stack_head[:-1]],
+                                                                cur_decoder_outputs[j])
+                            cur_ground_index = torch.tensor([int(cur_parsing_index[j]) - int(stack_head[0])])
+                            cur_ground_index = cur_ground_index.to(self.device)
+                            loss_tree_batch = loss_tree_batch + loss_function(log_atten_weights, cur_ground_index)
+
+                            # Compute Classifier Loss
+                            input_left = cur_encoder_outputs[cur_parsing_index[j]].unsqueeze(0)
+                            input_right = cur_encoder_outputs[stack_head[-1]].unsqueeze(0)
+                            _, log_relation_weights = self.getlabel(input_left, input_right)
+
+                            loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
+                                                                                cur_label_index[j].unsqueeze(0))
+
+                            # Stacks stuff
+                            stack_down = stack_head[(cur_parsing_index[j] - stack_head[0] + 1):]
+                            stack_top = stack_head[:(cur_parsing_index[j] - stack_head[0] + 1)]
+                            del stacks[-1]
+                            loop_label_batch = loop_label_batch + 1
+                            loop_tree_batch = loop_tree_batch + 1
+
+                            # Remove ONE-EDU part, TWO-EDU span will be removed after classifier in next step
+                            if len(stack_down) > 1:
+                                stacks.append(stack_down)
+                            if len(stack_top) > 1:
+                                stacks.append(stack_top)
+
+        loss_label_batch = loss_label_batch / loop_label_batch
+        loss_tree_batch = loss_tree_batch / loop_tree_batch
+
+        return loss_tree_batch, loss_label_batch
