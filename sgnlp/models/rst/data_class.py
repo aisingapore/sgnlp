@@ -35,6 +35,7 @@ class RstPointerSegmenterTrainArgs:
             assert (self.save_dir is not None), "Please specify a directory to save the model."
 
 
+# TODO: Separate train and model args
 @dataclass
 class RstPointerParserTrainArgs:
     train_data_dir: str = field(default=None, metadata={"help": "Training data directory."})
@@ -61,6 +62,8 @@ class RstPointerParserTrainArgs:
     lr_decay_epoch: int = field(default=10, metadata={"help": "Learning rate decay epoch."})
     weight_decay: float = field(default=0.0005, metadata={"help": "Weight decay rate."})
     highorder: bool = field(default=True, metadata={"help": "Whether to incorporate highorder information."})
+    # model_config_path: str = field(default=None,
+    #                                metadata={"help": "Path to model config. Uses default if not provided."})
 
     def __post_init__(self):
         assert (self.elmo_size in ['Large', 'Medium', 'Small']), "Invalid Elmo size!"

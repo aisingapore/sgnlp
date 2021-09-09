@@ -29,7 +29,7 @@ class RstPointerSegmenterConfig(PretrainedConfig):
 class RstPointerParserConfig(PretrainedConfig):
     def __init__(
         self,
-        word_dim,
+        word_dim=1024,
         batch_size=64,
         hidden_size=64,
         decoder_input_size=64,
