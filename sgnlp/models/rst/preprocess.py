@@ -43,7 +43,7 @@ class RSTPreprocessor:
         character_ids, sentence_lengths = self._get_elmo_char_ids(data_batch)
         return character_ids, sentence_lengths
 
-    def _get_elmo_char_ids(self, data_batch: List[str]) -> Dict[str, List]:
+    def _get_elmo_char_ids(self, data_batch: List[str]):
         """
         Method to get elmo embedding from a batch of texts.
 

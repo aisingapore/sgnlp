@@ -475,7 +475,6 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     dropout_e = cfg.dropout_e
     dropout_d = cfg.dropout_d
     dropout_c = cfg.dropout_c
-    # input_is_word = cfg.input_is_word  # Unused
     atten_model = cfg.atten_model
     classifier_input_size = cfg.classifier_input_size
     classifier_hidden_size = cfg.classifier_hidden_size
@@ -543,6 +542,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
 
     model = RstPointerParserModel(model_config)
     model = model.to(device)
+    model.embedding.to(device)  # Elmo layer doesn't get put onto device automatically
 
     trainer = Train(model, tr_input_sentences, tr_edu_breaks, tr_decoder_input,
                     tr_relation_label, tr_parsing_breaks, tr_golden_metric,
