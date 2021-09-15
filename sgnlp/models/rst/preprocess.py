@@ -56,6 +56,6 @@ class RSTPreprocessor:
         from allennlp.modules.elmo import batch_to_ids
         sentence_lengths = [len(data) for data in data_batch]
         character_ids = batch_to_ids(data_batch)
-        character_ids.to(self.device)
+        character_ids = character_ids.to(self.device)
 
         return character_ids, sentence_lengths
