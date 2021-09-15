@@ -11,6 +11,7 @@ from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
 
 from .config import RstPointerSegmenterConfig, RstPointerParserConfig
+from .modules.elmo import initialize_elmo
 from .modules.encoder_rnn import EncoderRNN
 from .modules.decoder_rnn import DecoderRNN
 from .modules.pointer_attention import PointerAtten
@@ -33,7 +34,7 @@ class RstPointerSegmenterPreTrainedModel(PreTrainedModel):
 
 class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
     def __init__(self, config: RstPointerSegmenterConfig):
-        super(RstPointerSegmenterModel, self).__init__()
+        super().__init__(config)
 
         self.word_dim = config.word_dim
         self.hidden_dim = config.hidden_dim
@@ -293,24 +294,27 @@ class RstPointerParserPreTrainedModel(PreTrainedModel):
 
 
 class RstPointerParserModel(RstPointerParserPreTrainedModel):
-    def __init__(self, config):
-        super(RstPointerParserModel, self).__init__()
+    def __init__(self, config: RstPointerParserConfig):
+        super().__init__(config)
         self.batch_size = config.batch_size
         self.word_dim = config.word_dim
         self.hidden_size = config.hidden_size
         self.decoder_input_size = config.decoder_input_size
         self.atten_model = config.atten_model
-        self.device = config.device
+        self._device = config.device
         self.classifier_input_size = config.classifier_input_size
         self.classifier_hidden_size = config.classifier_hidden_size
         self.highorder = config.highorder
         self.classes_label = config.classes_label
         self.classifier_bias = config.classifier_bias
         self.rnn_layers = config.rnn_layers
+
+        self.embedding, self.word_dim = initialize_elmo(config.elmo_size)
+
         self.encoder = EncoderRNN(
             word_dim=self.word_dim,
             hidden_size=self.hidden_size,
-            device=self.device,
+            device=self._device,
             rnn_layers=self.rnn_layers,
             dropout=config.dropout_e)
         self.decoder = DecoderRNN(
@@ -328,9 +332,10 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
             bias=self.classifier_bias,
             dropout=config.dropout_c)
 
-    def forward(self, input_sentence, edu_breaks, label_index, parsing_index, generate_splits=True):
+    def forward(self, input_sentence, edu_breaks, label_index, parsing_index, sentence_lengths, generate_splits=True):
         # Obtain encoder outputs and last hidden states
-        encoder_outputs, last_hidden_states = self.encoder(input_sentence)
+        embeddings = self.embedding(input_sentence)
+        encoder_outputs, last_hidden_states = self.encoder(embeddings, sentence_lengths)
 
         loss_function = nn.NLLLoss()
         loss_label_batch = 0
@@ -349,7 +354,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
 
             cur_label_index = label_index[i]
             cur_label_index = torch.tensor(cur_label_index)
-            cur_label_index = cur_label_index.to(self.device)
+            cur_label_index = cur_label_index.to(self._device)
             cur_parsing_index = parsing_index[i]
 
             if len(edu_breaks[i]) == 1:
@@ -520,7 +525,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                             temp_ground = stack_head[-2] - stack_head[0]
                         # Compute Tree Loss
                         cur_ground_index = torch.tensor([temp_ground])
-                        cur_ground_index = cur_ground_index.to(self.device)
+                        cur_ground_index = cur_ground_index.to(self._device)
                         loss_tree_batch = loss_tree_batch + loss_function(log_atten_weights, cur_ground_index)
 
                         # Compute Classifier Loss
@@ -575,15 +580,16 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
         return RstPointerParserModelOutput(loss_tree_batch, loss_label_batch,
                                            (splits_batch if generate_splits else None))
 
-    def forward_train(self, input_sentence, edu_breaks_batch, label_index_batch, parsing_index_batch,
-                      decoder_input_index_batch, parents_index_batch, sibling_index_batch):
+    def forward_train(self, input_sentence_ids_batch, edu_breaks_batch, label_index_batch, parsing_index_batch,
+                      decoder_input_index_batch, parents_index_batch, sibling_index_batch, sentence_lengths):
         # TODO: This function should ideally be combined with the forward function.
         #   There are significant overlap in code, but also some significant differences in the logic
         #   which makes refactoring them difficult.
         #   To retain the original code's fidelity, this function is used for the training forward pass.
 
         # Obtain encoder outputs and last hidden states
-        encoder_outputs, last_hiddenstates = self.encoder(input_sentence)
+        embeddings = self.embedding(input_sentence_ids_batch)
+        encoder_outputs, last_hiddenstates = self.encoder(embeddings, sentence_lengths)
         loss_function = nn.NLLLoss()
         loss_label_batch = 0
         loss_tree_batch = 0
@@ -593,7 +599,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
         for i in range(self.batch_size):
             cur_label_index = label_index_batch[i]
             cur_label_index = torch.tensor(cur_label_index)
-            cur_label_index = cur_label_index.to(self.device)
+            cur_label_index = cur_label_index.to(self._device)
             cur_parsing_index = parsing_index_batch[i]
             cur_decoder_input_index = decoder_input_index_batch[i]
             cur_parents_index = parents_index_batch[i]
@@ -619,7 +625,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
             else:
                 # Take the last hidden state of an EDU as the representation of this EDU
                 # The dimension: [NO_EDU,hidden_size]
-                cur_encoder_outputs = encoder_outputs[i][edu_breaks_batch[i]].to(self.device)
+                cur_encoder_outputs = encoder_outputs[i][edu_breaks_batch[i]].to(self._device)
 
                 # Obtain last hidden state of encoder
                 temp = torch.transpose(last_hiddenstates, 0, 1)[i].unsqueeze(0)
@@ -633,7 +639,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
 
                     # Incorporate sibling information
                     cur_decoder_inputs_S = torch.zeros([len(cur_sibling_index), cur_encoder_outputs.shape[1]]).to(
-                        self.device)
+                        self._device)
                     for n, s_idx in enumerate(cur_sibling_index):
                         if s_idx != 99:
                             cur_decoder_inputs_S[n] = cur_encoder_outputs[s_idx]
@@ -687,7 +693,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                             _, log_atten_weights = self.pointer(cur_encoder_outputs[stack_head[:-1]],
                                                                 cur_decoder_outputs[j])
                             cur_ground_index = torch.tensor([int(cur_parsing_index[j]) - int(stack_head[0])])
-                            cur_ground_index = cur_ground_index.to(self.device)
+                            cur_ground_index = cur_ground_index.to(self._device)
                             loss_tree_batch = loss_tree_batch + loss_function(log_atten_weights, cur_ground_index)
 
                             # Compute Classifier Loss

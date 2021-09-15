@@ -1,7 +1,6 @@
 from typing import Tuple
-
+from torch import nn
 from allennlp.modules.elmo import Elmo
-
 
 elmo_metadata = {
     'Large': {
@@ -26,11 +25,11 @@ def initialize_elmo(size: str = 'Large') -> Tuple[Elmo, int]:
     """Helper function to create Elmo object.
 
     Args:
-        size (str): size of elmo model to use.
+        size (str): size of elmo model to use. Sizes available: ["Small", "Medium", "Large"]
 
     Returns:
         Tuple[Elmo, int]: return initialized elmo object and the word dimension.
     """
     metadata = elmo_metadata[size]
     return Elmo(metadata['options_file'], metadata['weight_file'], 2, dropout=0.5, requires_grad=False), \
-        metadata['word_dim']
+           metadata['word_dim']

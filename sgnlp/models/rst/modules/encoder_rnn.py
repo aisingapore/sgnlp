@@ -16,7 +16,7 @@ class EncoderRNN(nn.Module):
         self.device = device
         self.rnn_layers = rnn_layers
         self.nnDropout = nn.Dropout(dropout)
-        self.batchnorm_input = nn.BatchNorm1d(word_dim, affine=False, tracking_running_stats=False)
+        self.batchnorm_input = nn.BatchNorm1d(word_dim, affine=False, track_running_stats=False)
         self.gru = nn.GRU(
             word_dim,
             hidden_size,
@@ -37,7 +37,7 @@ class EncoderRNN(nn.Module):
             Tuple[torch.Tensor, torch.Tensor]: return outputs and hidden states of encoder.
         """
         # batch norm
-        embeddings = input_embeddings['data_batch'][0]
+        embeddings = input_embeddings['elmo_representations'][0]
         embeddings = embeddings.permute(0, 2, 1)
         embeddings = self.batchnorm_input(embeddings)
         embeddings = embeddings.permute(0, 2, 1)

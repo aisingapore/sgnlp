@@ -3,16 +3,16 @@ from transformers import PretrainedConfig
 
 class RstPointerSegmenterConfig(PretrainedConfig):
     def __init__(
-        self,
-        word_dim,
-        hidden_dim=64,
-        dropout_prob=0.2,
-        is_bi_encoder_rnn=True,
-        num_rnn_layers=6,
-        rnn_type="GRU",
-        with_finetuning=False,
-        is_batch_norm=True,
-        use_cuda=True,
+            self,
+            word_dim=1024,
+            hidden_dim=64,
+            dropout_prob=0.2,
+            is_bi_encoder_rnn=True,
+            num_rnn_layers=6,
+            rnn_type="GRU",
+            with_finetuning=False,
+            is_batch_norm=True,
+            use_cuda=True,
             **kwargs):
         super().__init__(**kwargs)
         self.word_dim = word_dim
@@ -28,22 +28,23 @@ class RstPointerSegmenterConfig(PretrainedConfig):
 
 class RstPointerParserConfig(PretrainedConfig):
     def __init__(
-        self,
-        word_dim=1024,
-        batch_size=64,
-        hidden_size=64,
-        decoder_input_size=64,
-        atten_model='Dotproduct',
-        device='cpu',
-        classifier_input_size=64,
-        classifier_hidden_size=64,
-        highorder=False,
-        classes_label=39,
-        classifier_bias=True,
-        rnn_layers=6,
-        dropout_e=0.33,
-        dropout_d=0.5,
-        dropout_c=0.5,
+            self,
+            word_dim=1024,
+            batch_size=64,
+            hidden_size=64,
+            decoder_input_size=64,
+            atten_model='Dotproduct',
+            device='cpu',
+            classifier_input_size=64,
+            classifier_hidden_size=64,
+            highorder=False,
+            classes_label=39,
+            classifier_bias=True,
+            rnn_layers=6,
+            dropout_e=0.33,
+            dropout_d=0.5,
+            dropout_c=0.5,
+            elmo_size="Large",
             **kwargs):
         super().__init__(**kwargs)
         self.word_dim = word_dim
@@ -61,3 +62,4 @@ class RstPointerParserConfig(PretrainedConfig):
         self.dropout_e = dropout_e
         self.dropout_d = dropout_d
         self.dropout_c = dropout_c
+        self.elmo_size = elmo_size

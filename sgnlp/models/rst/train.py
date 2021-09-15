@@ -7,10 +7,10 @@ import logging
 import numpy as np
 from typing import List
 
+from sgnlp.models.rst.preprocess import RSTPreprocessor
 from .modeling import RstPointerParserModel, RstPointerParserConfig
 from .utils import parse_args_and_load_config
 from .data_class import RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs
-from .modules.elmo import initialize_elmo
 from .modules.type import DiscourseTreeNode, DiscourseTreeSplit
 
 logging.basicConfig(level=logging.INFO)
@@ -230,6 +230,9 @@ class Train(object):
         self.weight_decay = weight_decay
         self.save_path = save_path
 
+        # Preprocessor
+        self.preprocessor = RSTPreprocessor()
+
     def get_training_eval(self):
         # Obtain eval_size samples of training data to evaluate the model in
         # every epoch
@@ -283,14 +286,21 @@ class Train(object):
                                parsing_breaks[start_position:end_position],
                                golden_metric[start_position:end_position], self.batch_size)
 
-            loss_tree_batch, loss_label_batch, splits_batch = self.model.testing_loss(
-                input_sentences_batch, edu_breaks_batch, relation_label_batch,
-                parsing_breaks_batch, True)
+            input_sentences_ids_batch, sentence_lengths = self.preprocessor(input_sentences_batch)
 
-            loss_tree_all.append(loss_tree_batch)
-            loss_label_all.append(loss_label_batch)
+            model_output = self.model.forward(
+                input_sentence=input_sentences_ids_batch,
+                edu_breaks=edu_breaks_batch,
+                label_index=relation_label_batch,
+                parsing_index=parsing_breaks_batch,
+                sentence_lengths=sentence_lengths,
+                generate_splits=True
+            )
+
+            loss_tree_all.append(model_output.loss_tree_batch)
+            loss_label_all.append(model_output.loss_label_batch)
             correct_span_batch, correct_relation_batch, correct_nuclearity_batch, \
-            no_system_batch, no_golden_batch = get_batch_measure(splits_batch,
+            no_system_batch, no_golden_batch = get_batch_measure(model_output.split_batch,
                                                                  golden_metric_splits_batch)
 
             correct_span = correct_span + correct_span_batch
@@ -336,10 +346,19 @@ class Train(object):
                     self.train_parents_index, self.train_sibling_index, self.batch_size)
 
                 self.model.zero_grad()
-                loss_tree_batch, loss_label_batch = self.model.training_loss(input_sentences_batch,
-                                                                             edu_breaks_batch, relation_label_batch,
-                                                                             parsing_breaks_batch, decoder_input_batch,
-                                                                             parents_index_batch, sibling_batch)
+
+                input_sentences_ids_batch, sentence_lengths = self.preprocessor(input_sentences_batch)
+
+                loss_tree_batch, loss_label_batch = self.model.forward_train(
+                    input_sentence_ids_batch=input_sentences_ids_batch,
+                    edu_breaks_batch=edu_breaks_batch,
+                    label_index_batch=relation_label_batch,
+                    parsing_index_batch=parsing_breaks_batch,
+                    decoder_input_index_batch=decoder_input_batch,
+                    parents_index_batch=parents_index_batch,
+                    sibling_index_batch=sibling_batch,
+                    sentence_lengths=sentence_lengths
+                )
 
                 loss = loss_tree_batch + loss_label_batch
                 loss.backward()
@@ -474,29 +493,24 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     device = torch.device("cuda:" + str(cfg.gpu_id) if USE_CUDA else "cpu")
     logger.info(f'Using CUDA: {USE_CUDA}')
 
-    # TODO: Move this to a model method
-    logger.info(f'Initializing ELMo: {elmo_size}')
-    elmo, word_dim = initialize_elmo(elmo_size, device)
-    logger.info(f'Completed initializing Elmo')
-
     logger.info('Loading training and test data...')
     # Load Training data
-    Tr_InputSentences = pickle.load(open(os.path.join(train_data_dir, "tokenized_sentences.pickle"), "rb"))
-    Tr_EDUBreaks = pickle.load(open(os.path.join(train_data_dir, "edu_breaks.pickle"), "rb"))
-    Tr_DecoderInput = pickle.load(open(os.path.join(train_data_dir, "decoder_input_index.pickle"), "rb"))
-    Tr_RelationLabel = pickle.load(open(os.path.join(train_data_dir, "relation_index.pickle"), "rb"))
-    Tr_ParsingBreaks = pickle.load(open(os.path.join(train_data_dir, "splits_order.pickle"), "rb"))
-    Tr_GoldenMetric = pickle.load(open(os.path.join(train_data_dir, "discourse_tree_splits.pickle"), "rb"))
-    Tr_ParentsIndex = pickle.load(open(os.path.join(train_data_dir, "parent_index.pickle"), "rb"))
-    Tr_SiblingIndex = pickle.load(open(os.path.join(train_data_dir, "sibling_index.pickle"), "rb"))
+    tr_input_sentences = pickle.load(open(os.path.join(train_data_dir, "tokenized_sentences.pickle"), "rb"))
+    tr_edu_breaks = pickle.load(open(os.path.join(train_data_dir, "edu_breaks.pickle"), "rb"))
+    tr_decoder_input = pickle.load(open(os.path.join(train_data_dir, "decoder_input_index.pickle"), "rb"))
+    tr_relation_label = pickle.load(open(os.path.join(train_data_dir, "relation_index.pickle"), "rb"))
+    tr_parsing_breaks = pickle.load(open(os.path.join(train_data_dir, "splits_order.pickle"), "rb"))
+    tr_golden_metric = pickle.load(open(os.path.join(train_data_dir, "discourse_tree_splits.pickle"), "rb"))
+    tr_parents_index = pickle.load(open(os.path.join(train_data_dir, "parent_index.pickle"), "rb"))
+    tr_sibling_index = pickle.load(open(os.path.join(train_data_dir, "sibling_index.pickle"), "rb"))
 
     # Load Testing data
-    Test_InputSentences = pickle.load(open(os.path.join(test_data_dir, "tokenized_sentences.pickle"), "rb"))
-    Test_EDUBreaks = pickle.load(open(os.path.join(test_data_dir, "edu_breaks.pickle"), "rb"))
-    Test_DecoderInput = pickle.load(open(os.path.join(test_data_dir, "decoder_input_index.pickle"), "rb"))
-    Test_RelationLabel = pickle.load(open(os.path.join(test_data_dir, "relation_index.pickle"), "rb"))
-    Test_ParsingBreaks = pickle.load(open(os.path.join(test_data_dir, "splits_order.pickle"), "rb"))
-    Test_GoldenMetric = pickle.load(open(os.path.join(test_data_dir, "discourse_tree_splits.pickle"), "rb"))
+    test_input_sentences = pickle.load(open(os.path.join(test_data_dir, "tokenized_sentences.pickle"), "rb"))
+    test_edu_breaks = pickle.load(open(os.path.join(test_data_dir, "edu_breaks.pickle"), "rb"))
+    test_decoder_input = pickle.load(open(os.path.join(test_data_dir, "decoder_input_index.pickle"), "rb"))
+    test_relation_label = pickle.load(open(os.path.join(test_data_dir, "relation_index.pickle"), "rb"))
+    test_parsing_breaks = pickle.load(open(os.path.join(test_data_dir, "splits_order.pickle"), "rb"))
+    test_golden_metric = pickle.load(open(os.path.join(test_data_dir, "discourse_tree_splits.pickle"), "rb"))
 
     # To save model and data
     file_name = f'seed_{seed}_batchSize_{batch_size}_elmo_{elmo_size}_attenModel_{atten_model}' \
@@ -509,36 +523,38 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     logger.info('--------------------------------------------------------------------')
     # Initialize model
     # model_config = RstPointerParserConfig.from_pretrained(cfg.model_config_path)
-    model_config = RstPointerParserConfig(word_dim=word_dim,
-                                          batch_size=batch_size,
-                                          hidden_size=hidden_size,
-                                          decoder_input_size=hidden_size,
-                                          atten_model=atten_model,
-                                          device=device,
-                                          classifier_input_size=classifier_input_size,
-                                          classifier_hidden_size=classifier_hidden_size,
-                                          highorder=highorder,
-                                          classes_label=39,
-                                          classifier_bias=classifier_bias,
-                                          rnn_layers=rnn_layers,
-                                          dropout_e=dropout_e,
-                                          dropout_d=dropout_d,
-                                          dropout_c=dropout_c)
+    model_config = RstPointerParserConfig(
+        batch_size=batch_size,
+        hidden_size=hidden_size,
+        decoder_input_size=hidden_size,
+        atten_model=atten_model,
+        device=device,
+        classifier_input_size=classifier_input_size,
+        classifier_hidden_size=classifier_hidden_size,
+        highorder=highorder,
+        classes_label=39,
+        classifier_bias=classifier_bias,
+        rnn_layers=rnn_layers,
+        dropout_e=dropout_e,
+        dropout_d=dropout_d,
+        dropout_c=dropout_c,
+        elmo_size=elmo_size
+    )
 
     model = RstPointerParserModel(model_config)
     model = model.to(device)
 
-    TrainingProcess = Train(model, Tr_InputSentences, Tr_EDUBreaks, Tr_DecoderInput,
-                            Tr_RelationLabel, Tr_ParsingBreaks, Tr_GoldenMetric,
-                            Tr_ParentsIndex, Tr_SiblingIndex,
-                            Test_InputSentences, Test_EDUBreaks, Test_DecoderInput,
-                            Test_RelationLabel, Test_ParsingBreaks, Test_GoldenMetric,
-                            batch_size, eval_size, epochs, lr, lr_decay_epoch,
-                            weight_decay, model_save_dir)
+    trainer = Train(model, tr_input_sentences, tr_edu_breaks, tr_decoder_input,
+                    tr_relation_label, tr_parsing_breaks, tr_golden_metric,
+                    tr_parents_index, tr_sibling_index,
+                    test_input_sentences, test_edu_breaks, test_decoder_input,
+                    test_relation_label, test_parsing_breaks, test_golden_metric,
+                    batch_size, eval_size, epochs, lr, lr_decay_epoch,
+                    weight_decay, model_save_dir)
 
     best_epoch, best_F_relation, best_P_relation, best_R_relation, best_F_span, \
     best_P_span, best_R_span, best_F_nuclearity, best_P_nuclearity, \
-    best_R_nuclearity = TrainingProcess.train()
+    best_R_nuclearity = trainer.train()
 
     logger.info('--------------------------------------------------------------------')
     logger.info('Model training completed!')

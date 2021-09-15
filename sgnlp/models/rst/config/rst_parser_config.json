@@ -3,7 +3,7 @@
     "test_data_dir": "",
     "save_dir": "",
     "use_polyaxon": false,
-    "GPUforModel": 0,
+    "gpu_id": 0,
     "elmo_size": "Large",
     "batch_size": 64,
     "hidden_size": 64,

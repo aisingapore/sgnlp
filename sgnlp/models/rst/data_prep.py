@@ -403,7 +403,7 @@ def main():
             data['sibling_index'].append(sibling_index)
 
     # Save data
-    os.makedirs(SAVE_DIR)
+    os.makedirs(SAVE_DIR, exist_ok=True)
     for key, value in data.items():
         pickle.dump(value, open(os.path.join(SAVE_DIR, key + '.pickle'), 'wb'))
 
