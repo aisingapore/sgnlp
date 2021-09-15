@@ -717,7 +717,10 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                             if len(stack_top) > 1:
                                 stacks.append(stack_top)
 
-        loss_label_batch = loss_label_batch / loop_label_batch
-        loss_tree_batch = loss_tree_batch / loop_tree_batch
+        if loop_label_batch != 0:
+            loss_label_batch = loss_label_batch / loop_label_batch
+
+        if loss_tree_batch != 0:
+            loss_tree_batch = loss_tree_batch / loop_tree_batch
 
         return loss_tree_batch, loss_label_batch

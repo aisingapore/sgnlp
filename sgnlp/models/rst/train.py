@@ -118,14 +118,14 @@ def get_micro_measure(correct_span, correct_relation, correct_nuclearity, no_sys
 def get_batch_data_training(input_sentences, edu_breaks, decoder_input, relation_label,
                             parsing_breaks, golden_metric, parents_index, sibling, batch_size):
     # change them into np.array
-    input_sentences = np.array(input_sentences)
-    edu_breaks = np.array(edu_breaks)
-    decoder_input = np.array(decoder_input)
-    relation_label = np.array(relation_label)
-    parsing_breaks = np.array(parsing_breaks)
-    golden_metric = np.array(golden_metric)
-    parents_index = np.array(parents_index)
-    sibling = np.array(sibling)
+    input_sentences = np.array(input_sentences, dtype="object")
+    edu_breaks = np.array(edu_breaks, dtype="object")
+    decoder_input = np.array(decoder_input, dtype="object")
+    relation_label = np.array(relation_label, dtype="object")
+    parsing_breaks = np.array(parsing_breaks, dtype="object")
+    golden_metric = np.array(golden_metric, dtype="object")
+    parents_index = np.array(parents_index, dtype="object")
+    sibling = np.array(sibling, dtype="object")
 
     if len(decoder_input) < batch_size:
         batch_size = len(decoder_input)
@@ -163,12 +163,12 @@ def get_batch_data_training(input_sentences, edu_breaks, decoder_input, relation
 def get_batch_data(input_sentences, edu_breaks, decoder_input, relation_label,
                    parsing_breaks, golden_metric, batch_size):
     # change them into np.array
-    input_sentences = np.array(input_sentences)
-    edu_breaks = np.array(edu_breaks)
-    decoder_input = np.array(decoder_input)
-    relation_label = np.array(relation_label)
-    parsing_breaks = np.array(parsing_breaks)
-    golden_metric = np.array(golden_metric)
+    input_sentences = np.array(input_sentences, dtype="object")
+    edu_breaks = np.array(edu_breaks, dtype="object")
+    decoder_input = np.array(decoder_input, dtype="object")
+    relation_label = np.array(relation_label, dtype="object")
+    parsing_breaks = np.array(parsing_breaks, dtype="object")
+    golden_metric = np.array(golden_metric, dtype="object")
 
     if len(decoder_input) < batch_size:
         batch_size = len(decoder_input)
@@ -205,7 +205,7 @@ class Train(object):
                  test_input_sentences, test_edu_breaks, test_decoder_input,
                  test_relation_label, test_parsing_breaks, test_golden_metric,
                  batch_size, eval_size, epochs, lr, lr_decay_epoch, weight_decay,
-                 save_path):
+                 save_path, device):
 
         self.model = model
         self.train_input_sentences = train_input_sentences
@@ -231,7 +231,7 @@ class Train(object):
         self.save_path = save_path
 
         # Preprocessor
-        self.preprocessor = RSTPreprocessor()
+        self.preprocessor = RSTPreprocessor(device=device)
 
     def get_training_eval(self):
         # Obtain eval_size samples of training data to evaluate the model in
@@ -550,7 +550,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
                     test_input_sentences, test_edu_breaks, test_decoder_input,
                     test_relation_label, test_parsing_breaks, test_golden_metric,
                     batch_size, eval_size, epochs, lr, lr_decay_epoch,
-                    weight_decay, model_save_dir)
+                    weight_decay, model_save_dir, device)
 
     best_epoch, best_F_relation, best_P_relation, best_R_relation, best_F_span, \
     best_P_span, best_R_span, best_F_nuclearity, best_P_nuclearity, \
