@@ -7,7 +7,7 @@ import logging
 import numpy as np
 from typing import List
 
-from sgnlp.models.rst.preprocess import RSTPreprocessor
+from sgnlp.models.rst_pointer.preprocess import RSTPreprocessor
 from .modeling import RstPointerParserModel, RstPointerParserConfig
 from .utils import parse_args_and_load_config
 from .data_class import RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs
