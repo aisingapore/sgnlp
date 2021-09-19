@@ -3,10 +3,9 @@ from dataclasses import dataclass, field
 
 @dataclass
 class RstPointerSegmenterTrainArgs:
-    train_data_dir: str = field(default=None, metadata={"help": "Training data directory."})
-    test_data_dir: str = field(default=None, metadata={"help": "Test data directory."})
-    save_dir: str = field(default=None, metadata={"help": "Directory to save the model."})
-    use_polyaxon: bool = field(default=False, metadata={"help": "Use Polyaxon to track the training progress."})
+    train_data_dir: str = field(metadata={"help": "Training data directory."})
+    test_data_dir: str = field(metadata={"help": "Test data directory."})
+    save_dir: str = field(metadata={"help": "Directory to save the model."})
     hdim: int = field(default=64, metadata={"help": "Hidden dimension size."})
     rnn: str = field(default="GRU", metadata={"help": "RNN type."})
     rnnlayers: int = field(default=6, metadata={"help": "Number of RNN layers."})
@@ -26,22 +25,14 @@ class RstPointerSegmenterTrainArgs:
     def __post_init__(self):
         assert (self.rnn in ["GRU", "LSTM"]), "Invalid RNN type!"
         assert (self.elmo_size in ['Large', 'Medium', 'Small']), "Invalid Elmo size!"
-        if self.use_polyaxon:
-            try:
-                import polyaxon_client  # noqa: F401
-            except ImportError:
-                raise ImportError("polyaxon_client is required for using Polyaxon to track the training progress.")
-        if not self.use_polyaxon:
-            assert (self.save_dir is not None), "Please specify a directory to save the model."
 
 
 # TODO: Separate train and model args
 @dataclass
 class RstPointerParserTrainArgs:
-    train_data_dir: str = field(default=None, metadata={"help": "Training data directory."})
-    test_data_dir: str = field(default=None, metadata={"help": "Test data directory."})
-    save_dir: str = field(default=None, metadata={"help": "Directory to save the model."})
-    use_polyaxon: bool = field(default=False, metadata={"help": "Use Polyaxon to track the training progress."})
+    train_data_dir: str = field(metadata={"help": "Training data directory."})
+    test_data_dir: str = field(metadata={"help": "Test data directory."})
+    save_dir: str = field(metadata={"help": "Directory to save the model."})
     gpu_id: int = field(default=0, metadata={"help": "GPU ID for training."})
     elmo_size: str = field(default="Large", metadata={"help": "Elmo size. ['Large', 'Medium', 'Small']"})
     batch_size: int = field(default=64, metadata={"help": "Batch size."})
@@ -62,16 +53,10 @@ class RstPointerParserTrainArgs:
     lr_decay_epoch: int = field(default=10, metadata={"help": "Learning rate decay epoch."})
     weight_decay: float = field(default=0.0005, metadata={"help": "Weight decay rate."})
     highorder: bool = field(default=True, metadata={"help": "Whether to incorporate highorder information."})
+
     # model_config_path: str = field(default=None,
     #                                metadata={"help": "Path to model config. Uses default if not provided."})
 
     def __post_init__(self):
         assert (self.elmo_size in ['Large', 'Medium', 'Small']), "Invalid Elmo size!"
         assert (self.atten_model in ['Dotproduct', 'Biaffine']), "Invalid Attention model!"
-        if self.use_polyaxon:
-            try:
-                import polyaxon_client  # noqa: F401
-            except ImportError:
-                raise ImportError("polyaxon_client is required for using Polyaxon to track the training progress.")
-        if not self.use_polyaxon:
-            assert (self.save_dir is not None), "Please specify a directory to save the model."
