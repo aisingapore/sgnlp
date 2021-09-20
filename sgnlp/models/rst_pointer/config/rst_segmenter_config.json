@@ -2,7 +2,6 @@
     "train_data_dir": "",
     "test_data_dir": "",
     "save_dir": "",
-    "use_polyaxon": false,
     "hdim": 64,
     "rnn": "GRU",
     "rnnlayers": 6,
