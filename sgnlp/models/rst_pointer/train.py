@@ -717,8 +717,11 @@ class TrainSolver(object):
 
             batch_x, batch_y, all_lens = get_batch_test(x[start_idx:end_idx], y[start_idx:end_idx], None)
 
-            batch_ave_loss, batch_start_boundaries, batch_end_boundaries = self.model.predict(batch_x, all_lens,
-                                                                                              batch_y)
+            output = self.model(batch_x, all_lens, batch_y)
+            batch_ave_loss = output.batch_loss
+            batch_start_boundaries = output.batch_start_boundaries
+            batch_end_boundaries = output.batch_end_boundaries
+            # batch_ave_loss, batch_start_boundaries, batch_end_boundaries = self.model(batch_x, all_lens, batch_y)
 
             all_ave_loss.extend([batch_ave_loss.cpu().data.numpy()])
             all_start_boundaries.extend(batch_start_boundaries)
@@ -871,9 +874,12 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     model = RstPointerSegmenterModel(model_config)
     model.to(device=device)
 
+    # Arbitrary eval_size
+    eval_size = len(dev_x) * 2 // 3
+
     save_path = os.path.join(save_dir, filename)
     mysolver = TrainSolver(model, tr_x, tr_y, dev_x, dev_y, save_path,
-                           batch_size=batch_size, eval_size=600, epoch=cfg.epochs, lr=lr, lr_decay_epoch=lrdepoch,
+                           batch_size=batch_size, eval_size=eval_size, epoch=cfg.epochs, lr=lr, lr_decay_epoch=lrdepoch,
                            weight_decay=wd,
                            use_cuda=use_cuda)
 
