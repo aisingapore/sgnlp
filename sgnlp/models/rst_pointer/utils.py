@@ -151,6 +151,7 @@ relation_table = [
 ]
 
 
+# TODO: Unused. Remove if not needed.
 def get_label_ordered(original_order):
     """
     Get the right order of label for stacks manner.

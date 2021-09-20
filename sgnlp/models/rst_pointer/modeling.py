@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.utils.rnn as R
+from allennlp.modules.elmo import batch_to_ids
 from torch.autograd import Variable
 from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
@@ -40,26 +41,28 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         self.hidden_dim = config.hidden_dim
         self.dropout_prob = config.dropout_prob
         self.is_bi_encoder_rnn = config.is_bi_encoder_rnn
-        self.num_rnn_layers = config.rnn_layers
+        self.num_rnn_layers = config.num_rnn_layers
         self.rnn_type = config.rnn_type
         self.with_finetuning = config.with_finetuning
 
-        self.nnDropout = nn.Dropout(config.dropout_prob)
+        self.dropout = nn.Dropout(config.dropout_prob)
 
         self.is_batch_norm = config.is_batch_norm
+
+        self.embedding, self.word_dim = initialize_elmo(config.elmo_size)
 
         if self.rnn_type in ['LSTM', 'GRU']:
             self.decoder_rnn = getattr(nn, self.rnn_type)(
                 input_size=2 * self.hidden_dim if self.is_bi_encoder_rnn else self.hidden_dim,
                 hidden_size=2 * self.hidden_dim if self.is_bi_encoder_rnn else self.hidden_dim,
-                num_layers=self.rnn_layers,
+                num_layers=self.num_rnn_layers,
                 dropout=self.dropout_prob,
                 batch_first=True)
 
             self.encoder_rnn = getattr(nn, self.rnn_type)(
                 input_size=self.word_dim,
                 hidden_size=self.hidden_dim,
-                num_layers=self.rnn_layers,
+                num_layers=self.num_rnn_layers,
                 bidirectional=self.is_bi_encoder_rnn,
                 dropout=self.dropout_prob,
                 batch_first=True)
@@ -113,28 +116,27 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         batch_size = len(batch_x)
 
         # # to convert input to ELMo embeddings
-        # character_ids = batch_to_ids(batch_x)
-        # if self.use_cuda:
-        #     character_ids = character_ids.cuda()
-        # embeddings = self.elmo(character_ids)
-        # batch_x_elmo = embeddings['elmo_representations'][0]  # two layers output  [batch,length,d_elmo]
-        # if self.use_cuda:
-        #     batch_x_elmo = batch_x_elmo.cuda()
+        character_ids = batch_to_ids(batch_x)
+        if self.use_cuda:
+            character_ids = character_ids.cuda()
+        embeddings = self.embedding(character_ids)
+        batch_x_elmo = embeddings['elmo_representations'][0]  # two layers output  [batch,length,d_elmo]
+        if self.use_cuda:
+            batch_x_elmo = batch_x_elmo.cuda()
 
-        # X = batch_x_elmo
-        X = batch_x
+        X = batch_x_elmo
         if self.is_batch_norm:
             X = X.permute(0, 2, 1)  # N C L
             X = batch_norm(X)
             X = X.permute(0, 2, 1)  # N L C
 
-        X = self.nnDropout(X)
+        X = self.dropout(X)
 
         encoder_lstm_co_h_o = self.init_hidden(self.hidden_dim, batch_size)
         output_encoder, hidden_states_encoder = self._run_rnn_packed(self.encoder_rnn, X, batch_x_lens,
                                                                      encoder_lstm_co_h_o)  # batch_first=True
         output_encoder = output_encoder.contiguous()
-        output_encoder = self.nnDropout(output_encoder)
+        output_encoder = self.dropout(output_encoder)
 
         return output_encoder, hidden_states_encoder
 
@@ -148,24 +150,26 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         attention_pointer = torch.matmul(encoder_states, cur_decoder_state).unsqueeze(1)
         attention_pointer = attention_pointer.permute(1, 0)
 
-        att_weights = F.softmax(attention_pointer)
-        logits = F.log_softmax(attention_pointer)
+        att_weights = F.softmax(attention_pointer, dim=1)
+        logits = F.log_softmax(attention_pointer, dim=1)
 
         return logits, att_weights
 
-    def neg_log_likelihood(self, BatchX, IndexX, IndexY, lens):
-        encoder_hn, encoder_h_end = self.pointer_encoder(BatchX, lens)
+    def neg_log_likelihood(self, batch_x, batch_x_index, batch_y, lens):
+        # TODO: No diff with forward actually
+        encoder_hn, encoder_h_end = self.pointer_encoder(batch_x, lens)
 
-        loss = self.training_decoder(encoder_hn, encoder_h_end, IndexX, IndexY, lens)
+        # loss = self.training_decoder(encoder_hn, encoder_h_end, batch_x_index, batch_y, lens)
+        _, _, _, loss = self.test_decoder(encoder_hn, encoder_h_end, lens, batch_y)
 
         return loss
 
-    def test_decoder(self, h_n, h_end, batch_x_lens, batch_y_index=None):
+    def test_decoder(self, h_n, h_end, batch_x_lens, batch_y=None):
         """
         :param h_n: all hidden states
         :param h_end: final hidden state
         :param batch_x_lens: lengths of x (i.e. number of tokens)
-        :param batch_y_index: optional. provide to get loss metric.
+        :param batch_y: optional. provide to get loss metric.
         :return: A tuple containing the following values:
                 batch_start_boundaries: array of start tokens for each predicted edu
                 batch_end_boundaries: array of end tokens for each predicted edu
@@ -181,7 +185,7 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         batch_size = len(batch_x_lens)
 
         # calculate batch loss if y_index is provided
-        if batch_y_index is not None:
+        if batch_y is not None:
             loss_function = nn.NLLLoss()
             batch_loss = 0
         else:
@@ -192,7 +196,7 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
             cur_encoder_hn = h_n[i, 0:cur_len, :]  # length * encoder_hidden_size
             cur_end_boundary = cur_len - 1  # end boundary is index of last token
 
-            cur_y_index = batch_y_index[i] if batch_y_index is not None else None
+            cur_y_index = batch_y[i] if batch_y is not None else None
 
             cur_end_boundaries = []
             cur_start_boundaries = []
@@ -233,7 +237,7 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
                 ori_pred_index = pred_index + cur_start_boundary
 
                 # Calculate loss
-                if batch_y_index is not None:
+                if batch_y is not None:
                     if loop_j > len(cur_y_index) - 1:
                         cur_ground_y = cur_y_index[-1]
                     else:
@@ -266,11 +270,11 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
             batch_start_boundaries.append(cur_start_boundaries)
             batch_align_matrix.append(cur_align_matrix)
 
-        batch_end_boundaries = np.array(batch_end_boundaries)
-        batch_start_boundaries = np.array(batch_start_boundaries)
-        batch_align_matrix = np.array(batch_align_matrix)
+        batch_end_boundaries = np.array(batch_end_boundaries, dtype="object")
+        batch_start_boundaries = np.array(batch_start_boundaries, dtype="object")
+        batch_align_matrix = np.array(batch_align_matrix, dtype="object")
 
-        batch_loss = batch_loss / total_loops if batch_y_index is not None else None
+        batch_loss = batch_loss / total_loops if batch_y is not None else None
 
         return batch_start_boundaries, batch_end_boundaries, batch_align_matrix, batch_loss
 

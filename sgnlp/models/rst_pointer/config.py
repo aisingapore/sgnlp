@@ -13,6 +13,7 @@ class RstPointerSegmenterConfig(PretrainedConfig):
             with_finetuning=False,
             is_batch_norm=True,
             use_cuda=True,
+            elmo_size="Large",
             **kwargs):
         super().__init__(**kwargs)
         self.word_dim = word_dim
@@ -24,6 +25,7 @@ class RstPointerSegmenterConfig(PretrainedConfig):
         self.with_finetuning = with_finetuning
         self.is_batch_norm = is_batch_norm
         self.use_cuda = use_cuda
+        self.elmo_size = elmo_size
 
 
 class RstPointerParserConfig(PretrainedConfig):

@@ -6,9 +6,11 @@ import random
 import logging
 import numpy as np
 from typing import List
+from torch.backends import cudnn
 
+from sgnlp.models.rst_pointer.config import RstPointerSegmenterConfig
 from sgnlp.models.rst_pointer.preprocess import RSTPreprocessor
-from .modeling import RstPointerParserModel, RstPointerParserConfig
+from .modeling import RstPointerParserModel, RstPointerParserConfig, RstPointerSegmenterModel
 from .utils import parse_args_and_load_config
 from .data_class import RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs
 from .modules.type import DiscourseTreeNode, DiscourseTreeSplit
@@ -25,6 +27,7 @@ def setup(seed):
     random.seed(seed)
 
 
+# Parser training code
 def get_span_dict(discourse_tree_splits: List[DiscourseTreeSplit]):
     span_dict = {}
 
@@ -458,9 +461,6 @@ class Train(object):
 
 
 def train_parser(cfg: RstPointerParserTrainArgs) -> None:
-    logging.basicConfig(level=logging.DEBUG)
-
-    logger = logging.getLogger(__name__)
     logger.info(f'===== Training RST Pointer Parser =====')
 
     # Setup
@@ -572,8 +572,315 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
                                                      best_P_nuclearity, best_R_nuclearity])) + '\n')
 
 
+# Segmenter training code
+def sample_a_sorted_batch_from_numpy(input_x, output_y, batch_size, use_cuda):
+    input_x = np.array(input_x, dtype="object")
+    output_y = np.array(output_y, dtype="object")
+
+    if batch_size is not None:
+        select_index = random.sample(range(len(output_y)), batch_size)
+    else:
+        select_index = np.array(range(len(output_y)))
+
+    batch_x = copy.deepcopy(input_x[select_index])
+    batch_y = copy.deepcopy(output_y[select_index])
+
+    all_lens = np.array([len(x) for x in batch_x])
+
+    idx = np.argsort(all_lens)
+    idx = idx[::-1]  # decreasing
+
+    batch_x = batch_x[idx]
+
+    batch_y = batch_y[idx]
+
+    # decoder input
+    batch_x_index = []
+
+    for i in range(len(batch_y)):
+        cur_y = batch_y[i]
+
+        temp = [x + 1 for x in cur_y]
+        temp.insert(0, 0)
+        temp.pop()
+        batch_x_index.append(temp)
+
+    all_lens = all_lens[idx]
+
+    return batch_x, batch_x_index, batch_y, all_lens
+
+
+def get_batch_test(x, y, batch_size):
+    x = np.array(x)
+    y = np.array(y)
+
+    if batch_size is not None:
+        select_index = random.sample(range(len(y)), batch_size)
+    else:
+        select_index = np.array(range(len(y)))
+
+    batch_x = copy.deepcopy(x[select_index])
+    batch_y = copy.deepcopy(y[select_index])
+
+    all_lens = np.array([len(x) for x in batch_x])
+
+    return batch_x, batch_y, all_lens
+
+
+class TrainSolver(object):
+    def __init__(self, model, train_x, train_y, dev_x, dev_y, save_path, batch_size, eval_size, epoch, lr,
+                 lr_decay_epoch, weight_decay, use_cuda):
+
+        self.lr = lr
+        self.model = model
+        self.num_epochs = epoch
+        self.train_x = train_x
+        self.train_y = train_y
+        self.use_cuda = use_cuda
+        self.batch_size = batch_size
+        self.lr_decay_epoch = lr_decay_epoch
+        self.eval_size = eval_size
+        self.dev_x, self.dev_y = dev_x, dev_y
+        self.model = model
+        self.save_path = save_path
+        self.weight_decay = weight_decay
+
+    def sample_dev(self):
+
+        select_index = random.sample(range(len(self.train_y)), self.eval_size)
+
+        train_x = np.array(self.train_x, dtype="object")
+        train_y = np.array(self.train_y, dtype="object")
+        test_tr_x = train_x[select_index]
+        test_tr_y = train_y[select_index]
+
+        return test_tr_x, test_tr_y
+
+    def get_batch_micro_metric(self, pre_b, ground_b):
+        All_C = []
+        All_R = []
+        All_G = []
+        for i in range(len(ground_b)):
+            index_of_1 = np.array(ground_b[i])
+            index_pre = pre_b[i]
+
+            index_pre = np.array(index_pre)
+
+            END_B = index_of_1[-1]
+            index_pre = index_pre[index_pre != END_B]
+            index_of_1 = index_of_1[index_of_1 != END_B]
+
+            no_correct = len(np.intersect1d(list(index_of_1), list(index_pre)))
+            All_C.append(no_correct)
+            All_R.append(len(index_pre))
+            All_G.append(len(index_of_1))
+
+        return All_C, All_R, All_G
+
+    def get_batch_metric(self, pre_b, ground_b):
+        b_pr = []
+        b_re = []
+        b_f1 = []
+        for i, cur_seq_y in enumerate(ground_b):
+            index_of_1 = np.where(cur_seq_y == 1)[0]
+            index_pre = pre_b[i]
+
+            no_correct = len(np.intersect1d(index_of_1, index_pre))
+
+            cur_pre = no_correct / len(index_pre)
+            cur_rec = no_correct / len(index_of_1)
+            cur_f1 = 2 * cur_pre * cur_rec / (cur_pre + cur_rec)
+
+            b_pr.append(cur_pre)
+            b_re.append(cur_rec)
+            b_f1.append(cur_f1)
+
+        return b_pr, b_re, b_f1
+
+    def check_accuracy(self, x, y):
+        num_loops = int(np.ceil(len(y) / self.batch_size))
+
+        all_ave_loss = []
+        all_start_boundaries = []
+        all_end_boundaries = []
+        all_index_decoder_y = []
+        all_x_save = []
+
+        all_C = []
+        all_R = []
+        all_G = []
+        for i in range(num_loops):
+            start_idx = i * self.batch_size
+            end_idx = (i + 1) * self.batch_size
+            if end_idx > len(y):
+                end_idx = len(y)
+
+            batch_x, batch_y, all_lens = get_batch_test(x[start_idx:end_idx], y[start_idx:end_idx], None)
+
+            batch_ave_loss, batch_start_boundaries, batch_end_boundaries = self.model.predict(batch_x, all_lens,
+                                                                                              batch_y)
+
+            all_ave_loss.extend([batch_ave_loss.cpu().data.numpy()])
+            all_start_boundaries.extend(batch_start_boundaries)
+            all_end_boundaries.extend(batch_end_boundaries)
+
+            ba_C, ba_R, ba_G = self.get_batch_micro_metric(batch_end_boundaries, batch_y)
+
+            all_C.extend(ba_C)
+            all_R.extend(ba_R)
+            all_G.extend(ba_G)
+
+        ba_pre = np.sum(all_C) / np.sum(all_R)
+        ba_rec = np.sum(all_C) / np.sum(all_G)
+        ba_f1 = 2 * ba_pre * ba_rec / (ba_pre + ba_rec)
+
+        return np.mean(all_ave_loss), ba_pre, ba_rec, ba_f1, \
+               (all_x_save, all_index_decoder_y, all_start_boundaries, all_end_boundaries)
+
+    def adjust_learning_rate(self, optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
+        if (epoch % lr_decay_epoch == 0) and (epoch != 0):
+            for param_group in optimizer.param_groups:
+                param_group['lr'] *= lr_decay
+
+    def train(self):
+        self.test_train_x, self.test_train_y = self.sample_dev()
+
+        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=self.lr,
+                                     weight_decay=self.weight_decay)
+
+        num_iterations = int(np.round(len(self.train_y) / self.batch_size))
+
+        os.makedirs(self.save_path, exist_ok=True)
+
+        best_i = 0
+        best_f1 = 0
+
+        for current_epoch in range(self.num_epochs):
+
+            self.adjust_learning_rate(optimizer, current_epoch, 0.8, self.lr_decay_epoch)
+
+            track_epoch_loss = []
+            for current_iter in range(num_iterations):
+                batch_x, batch_x_index, batch_y, all_lens = sample_a_sorted_batch_from_numpy(
+                    self.train_x, self.train_y, self.batch_size, self.use_cuda)
+
+                self.model.zero_grad()
+
+                neg_loss = self.model.neg_log_likelihood(batch_x, batch_x_index, batch_y, all_lens)
+                neg_loss_v = float(neg_loss.data)
+
+                track_epoch_loss.append(neg_loss_v)
+                logger.info(f'Epoch: {current_epoch + 1}/{self.num_epochs}, '
+                            f'iteration: {current_iter + 1}/{num_iterations}, '
+                            f'loss: {neg_loss_v:.3f}')
+
+                neg_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
+                optimizer.step()
+
+            self.model.eval()
+
+            logger.info('Running end of epoch evaluations on sample train data and test data...')
+            tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = self.check_accuracy(self.test_train_x,
+                                                                                       self.test_train_y)
+
+            dev_batch_ave_loss, dev_pre, dev_rec, dev_f1, dev_visdata = self.check_accuracy(self.dev_x, self.dev_y)
+            _, _, _, all_end_boundaries = dev_visdata
+
+            logger.info(f'train sample -- loss: {tr_batch_ave_loss:.3f}, '
+                        f'precision: {tr_pre:.3f}, recall: {tr_rec:.3f}, f1: {tr_f1:.3f}')
+            logger.info(f'test sample -- loss: {dev_batch_ave_loss:.3f}, '
+                        f'precision: {dev_pre:.3f}, recall: {dev_rec:.3f}, f1: {dev_f1:.3f}')
+
+            if best_f1 < dev_f1:
+                best_f1 = dev_f1
+                best_rec = dev_rec
+                best_pre = dev_pre
+                best_i = current_epoch
+
+            save_data = [current_epoch, tr_batch_ave_loss, tr_pre, tr_rec, tr_f1,
+                         dev_batch_ave_loss, dev_pre, dev_rec, dev_f1]
+
+            save_file_name = f'bs_{self.batch_size}_es_{self.eval_size}_lr_{self.lr}_lrdc_{self.lr_decay_epoch}_' \
+                             f'wd_{self.weight_decay}_epoch_loss_acc_pk_wd.txt'
+            with open(os.path.join(self.save_path, save_file_name), 'a+') as f:
+                f.write(','.join(map(str, save_data)) + '\n')
+
+            if current_epoch == best_i:
+                logger.info('Saving best model...')
+                torch.save(self.model, os.path.join(self.save_path, 'best_model.torchsave'))
+
+                with open(os.path.join(self.save_path, 'best_segmentation.pickle'), 'wb') as f:
+                    pickle.dump(all_end_boundaries, f)
+
+            self.model.train()
+
+        return best_i, best_pre, best_rec, best_f1
+
+
 def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
-    pass
+    logger.info(f'===== Training RST Pointer Segmenter =====')
+    train_data_dir = cfg.train_data_dir
+    test_data_dir = cfg.test_data_dir
+    save_dir = cfg.save_dir
+
+    use_cuda = torch.cuda.is_available()
+    device = torch.device('cuda:0' if use_cuda else 'cpu')
+    logger.info(f'Using CUDA: {use_cuda}')
+    iscudnn = cfg.iscudnn == 'True'
+
+    cudnn.enabled = iscudnn
+    hidden_dim = cfg.hdim
+    rnn_type = cfg.rnn
+    rnn_layers = cfg.rnnlayers
+    lr = cfg.lr
+    dout = cfg.dout
+    wd = cfg.wd
+    myseed = cfg.seed
+    batch_size = cfg.bsize
+    lrdepoch = cfg.lrdepoch
+    elmo_size = cfg.elmo_size
+
+    torch.manual_seed(myseed)
+    if use_cuda:
+        torch.cuda.manual_seed_all(myseed)
+    np.random.seed(myseed)
+    random.seed(myseed)
+
+    is_bidirectional = cfg.isbi == 'True'
+    finetune = cfg.fine == 'True'
+    is_batch_norm = cfg.isbarnor == 'True'
+
+    tr_x = pickle.load(open(os.path.join(train_data_dir, "tokenized_sentences.pickle"), "rb"))
+    tr_y = pickle.load(open(os.path.join(train_data_dir, "edu_breaks.pickle"), "rb"))
+
+    dev_x = pickle.load(open(os.path.join(test_data_dir, "tokenized_sentences.pickle"), "rb"))
+    dev_y = pickle.load(open(os.path.join(test_data_dir, "edu_breaks.pickle"), "rb"))
+
+    filename = 'elmoLarge_dot_' + str(myseed) + 'seed_' + str(hidden_dim) + 'hidden_' + \
+               str(is_bidirectional) + 'bi_' + rnn_type + 'rnn_' + str(finetune) + 'Fined_' + str(rnn_layers) + \
+               'rnnlayers_' + str(lr) + 'lr_' + str(dout) + 'dropout_' + str(wd) + 'weightdecay_' + str(
+        batch_size) + 'bsize_' + str(lrdepoch) + 'lrdepoch_' + \
+               str(is_batch_norm) + 'barnor_' + str(iscudnn) + 'iscudnn'
+
+    model_config = RstPointerSegmenterConfig(hidden_dim=hidden_dim,
+                                             is_bi_encoder_rnn=is_bidirectional,
+                                             rnn_type=rnn_type, rnn_layers=rnn_layers,
+                                             dropout_prob=dout, use_cuda=use_cuda, with_finetuning=finetune,
+                                             is_batch_norm=is_batch_norm)
+    model = RstPointerSegmenterModel(model_config)
+    model.to(device=device)
+
+    save_path = os.path.join(save_dir, filename)
+    mysolver = TrainSolver(model, tr_x, tr_y, dev_x, dev_y, save_path,
+                           batch_size=batch_size, eval_size=600, epoch=cfg.epochs, lr=lr, lr_decay_epoch=lrdepoch,
+                           weight_decay=wd,
+                           use_cuda=use_cuda)
+
+    best_i, best_pre, best_rec, best_f1 = mysolver.train()
+
+    with open(os.path.join(save_dir, 'results.csv'), 'a') as f:
+        f.write(filename + ',' + ','.join(map(str, [best_i, best_pre, best_rec, best_f1])) + '\n')
 
 
 if __name__ == "__main__":
