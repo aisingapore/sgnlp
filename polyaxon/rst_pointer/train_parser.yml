@@ -21,6 +21,6 @@ logging:
   level: INFO
 
 run:
-  cmd: python -m sgnlp.models.rst.train \
+  cmd: python -m sgnlp.models.rst_pointer.train \
     --config_path="/polyaxon-data/workspace/jonheng/rst-pointer/parser-experiment-1/rst_parser_config.json" \
     --train_type="parser"

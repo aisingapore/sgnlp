@@ -1,0 +1,26 @@
+---
+version: 1
+
+kind: experiment
+
+build:
+  dockerfile: polyaxon/rst_pointer/experiment.Dockerfile
+
+environment:
+  configmap_refs: ["sgnlp-wandb-api-key"]
+  persistence:
+    data: ["100e-nlp-lab-data"]
+  resources:
+    gpu:
+      requests: 1
+      limits: 1
+
+framework: pytorch
+
+logging:
+  level: INFO
+
+run:
+  cmd: python -m sgnlp.models.rst_pointer.train \
+    --config_path="/polyaxon-data/workspace/jonheng/rst-pointer/segmenter-experiment-1/rst_segmenter_config.json" \
+    --train_type="segmenter"
