@@ -270,9 +270,9 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
             batch_start_boundaries.append(cur_start_boundaries)
             batch_align_matrix.append(cur_align_matrix)
 
-        batch_end_boundaries = np.array(batch_end_boundaries, dtype="object")
-        batch_start_boundaries = np.array(batch_start_boundaries, dtype="object")
-        batch_align_matrix = np.array(batch_align_matrix, dtype="object")
+        # batch_end_boundaries = np.array(batch_end_boundaries, dtype="object")
+        # batch_start_boundaries = np.array(batch_start_boundaries, dtype="object")
+        # batch_align_matrix = np.array(batch_align_matrix, dtype="object")
 
         batch_loss = batch_loss / total_loops if batch_y is not None else None
 

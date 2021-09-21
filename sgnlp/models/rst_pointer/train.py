@@ -611,8 +611,8 @@ def sample_a_sorted_batch_from_numpy(input_x, output_y, batch_size, use_cuda):
 
 
 def get_batch_test(x, y, batch_size):
-    x = np.array(x)
-    y = np.array(y)
+    x = np.array(x, dtype="object")
+    y = np.array(y, dtype="object")
 
     if batch_size is not None:
         select_index = random.sample(range(len(y)), batch_size)
