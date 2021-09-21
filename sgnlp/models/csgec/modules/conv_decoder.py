@@ -6,7 +6,7 @@ from .conv_glu import ConvGLU
 from .positional_embedding import PositionalEmbedding
 
 
-class ConvEncoder(nn.Module):
+class ConvDecoder(nn.Module):
     """
     CNN based encoder. Inputs are padded on both sides before passing through a 1D CNN, a GLU activation function, a skip connection, an optional dropout layer and a fully connected linear layer.
     """
@@ -32,7 +32,7 @@ class ConvEncoder(nn.Module):
             Probability of setting each embedding dimension to 0 during training.
         """
 
-        super(ConvEncoder, self).__init__()
+        super(ConvDecoder, self).__init__()
 
         self.embed_tokens = nn.Embedding(
             num_embeddings=num_embeddings,
@@ -65,17 +65,21 @@ class ConvEncoder(nn.Module):
 
         self.fc2 = nn.Linear(in_features=hidden_dim, out_features=embedding_dim)
 
-    def forward(self, src_tokens):
+    def forward(self, prev_output_tokens, incremental_state=None):
         """
-        src_tokens : torch LongTensor
-            Indices of the source sentence tokens. Size of (batch_size, padded_sent_length)
+        prev_output_tokens : torch LongTensor
+            Indices of the previous tokens. Size of (batch_size, seq_length)
+        incremental_state :
         """
-        x = self.embed_tokens(src_tokens)
-        # x = F.dropout2d(x, p=self.token_dropout, self.training) # need to handle this
-        x += self.embed_positions(src_tokens)
+        pos_embed = self.embed_positions(prev_output_tokens, incremental_state)
+        if incremental_state is not None:
+            prev_output_tokens = prev_output_tokens[:, -1:]
+        x = self.embed_tokens(prev_output_tokens, incremental_state)
+        x += pos_embed
+
+        target_embedding = x
 
         # x = F.dropout(x, p=self.dropout, training=self.training) # need to handle this
-        input_embedding = x
         x = self.fc1(x)
 
         for conv in self.convolutions:

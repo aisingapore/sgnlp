@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Conv1dEncoder(nn.Module):
+class ConvGLU(nn.Module):
     """
     CNN based encoder. Inputs are padded on both sides before passing through a 1D CNN, a GLU activation function, a skip connection, an optional dropout layer and a fully connected linear layer.
     """
@@ -18,7 +18,7 @@ class Conv1dEncoder(nn.Module):
             Probability of setting each embedding dimension to 0 during training.
         """
 
-        super(Conv1dEncoder, self).__init__()
+        super(ConvGLU, self).__init__()
         self.conv = nn.Conv1d(
             in_channels=input_dim,
             out_channels=input_dim * 2,  # note that this is multiplied by 2 for the GLU

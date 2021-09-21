@@ -30,13 +30,18 @@ class PositionalEmbedding(nn.Embedding):
         # This requires that all other special tokens be indexed before the padding token
         self.max_seq_len = self.num_embeddings - self.padding_idx - 1
 
-    def forward(self, input_ids):
+    def forward(self, input_ids, incremental_state=None):
         """
         input_ids : torch LongTensor
             LongTensor containing the token indices of a batch of input sequences. Shape of (batch size, sequence length).
         """
-
-        position_ids = self.make_positions(input_ids)
+        if incremental_state is not None:
+            # positions is the same for every token when decoding a single step
+            position_ids = input_ids.data.new(1, 1).fill_(
+                self.padding_idx + input.size(1)
+            )
+        else:
+            position_ids = self.make_positions(input_ids)
 
         return F.embedding(
             position_ids,
