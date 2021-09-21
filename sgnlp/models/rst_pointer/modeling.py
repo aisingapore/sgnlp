@@ -233,7 +233,7 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
                 cur_align_matrix.append(cur_align_vector)
 
                 _, top_i = cur_logits.data.topk(1)
-                pred_index = top_i[0][0]
+                pred_index = top_i[0][0].item()
                 ori_pred_index = pred_index + cur_start_boundary
 
                 # Calculate loss
