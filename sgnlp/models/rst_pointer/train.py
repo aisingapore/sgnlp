@@ -1,3 +1,4 @@
+import csv
 import os
 import copy
 import pickle
@@ -334,8 +335,8 @@ class Train(object):
         except:
             pass
 
-        best_F_relation = 0
-        best_F_span = 0
+        best_f1_relation = 0
+        best_f1_span = 0
         for current_epoch in range(self.epochs):
             self.learning_rate_adjust(optimizer, current_epoch, 0.8, self.lr_decay_epoch)
 
@@ -398,42 +399,42 @@ class Train(object):
 
             # Unfold numbers
             # Test
-            P_span, R_span, F_span = span_points_test
-            P_relation, R_relation, F_relation = relation_points_test
-            P_nuclearity, R_nuclearity, F_nuclearity = nuclearity_points_test
+            precision_span, recall_span, f1_span = span_points_test
+            precision_relation, recall_relation, f1_relation = relation_points_test
+            precision_nuclearity, recall_nuclearity, f1_nuclearity = nuclearity_points_test
             # Training Eval
-            _, _, F_span_eval = span_points_eval
-            _, _, F_relation_eval = relation_points_eval
-            _, _, F_nuclearity_eval = nuclearity_points_eval
+            _, _, f1_span_eval = span_points_eval
+            _, _, f1_relation_eval = relation_points_eval
+            _, _, f1_nuclearity_eval = nuclearity_points_eval
 
             # Relation will take the priority consideration
-            if F_relation > best_F_relation:
+            if f1_relation > best_f1_relation:
                 best_epoch = current_epoch
                 # relation
-                best_F_relation = F_relation
-                best_P_relation = P_relation
-                best_R_relation = R_relation
+                best_f1_relation = f1_relation
+                best_precision_relation = precision_relation
+                best_recall_relation = recall_relation
                 # span
-                best_F_span = F_span
-                best_P_span = P_span
-                best_R_span = R_span
+                best_f1_span = f1_span
+                best_precision_span = precision_span
+                best_recall_span = recall_span
                 # nuclearity
-                best_F_nuclearity = F_nuclearity
-                best_P_nuclearity = P_nuclearity
-                best_R_nuclearity = R_nuclearity
+                best_f1_nuclearity = f1_nuclearity
+                best_precision_nuclearity = precision_nuclearity
+                best_recall_nuclearity = recall_nuclearity
 
             # Saving data
             save_data = [current_epoch, loss_tree_eval, loss_label_eval,
-                         F_span_eval, F_relation_eval, F_nuclearity_eval,
-                         loss_tree_test, loss_label_test, F_span, F_relation, F_nuclearity]
+                         f1_span_eval, f1_relation_eval, f1_nuclearity_eval,
+                         loss_tree_test, loss_label_test, f1_span, f1_relation, f1_nuclearity]
 
             # Log evaluation and test metrics
             self.log_metrics(log_prefix='Metrics on train sample --',
                              loss_tree=loss_tree_eval, loss_label=loss_label_eval,
-                             f1_span=F_span_eval, f1_relation=F_relation_eval, f1_nuclearity=F_nuclearity_eval)
+                             f1_span=f1_span_eval, f1_relation=f1_relation_eval, f1_nuclearity=f1_nuclearity_eval)
             self.log_metrics(log_prefix='Metrics on test data --',
                              loss_tree=loss_tree_test, loss_label=loss_label_test,
-                             f1_span=F_span, f1_relation=F_relation, f1_nuclearity=F_nuclearity)
+                             f1_span=f1_span, f1_relation=f1_relation, f1_nuclearity=f1_nuclearity)
 
             logger.info(f'End of epoch {current_epoch + 1}')
             file_name = f'span_bs_{self.batch_size}_es_{self.eval_size}_lr_{self.lr}_' \
@@ -444,13 +445,13 @@ class Train(object):
 
             # Saving model
             if best_epoch == current_epoch:
-                torch.save(self.model, os.path.join(self.save_path, f'epoch_{current_epoch + 1}.torchsave'))
+                self.model.save_pretrained(self.save_path)
 
             # Convert back to training
             self.model.train()
 
-        return best_epoch, best_F_relation, best_P_relation, best_R_relation, best_F_span, \
-               best_P_span, best_R_span, best_F_nuclearity, best_P_nuclearity, best_R_nuclearity
+        return best_epoch, best_f1_relation, best_precision_relation, best_recall_relation, best_f1_span, \
+               best_precision_span, best_recall_span, best_f1_nuclearity, best_precision_nuclearity, best_recall_nuclearity
 
     def log_metrics(self, log_prefix, loss_tree, loss_label, f1_span, f1_relation, f1_nuclearity):
         logger.info(f'{log_prefix} \n'
@@ -552,24 +553,34 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
                     batch_size, eval_size, epochs, lr, lr_decay_epoch,
                     weight_decay, model_save_dir, device)
 
-    best_epoch, best_F_relation, best_P_relation, best_R_relation, best_F_span, \
-    best_P_span, best_R_span, best_F_nuclearity, best_P_nuclearity, \
-    best_R_nuclearity = trainer.train()
+    best_epoch, f1_relation, precision_relation, recall_relation, \
+    f1_span, precision_span, recall_span, \
+    f1_nuclearity, precision_nuclearity, recall_nuclearity = trainer.train()
 
     logger.info('--------------------------------------------------------------------')
     logger.info('Model training completed!')
     logger.info('--------------------------------------------------------------------')
-    logger.info('Processing...')
-    logger.info(f'The best F1 points for Relation is: {best_F_relation:.3f}.')
-    logger.info(f'The best F1 points for Nuclearity is: {best_F_nuclearity:.3f}')
-    logger.info(f'The best F1 points for Span is: {best_F_span:.3f}')
+    logger.info(f'The best F1 points for Relation is: {f1_relation:.3f}.')
+    logger.info(f'The best F1 points for Nuclearity is: {f1_nuclearity:.3f}')
+    logger.info(f'The best F1 points for Span is: {f1_span:.3f}')
 
     # Save result
     with open(os.path.join(save_dir, 'results.csv'), 'a') as f:
-        f.write(file_name + ',' + ','.join(map(str, [best_epoch, best_F_relation,
-                                                     best_P_relation, best_R_relation, best_F_span,
-                                                     best_P_span, best_R_span, best_F_nuclearity,
-                                                     best_P_nuclearity, best_R_nuclearity])) + '\n')
+        writer = csv.DictWriter(f, fieldnames=['best_epoch', 'f1_relation', 'precision_relation', 'recall_relation',
+                                               'f1_span', 'precision_span', 'recall_span',
+                                               'f1_nuclearity', 'precision_nuclearity', 'recall_nuclearity'])
+        writer.writerow({
+            'best_epoch': best_epoch,
+            'f1_relation': f1_relation,
+            'precision_relation': precision_relation,
+            'recall_relation': recall_relation,
+            'f1_span': f1_span,
+            'precision_span': precision_span,
+            'recall_span': recall_span,
+            'f1_nuclearity': f1_nuclearity,
+            'precision_nuclearity': precision_nuclearity,
+            'recall_nuclearity': recall_nuclearity
+        })
 
 
 # Segmenter training code
@@ -746,7 +757,7 @@ class TrainSolver(object):
                 param_group['lr'] *= lr_decay
 
     def train(self):
-        self.test_train_x, self.test_train_y = self.sample_dev()
+        test_train_x, test_train_y = self.sample_dev()
 
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=self.lr,
                                      weight_decay=self.weight_decay)
@@ -755,7 +766,7 @@ class TrainSolver(object):
 
         os.makedirs(self.save_path, exist_ok=True)
 
-        best_i = 0
+        best_epoch = 0
         best_f1 = 0
 
         for current_epoch in range(self.num_epochs):
@@ -784,8 +795,8 @@ class TrainSolver(object):
             self.model.eval()
 
             logger.info('Running end of epoch evaluations on sample train data and test data...')
-            tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = self.check_accuracy(self.test_train_x,
-                                                                                       self.test_train_y)
+            tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = self.check_accuracy(test_train_x,
+                                                                                       test_train_y)
 
             dev_batch_ave_loss, dev_pre, dev_rec, dev_f1, dev_visdata = self.check_accuracy(self.dev_x, self.dev_y)
             _, _, _, all_end_boundaries = dev_visdata
@@ -799,7 +810,7 @@ class TrainSolver(object):
                 best_f1 = dev_f1
                 best_rec = dev_rec
                 best_pre = dev_pre
-                best_i = current_epoch
+                best_epoch = current_epoch
 
             save_data = [current_epoch, tr_batch_ave_loss, tr_pre, tr_rec, tr_f1,
                          dev_batch_ave_loss, dev_pre, dev_rec, dev_f1]
@@ -809,20 +820,23 @@ class TrainSolver(object):
             with open(os.path.join(self.save_path, save_file_name), 'a+') as f:
                 f.write(','.join(map(str, save_data)) + '\n')
 
-            if current_epoch == best_i:
+            if current_epoch == best_epoch:
                 logger.info('Saving best model...')
-                torch.save(self.model, os.path.join(self.save_path, 'best_model.torchsave'))
+                self.model.save_pretrained(self.save_path)
 
                 with open(os.path.join(self.save_path, 'best_segmentation.pickle'), 'wb') as f:
                     pickle.dump(all_end_boundaries, f)
 
             self.model.train()
 
-        return best_i, best_pre, best_rec, best_f1
+        return best_epoch, best_pre, best_rec, best_f1
 
 
 def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     logger.info(f'===== Training RST Pointer Segmenter =====')
+
+    setup(seed=cfg.seed)
+
     train_data_dir = cfg.train_data_dir
     test_data_dir = cfg.test_data_dir
     save_dir = cfg.save_dir
@@ -844,12 +858,6 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     lrdepoch = cfg.lrdepoch
     elmo_size = cfg.elmo_size
 
-    torch.manual_seed(myseed)
-    if use_cuda:
-        torch.cuda.manual_seed_all(myseed)
-    np.random.seed(myseed)
-    random.seed(myseed)
-
     is_bidirectional = cfg.isbi == 'True'
     finetune = cfg.fine == 'True'
     is_batch_norm = cfg.isbarnor == 'True'
@@ -870,7 +878,7 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
                                              is_bi_encoder_rnn=is_bidirectional,
                                              rnn_type=rnn_type, rnn_layers=rnn_layers,
                                              dropout_prob=dout, use_cuda=use_cuda, with_finetuning=finetune,
-                                             is_batch_norm=is_batch_norm)
+                                             is_batch_norm=is_batch_norm, elmo_size=elmo_size)
     model = RstPointerSegmenterModel(model_config)
     model.to(device=device)
 
@@ -883,10 +891,16 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
                            weight_decay=wd,
                            use_cuda=use_cuda)
 
-    best_i, best_pre, best_rec, best_f1 = mysolver.train()
+    best_epoch, best_pre, best_rec, best_f1 = mysolver.train()
 
     with open(os.path.join(save_dir, 'results.csv'), 'a') as f:
-        f.write(filename + ',' + ','.join(map(str, [best_i, best_pre, best_rec, best_f1])) + '\n')
+        writer = csv.DictWriter(f, fieldnames=["best_epoch", "precision", "recall", "f1"])
+        writer.writerow({
+            'best_epoch': best_epoch,
+            'precision': best_pre,
+            'recall': best_rec,
+            'f1': best_f1
+        })
 
 
 if __name__ == "__main__":
