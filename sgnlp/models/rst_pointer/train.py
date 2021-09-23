@@ -355,7 +355,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
 
     model = RstPointerParserModel(model_config)
     model = model.to(device)
-    # model.embedding.to(device)  # Elmo layer doesn't get put onto device automatically
+    model.embedding.to(device)  # Elmo layer doesn't get put onto device automatically
 
     preprocessor = RSTPreprocessor(device=device)
 
