@@ -16,7 +16,6 @@
     "classifier_hidden_size": 64,
     "classifier_bias": true,
     "seed": 550,
-    "eval_size": 600,
     "epochs": 200,
     "lr": 0.001,
     "lr_decay_epoch": 10,
