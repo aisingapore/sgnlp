@@ -9,9 +9,9 @@ import numpy as np
 from typing import List
 from torch.backends import cudnn
 
-from sgnlp.models.rst_pointer.config import RstPointerSegmenterConfig
-from sgnlp.models.rst_pointer.preprocess import RSTPreprocessor
-from .modeling import RstPointerParserModel, RstPointerParserConfig, RstPointerSegmenterModel
+from sgnlp.utils.csv_writer import CsvWriter
+from .preprocess import RSTPreprocessor
+from .modeling import RstPointerParserModel, RstPointerParserConfig, RstPointerSegmenterModel, RstPointerSegmenterConfig
 from .utils import parse_args_and_load_config
 from .data_class import RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs
 from .modules.type import DiscourseTreeNode, DiscourseTreeSplit
@@ -119,6 +119,7 @@ def get_micro_measure(correct_span, correct_relation, correct_nuclearity, no_sys
            (precision_nuclearity, recall_nuclearity, f1_nuclearity)
 
 
+# TODO: Change data sampling
 def get_batch_data_training(input_sentences, edu_breaks, decoder_input, relation_label,
                             parsing_breaks, golden_metric, parents_index, sibling, batch_size):
     # change them into np.array
@@ -292,8 +293,6 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     classifier_hidden_size = cfg.classifier_hidden_size
     classifier_bias = cfg.classifier_bias
     elmo_size = cfg.elmo_size
-    seed = cfg.seed
-    eval_size = cfg.eval_size
     epochs = cfg.epochs
     lr = cfg.lr
     lr_decay_epoch = cfg.lr_decay_epoch
@@ -303,6 +302,16 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     USE_CUDA = torch.cuda.is_available()
     device = torch.device("cuda:" + str(cfg.gpu_id) if USE_CUDA else "cpu")
     logger.info(f'Using CUDA: {USE_CUDA}')
+
+    # Create directory and files
+    os.makedirs(save_dir, exist_ok=True)
+    best_results_writer = CsvWriter(file_path=os.path.join(save_dir, 'best_results.csv'),
+                                    fieldnames=['best_epoch', 'f1_relation', 'precision_relation', 'recall_relation',
+                                                'f1_span', 'precision_span', 'recall_span',
+                                                'f1_nuclearity', 'precision_nuclearity', 'recall_nuclearity'])
+    results_writer = CsvWriter(file_path=os.path.join(save_dir, 'results.csv'),
+                               fieldnames=['current_epoch', 'loss_tree_test', 'loss_label_test', 'f1_span',
+                                           'f1_relation', 'f1_nuclearity'])
 
     logger.info('Loading training and test data...')
     # Load Training data
@@ -323,17 +332,10 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     test_parsing_breaks = pickle.load(open(os.path.join(test_data_dir, "splits_order.pickle"), "rb"))
     test_golden_metric = pickle.load(open(os.path.join(test_data_dir, "discourse_tree_splits.pickle"), "rb"))
 
-    # To save model and data
-    file_name = f'seed_{seed}_batchSize_{batch_size}_elmo_{elmo_size}_attenModel_{atten_model}' \
-                f'_rnnLayers_{rnn_layers}_rnnHiddenSize_{hidden_size}_classifierHiddenSize_{classifier_hidden_size}'
-
-    model_save_dir = os.path.join(save_dir, file_name)
-
     logger.info('--------------------------------------------------------------------')
     logger.info('Starting model training...')
     logger.info('--------------------------------------------------------------------')
     # Initialize model
-    # model_config = RstPointerParserConfig.from_pretrained(cfg.model_config_path)
     model_config = RstPointerParserConfig(
         batch_size=batch_size,
         hidden_size=hidden_size,
@@ -361,11 +363,6 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
                                  lr=lr, betas=(0.9, 0.9), weight_decay=weight_decay)
 
     num_iterations = int(np.ceil(len(tr_parsing_breaks) / batch_size))
-
-    try:
-        os.mkdir(model_save_dir)
-    except:
-        pass
 
     best_f1_relation = 0
     best_f1_span = 0
@@ -441,24 +438,25 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
             best_precision_nuclearity = precision_nuclearity
             best_recall_nuclearity = recall_nuclearity
 
-        # Saving data
-        save_data = [current_epoch, loss_tree_test, loss_label_test, f1_span, f1_relation, f1_nuclearity]
-
         # Log evaluation and test metrics
         log_metrics(log_prefix='Metrics on test data --',
                     loss_tree=loss_tree_test, loss_label=loss_label_test,
                     f1_span=f1_span, f1_relation=f1_relation, f1_nuclearity=f1_nuclearity)
 
         logger.info(f'End of epoch {current_epoch + 1}')
-        file_name = f'span_bs_{batch_size}_es_{eval_size}_lr_{lr}_' \
-                    f'lrdc_{lr_decay_epoch}_wd_{weight_decay}.txt'
 
-        with open(os.path.join(model_save_dir, file_name), 'a+') as f:
-            f.write(','.join(map(str, save_data)) + '\n')
+        results_writer.writerow({
+            'current_epoch': current_epoch,
+            'loss_tree_test': loss_tree_test,
+            'loss_label_test': loss_label_test,
+            'f1_span': f1_span,
+            'f1_relation': f1_relation,
+            'f1_nuclearity': f1_nuclearity
+        })
 
         # Saving model
         if best_epoch == current_epoch:
-            model.save_pretrained(model_save_dir)
+            model.save_pretrained(save_dir)
 
         # Convert back to training
         model.train()
@@ -470,23 +468,18 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     logger.info(f'The best F1 points for Nuclearity is: {best_f1_nuclearity:.3f}')
     logger.info(f'The best F1 points for Span is: {best_f1_span:.3f}')
 
-    # Save result
-    with open(os.path.join(save_dir, 'results.csv'), 'a') as f:
-        writer = csv.DictWriter(f, fieldnames=['best_epoch', 'f1_relation', 'precision_relation', 'recall_relation',
-                                               'f1_span', 'precision_span', 'recall_span',
-                                               'f1_nuclearity', 'precision_nuclearity', 'recall_nuclearity'])
-        writer.writerow({
-            'best_epoch': best_epoch,
-            'f1_relation': best_f1_relation,
-            'precision_relation': best_precision_relation,
-            'recall_relation': best_recall_relation,
-            'f1_span': best_f1_span,
-            'precision_span': best_precision_span,
-            'recall_span': best_recall_span,
-            'f1_nuclearity': best_f1_nuclearity,
-            'precision_nuclearity': best_precision_nuclearity,
-            'recall_nuclearity': best_recall_nuclearity
-        })
+    best_results_writer.writerow({
+        'best_epoch': best_epoch,
+        'f1_relation': best_f1_relation,
+        'precision_relation': best_precision_relation,
+        'recall_relation': best_recall_relation,
+        'f1_span': best_f1_span,
+        'precision_span': best_precision_span,
+        'recall_span': best_recall_span,
+        'f1_nuclearity': best_f1_nuclearity,
+        'precision_nuclearity': best_precision_nuclearity,
+        'recall_nuclearity': best_recall_nuclearity
+    })
 
 
 # Segmenter training code
