@@ -36,7 +36,6 @@ class RstPointerParserConfig(PretrainedConfig):
             hidden_size=64,
             decoder_input_size=64,
             atten_model='Dotproduct',
-            device='cpu',
             classifier_input_size=64,
             classifier_hidden_size=64,
             highorder=False,
@@ -54,7 +53,6 @@ class RstPointerParserConfig(PretrainedConfig):
         self.hidden_size = hidden_size
         self.decoder_input_size = decoder_input_size
         self.atten_model = atten_model
-        self.device = device
         self.classifier_input_size = classifier_input_size
         self.classifier_hidden_size = classifier_hidden_size
         self.highorder = highorder

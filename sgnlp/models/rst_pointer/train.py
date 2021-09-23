@@ -202,263 +202,74 @@ def get_batch_data(input_sentences, edu_breaks, decoder_input, relation_label,
     return input_sentences_batch, edu_breaks_batch, decoder_input_batch, relation_label_batch, parsing_breaks_batch, golden_metric_batch
 
 
-class Train(object):
-    def __init__(self, model, train_input_sentences, train_edu_breaks, train_decoder_input,
-                 train_relation_label, train_parsing_breaks, train_golden_metric,
-                 train_parents_index, train_sibling_index,
-                 test_input_sentences, test_edu_breaks, test_decoder_input,
-                 test_relation_label, test_parsing_breaks, test_golden_metric,
-                 batch_size, eval_size, epochs, lr, lr_decay_epoch, weight_decay,
-                 save_path, device):
+def get_accuracy(model, preprocessor, input_sentences, edu_breaks, decoder_input, relation_label,
+                 parsing_breaks, golden_metric, batch_size):
+    num_loops = int(np.ceil(len(edu_breaks) / batch_size))
 
-        self.model = model
-        self.train_input_sentences = train_input_sentences
-        self.train_edu_breaks = train_edu_breaks
-        self.train_decoder_input = train_decoder_input
-        self.train_relation_label = train_relation_label
-        self.train_parsing_breaks = train_parsing_breaks
-        self.train_golden_metric = train_golden_metric
-        self.train_parents_index = train_parents_index
-        self.train_sibling_index = train_sibling_index
-        self.test_input_sentences = test_input_sentences
-        self.test_edu_breaks = test_edu_breaks
-        self.test_decoder_input = test_decoder_input
-        self.test_relation_label = test_relation_label
-        self.test_parsing_breaks = test_parsing_breaks
-        self.test_golden_metric = test_golden_metric
-        self.batch_size = batch_size
-        self.eval_size = eval_size
-        self.epochs = epochs
-        self.lr = lr
-        self.lr_decay_epoch = lr_decay_epoch
-        self.weight_decay = weight_decay
-        self.save_path = save_path
+    loss_tree_all = []
+    loss_label_all = []
+    correct_span = 0
+    correct_relation = 0
+    correct_nuclearity = 0
+    no_system = 0
+    no_golden = 0
 
-        # Preprocessor
-        self.preprocessor = RSTPreprocessor(device=device)
+    for loop in range(num_loops):
+        start_idx = loop * batch_size
+        end_idx = (loop + 1) * batch_size
+        if end_idx > len(edu_breaks):
+            end_idx = len(edu_breaks)
 
-    def get_training_eval(self):
-        # Obtain eval_size samples of training data to evaluate the model in
-        # every epoch
+        input_sentences_batch, edu_breaks_batch, _, \
+        relation_label_batch, parsing_breaks_batch, golden_metric_splits_batch = \
+            get_batch_data(input_sentences[start_idx:end_idx],
+                           edu_breaks[start_idx:end_idx],
+                           decoder_input[start_idx:end_idx],
+                           relation_label[start_idx:end_idx],
+                           parsing_breaks[start_idx:end_idx],
+                           golden_metric[start_idx:end_idx], batch_size)
 
-        # Convert to np.array
-        train_input_sentences = np.array(self.train_input_sentences)
-        train_edu_breaks = np.array(self.train_edu_breaks)
-        train_decoder_input = np.array(self.train_decoder_input)
-        train_relation_label = np.array(self.train_relation_label)
-        train_parsing_breaks = np.array(self.train_parsing_breaks)
-        train_golden_metric = np.array(self.train_golden_metric)
+        input_sentences_ids_batch, sentence_lengths = preprocessor(input_sentences_batch)
 
-        sample_indices = random.sample(range(len(self.train_parsing_breaks)), self.eval_size)
+        model_output = model.forward(
+            input_sentence=input_sentences_ids_batch,
+            edu_breaks=edu_breaks_batch,
+            label_index=relation_label_batch,
+            parsing_index=parsing_breaks_batch,
+            sentence_lengths=sentence_lengths,
+            generate_splits=True
+        )
 
-        eval_input_sentences = train_input_sentences[sample_indices].tolist()
-        eval_edu_breaks = train_edu_breaks[sample_indices].tolist()
-        eval_decoder_input = train_decoder_input[sample_indices].tolist()
-        eval_relation_label = train_relation_label[sample_indices].tolist()
-        eval_parsing_breaks = train_parsing_breaks[sample_indices].tolist()
-        eval_golden_metric = train_golden_metric[sample_indices].tolist()
+        loss_tree_all.append(model_output.loss_tree_batch)
+        loss_label_all.append(model_output.loss_label_batch)
+        correct_span_batch, correct_relation_batch, correct_nuclearity_batch, \
+        no_system_batch, no_golden_batch = get_batch_measure(model_output.split_batch,
+                                                             golden_metric_splits_batch)
 
-        return eval_input_sentences, eval_edu_breaks, eval_decoder_input, eval_relation_label, \
-               eval_parsing_breaks, eval_golden_metric
+        correct_span = correct_span + correct_span_batch
+        correct_relation = correct_relation + correct_relation_batch
+        correct_nuclearity = correct_nuclearity + correct_nuclearity_batch
+        no_system = no_system + no_system_batch
+        no_golden = no_golden + no_golden_batch
 
-    def get_accuracy(self, input_sentences, edu_breaks, decoder_input, relation_label,
-                     parsing_breaks, golden_metric):
+    span_points, relation_points, nuclearity_points = get_micro_measure(
+        correct_span, correct_relation, correct_nuclearity, no_system, no_golden)
 
-        num_loops = int(np.ceil(len(edu_breaks) / self.batch_size))
+    return np.mean(loss_tree_all), np.mean(loss_label_all), span_points, relation_points, nuclearity_points
 
-        loss_tree_all = []
-        loss_label_all = []
-        correct_span = 0
-        correct_relation = 0
-        correct_nuclearity = 0
-        no_system = 0
-        no_golden = 0
 
-        for loop in range(num_loops):
+def learning_rate_adjust(optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
+    if (epoch % lr_decay_epoch == 0) and (epoch != 0):
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = param_group['lr'] * lr_decay
 
-            start_position = loop * self.batch_size
-            end_position = (loop + 1) * self.batch_size
-            if end_position > len(edu_breaks):
-                end_position = len(edu_breaks)
 
-            input_sentences_batch, edu_breaks_batch, _, \
-            relation_label_batch, parsing_breaks_batch, golden_metric_splits_batch = \
-                get_batch_data(input_sentences[start_position:end_position],
-                               edu_breaks[start_position:end_position],
-                               decoder_input[start_position:end_position],
-                               relation_label[start_position:end_position],
-                               parsing_breaks[start_position:end_position],
-                               golden_metric[start_position:end_position], self.batch_size)
-
-            input_sentences_ids_batch, sentence_lengths = self.preprocessor(input_sentences_batch)
-
-            model_output = self.model.forward(
-                input_sentence=input_sentences_ids_batch,
-                edu_breaks=edu_breaks_batch,
-                label_index=relation_label_batch,
-                parsing_index=parsing_breaks_batch,
-                sentence_lengths=sentence_lengths,
-                generate_splits=True
-            )
-
-            loss_tree_all.append(model_output.loss_tree_batch)
-            loss_label_all.append(model_output.loss_label_batch)
-            correct_span_batch, correct_relation_batch, correct_nuclearity_batch, \
-            no_system_batch, no_golden_batch = get_batch_measure(model_output.split_batch,
-                                                                 golden_metric_splits_batch)
-
-            correct_span = correct_span + correct_span_batch
-            correct_relation = correct_relation + correct_relation_batch
-            correct_nuclearity = correct_nuclearity + correct_nuclearity_batch
-            no_system = no_system + no_system_batch
-            no_golden = no_golden + no_golden_batch
-
-        span_points, relation_points, nuclearity_points = get_micro_measure(
-            correct_span, correct_relation, correct_nuclearity, no_system, no_golden)
-
-        return np.mean(loss_tree_all), np.mean(loss_label_all), span_points, relation_points, nuclearity_points
-
-    def learning_rate_adjust(self, optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
-        if (epoch % lr_decay_epoch == 0) and (epoch != 0):
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = param_group['lr'] * lr_decay
-
-    def train(self):
-
-        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()),
-                                     lr=self.lr, betas=(0.9, 0.9), weight_decay=self.weight_decay)
-
-        num_iterations = int(np.ceil(len(self.train_parsing_breaks) / self.batch_size))
-
-        try:
-            os.mkdir(self.save_path)
-        except:
-            pass
-
-        best_f1_relation = 0
-        best_f1_span = 0
-        for current_epoch in range(self.epochs):
-            self.learning_rate_adjust(optimizer, current_epoch, 0.8, self.lr_decay_epoch)
-
-            for current_iteration in range(num_iterations):
-                input_sentences_batch, edu_breaks_batch, decoder_input_batch, \
-                relation_label_batch, parsing_breaks_batch, _, parents_index_batch, \
-                sibling_batch = get_batch_data_training(
-                    self.train_input_sentences, self.train_edu_breaks,
-                    self.train_decoder_input, self.train_relation_label,
-                    self.train_parsing_breaks, self.train_golden_metric,
-                    self.train_parents_index, self.train_sibling_index, self.batch_size)
-
-                self.model.zero_grad()
-
-                input_sentences_ids_batch, sentence_lengths = self.preprocessor(input_sentences_batch)
-
-                loss_tree_batch, loss_label_batch = self.model.forward_train(
-                    input_sentence_ids_batch=input_sentences_ids_batch,
-                    edu_breaks_batch=edu_breaks_batch,
-                    label_index_batch=relation_label_batch,
-                    parsing_index_batch=parsing_breaks_batch,
-                    decoder_input_index_batch=decoder_input_batch,
-                    parents_index_batch=parents_index_batch,
-                    sibling_index_batch=sibling_batch,
-                    sentence_lengths=sentence_lengths
-                )
-
-                loss = loss_tree_batch + loss_label_batch
-                loss.backward()
-
-                cur_loss = float(loss.item())
-
-                logger.info(f'Epoch: {current_epoch + 1}/{self.epochs}, '
-                            f'iteration: {current_iteration + 1}/{num_iterations}, '
-                            f'loss: {cur_loss:.3f}')
-
-                # To avoid gradient explosion
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
-
-                optimizer.step()
-
-            # Convert model to eval
-            self.model.eval()
-
-            # Obtain Training (development) data
-            eval_input_sentences, eval_edu_breaks, eval_decoder_input, eval_relation_label, \
-            eval_parsing_breaks, eval_golden_metric = self.get_training_eval()
-
-            # Eval on training (development) data
-            loss_tree_eval, loss_label_eval, span_points_eval, relation_points_eval, nuclearity_points_eval = \
-                self.get_accuracy(eval_input_sentences, eval_edu_breaks,
-                                  eval_decoder_input, eval_relation_label,
-                                  eval_parsing_breaks, eval_golden_metric)
-
-            # Eval on Testing data
-            loss_tree_test, loss_label_test, span_points_test, relation_points_test, nuclearity_points_test = \
-                self.get_accuracy(self.test_input_sentences, self.test_edu_breaks,
-                                  self.test_decoder_input, self.test_relation_label,
-                                  self.test_parsing_breaks, self.test_golden_metric)
-
-            # Unfold numbers
-            # Test
-            precision_span, recall_span, f1_span = span_points_test
-            precision_relation, recall_relation, f1_relation = relation_points_test
-            precision_nuclearity, recall_nuclearity, f1_nuclearity = nuclearity_points_test
-            # Training Eval
-            _, _, f1_span_eval = span_points_eval
-            _, _, f1_relation_eval = relation_points_eval
-            _, _, f1_nuclearity_eval = nuclearity_points_eval
-
-            # Relation will take the priority consideration
-            if f1_relation > best_f1_relation:
-                best_epoch = current_epoch
-                # relation
-                best_f1_relation = f1_relation
-                best_precision_relation = precision_relation
-                best_recall_relation = recall_relation
-                # span
-                best_f1_span = f1_span
-                best_precision_span = precision_span
-                best_recall_span = recall_span
-                # nuclearity
-                best_f1_nuclearity = f1_nuclearity
-                best_precision_nuclearity = precision_nuclearity
-                best_recall_nuclearity = recall_nuclearity
-
-            # Saving data
-            save_data = [current_epoch, loss_tree_eval, loss_label_eval,
-                         f1_span_eval, f1_relation_eval, f1_nuclearity_eval,
-                         loss_tree_test, loss_label_test, f1_span, f1_relation, f1_nuclearity]
-
-            # Log evaluation and test metrics
-            self.log_metrics(log_prefix='Metrics on train sample --',
-                             loss_tree=loss_tree_eval, loss_label=loss_label_eval,
-                             f1_span=f1_span_eval, f1_relation=f1_relation_eval, f1_nuclearity=f1_nuclearity_eval)
-            self.log_metrics(log_prefix='Metrics on test data --',
-                             loss_tree=loss_tree_test, loss_label=loss_label_test,
-                             f1_span=f1_span, f1_relation=f1_relation, f1_nuclearity=f1_nuclearity)
-
-            logger.info(f'End of epoch {current_epoch + 1}')
-            file_name = f'span_bs_{self.batch_size}_es_{self.eval_size}_lr_{self.lr}_' \
-                        f'lrdc_{self.lr_decay_epoch}_wd_{self.weight_decay}.txt'
-
-            with open(os.path.join(self.save_path, file_name), 'a+') as f:
-                f.write(','.join(map(str, save_data)) + '\n')
-
-            # Saving model
-            if best_epoch == current_epoch:
-                self.model.save_pretrained(self.save_path)
-
-            # Convert back to training
-            self.model.train()
-
-        return best_epoch, best_f1_relation, best_precision_relation, best_recall_relation, best_f1_span, \
-               best_precision_span, best_recall_span, best_f1_nuclearity, best_precision_nuclearity, best_recall_nuclearity
-
-    def log_metrics(self, log_prefix, loss_tree, loss_label, f1_span, f1_relation, f1_nuclearity):
-        logger.info(f'{log_prefix} \n'
-                    f'\t'
-                    f'loss_tree: {loss_tree:.3f}, loss_label: {loss_label:.3f} \n'
-                    f'\t'
-                    f'f1_span: {f1_span:.3f}, f1_relation: {f1_relation:.3f}, f1_nuclearity: {f1_nuclearity:.3f}')
+def log_metrics(log_prefix, loss_tree, loss_label, f1_span, f1_relation, f1_nuclearity):
+    logger.info(f'{log_prefix} \n'
+                f'\t'
+                f'loss_tree: {loss_tree:.3f}, loss_label: {loss_label:.3f} \n'
+                f'\t'
+                f'f1_span: {f1_span:.3f}, f1_relation: {f1_relation:.3f}, f1_nuclearity: {f1_nuclearity:.3f}')
 
 
 def train_parser(cfg: RstPointerParserTrainArgs) -> None:
@@ -528,7 +339,6 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
         hidden_size=hidden_size,
         decoder_input_size=hidden_size,
         atten_model=atten_model,
-        device=device,
         classifier_input_size=classifier_input_size,
         classifier_hidden_size=classifier_hidden_size,
         highorder=highorder,
@@ -543,26 +353,122 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
 
     model = RstPointerParserModel(model_config)
     model = model.to(device)
-    model.embedding.to(device)  # Elmo layer doesn't get put onto device automatically
+    # model.embedding.to(device)  # Elmo layer doesn't get put onto device automatically
 
-    trainer = Train(model, tr_input_sentences, tr_edu_breaks, tr_decoder_input,
-                    tr_relation_label, tr_parsing_breaks, tr_golden_metric,
-                    tr_parents_index, tr_sibling_index,
-                    test_input_sentences, test_edu_breaks, test_decoder_input,
-                    test_relation_label, test_parsing_breaks, test_golden_metric,
-                    batch_size, eval_size, epochs, lr, lr_decay_epoch,
-                    weight_decay, model_save_dir, device)
+    preprocessor = RSTPreprocessor(device=device)
 
-    best_epoch, f1_relation, precision_relation, recall_relation, \
-    f1_span, precision_span, recall_span, \
-    f1_nuclearity, precision_nuclearity, recall_nuclearity = trainer.train()
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
+                                 lr=lr, betas=(0.9, 0.9), weight_decay=weight_decay)
+
+    num_iterations = int(np.ceil(len(tr_parsing_breaks) / batch_size))
+
+    try:
+        os.mkdir(model_save_dir)
+    except:
+        pass
+
+    best_f1_relation = 0
+    best_f1_span = 0
+    for current_epoch in range(epochs):
+        learning_rate_adjust(optimizer, current_epoch, 0.8, lr_decay_epoch)
+
+        for current_iteration in range(num_iterations):
+            input_sentences_batch, edu_breaks_batch, decoder_input_batch, \
+            relation_label_batch, parsing_breaks_batch, _, parents_index_batch, \
+            sibling_batch = get_batch_data_training(
+                tr_input_sentences, tr_edu_breaks,
+                tr_decoder_input, tr_relation_label,
+                tr_parsing_breaks, tr_golden_metric,
+                tr_parents_index, tr_sibling_index, batch_size)
+
+            model.zero_grad()
+
+            input_sentences_ids_batch, sentence_lengths = preprocessor(input_sentences_batch)
+
+            loss_tree_batch, loss_label_batch = model.forward_train(
+                input_sentence_ids_batch=input_sentences_ids_batch,
+                edu_breaks_batch=edu_breaks_batch,
+                label_index_batch=relation_label_batch,
+                parsing_index_batch=parsing_breaks_batch,
+                decoder_input_index_batch=decoder_input_batch,
+                parents_index_batch=parents_index_batch,
+                sibling_index_batch=sibling_batch,
+                sentence_lengths=sentence_lengths
+            )
+
+            loss = loss_tree_batch + loss_label_batch
+            loss.backward()
+
+            cur_loss = float(loss.item())
+
+            logger.info(f'Epoch: {current_epoch + 1}/{epochs}, '
+                        f'iteration: {current_iteration + 1}/{num_iterations}, '
+                        f'loss: {cur_loss:.3f}')
+
+            # To avoid gradient explosion
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
+
+            optimizer.step()
+
+        # Convert model to eval
+        model.eval()
+
+        # Eval on Testing data
+        loss_tree_test, loss_label_test, span_points_test, relation_points_test, nuclearity_points_test = \
+            get_accuracy(model, preprocessor, test_input_sentences, test_edu_breaks,
+                         test_decoder_input, test_relation_label,
+                         test_parsing_breaks, test_golden_metric, batch_size)
+
+        # Unfold numbers
+        # Test
+        precision_span, recall_span, f1_span = span_points_test
+        precision_relation, recall_relation, f1_relation = relation_points_test
+        precision_nuclearity, recall_nuclearity, f1_nuclearity = nuclearity_points_test
+
+        # Relation will take the priority consideration
+        if f1_relation > best_f1_relation:
+            best_epoch = current_epoch
+            # relation
+            best_f1_relation = f1_relation
+            best_precision_relation = precision_relation
+            best_recall_relation = recall_relation
+            # span
+            best_f1_span = f1_span
+            best_precision_span = precision_span
+            best_recall_span = recall_span
+            # nuclearity
+            best_f1_nuclearity = f1_nuclearity
+            best_precision_nuclearity = precision_nuclearity
+            best_recall_nuclearity = recall_nuclearity
+
+        # Saving data
+        save_data = [current_epoch, loss_tree_test, loss_label_test, f1_span, f1_relation, f1_nuclearity]
+
+        # Log evaluation and test metrics
+        log_metrics(log_prefix='Metrics on test data --',
+                    loss_tree=loss_tree_test, loss_label=loss_label_test,
+                    f1_span=f1_span, f1_relation=f1_relation, f1_nuclearity=f1_nuclearity)
+
+        logger.info(f'End of epoch {current_epoch + 1}')
+        file_name = f'span_bs_{batch_size}_es_{eval_size}_lr_{lr}_' \
+                    f'lrdc_{lr_decay_epoch}_wd_{weight_decay}.txt'
+
+        with open(os.path.join(model_save_dir, file_name), 'a+') as f:
+            f.write(','.join(map(str, save_data)) + '\n')
+
+        # Saving model
+        if best_epoch == current_epoch:
+            model.save_pretrained(model_save_dir)
+
+        # Convert back to training
+        model.train()
 
     logger.info('--------------------------------------------------------------------')
     logger.info('Model training completed!')
     logger.info('--------------------------------------------------------------------')
-    logger.info(f'The best F1 points for Relation is: {f1_relation:.3f}.')
-    logger.info(f'The best F1 points for Nuclearity is: {f1_nuclearity:.3f}')
-    logger.info(f'The best F1 points for Span is: {f1_span:.3f}')
+    logger.info(f'The best F1 points for Relation is: {best_f1_relation:.3f}.')
+    logger.info(f'The best F1 points for Nuclearity is: {best_f1_nuclearity:.3f}')
+    logger.info(f'The best F1 points for Span is: {best_f1_span:.3f}')
 
     # Save result
     with open(os.path.join(save_dir, 'results.csv'), 'a') as f:
@@ -571,15 +477,15 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
                                                'f1_nuclearity', 'precision_nuclearity', 'recall_nuclearity'])
         writer.writerow({
             'best_epoch': best_epoch,
-            'f1_relation': f1_relation,
-            'precision_relation': precision_relation,
-            'recall_relation': recall_relation,
-            'f1_span': f1_span,
-            'precision_span': precision_span,
-            'recall_span': recall_span,
-            'f1_nuclearity': f1_nuclearity,
-            'precision_nuclearity': precision_nuclearity,
-            'recall_nuclearity': recall_nuclearity
+            'f1_relation': best_f1_relation,
+            'precision_relation': best_precision_relation,
+            'recall_relation': best_recall_relation,
+            'f1_span': best_f1_span,
+            'precision_span': best_precision_span,
+            'recall_span': best_recall_span,
+            'f1_nuclearity': best_f1_nuclearity,
+            'precision_nuclearity': best_precision_nuclearity,
+            'recall_nuclearity': best_recall_nuclearity
         })
 
 

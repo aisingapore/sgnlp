@@ -305,7 +305,6 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
         self.hidden_size = config.hidden_size
         self.decoder_input_size = config.decoder_input_size
         self.atten_model = config.atten_model
-        self._device = config.device
         self.classifier_input_size = config.classifier_input_size
         self.classifier_hidden_size = config.classifier_hidden_size
         self.highorder = config.highorder
@@ -318,7 +317,6 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
         self.encoder = EncoderRNN(
             word_dim=self.word_dim,
             hidden_size=self.hidden_size,
-            device=self._device,
             rnn_layers=self.rnn_layers,
             dropout=config.dropout_e)
         self.decoder = DecoderRNN(
@@ -358,7 +356,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
 
             cur_label_index = label_index[i]
             cur_label_index = torch.tensor(cur_label_index)
-            cur_label_index = cur_label_index.to(self._device)
+            cur_label_index = cur_label_index.to(self.device)
             cur_parsing_index = parsing_index[i]
 
             if len(edu_breaks[i]) == 1:
@@ -529,7 +527,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                             temp_ground = stack_head[-2] - stack_head[0]
                         # Compute Tree Loss
                         cur_ground_index = torch.tensor([temp_ground])
-                        cur_ground_index = cur_ground_index.to(self._device)
+                        cur_ground_index = cur_ground_index.to(self.device)
                         loss_tree_batch = loss_tree_batch + loss_function(log_atten_weights, cur_ground_index)
 
                         # Compute Classifier Loss
@@ -603,7 +601,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
         for i in range(self.batch_size):
             cur_label_index = label_index_batch[i]
             cur_label_index = torch.tensor(cur_label_index)
-            cur_label_index = cur_label_index.to(self._device)
+            cur_label_index = cur_label_index.to(self.device)
             cur_parsing_index = parsing_index_batch[i]
             cur_decoder_input_index = decoder_input_index_batch[i]
             cur_parents_index = parents_index_batch[i]
@@ -629,7 +627,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
             else:
                 # Take the last hidden state of an EDU as the representation of this EDU
                 # The dimension: [NO_EDU,hidden_size]
-                cur_encoder_outputs = encoder_outputs[i][edu_breaks_batch[i]].to(self._device)
+                cur_encoder_outputs = encoder_outputs[i][edu_breaks_batch[i]].to(self.device)
 
                 # Obtain last hidden state of encoder
                 temp = torch.transpose(last_hiddenstates, 0, 1)[i].unsqueeze(0)
@@ -643,7 +641,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
 
                     # Incorporate sibling information
                     cur_decoder_inputs_S = torch.zeros([len(cur_sibling_index), cur_encoder_outputs.shape[1]]).to(
-                        self._device)
+                        self.device)
                     for n, s_idx in enumerate(cur_sibling_index):
                         if s_idx != 99:
                             cur_decoder_inputs_S[n] = cur_encoder_outputs[s_idx]
@@ -697,7 +695,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                             _, log_atten_weights = self.pointer(cur_encoder_outputs[stack_head[:-1]],
                                                                 cur_decoder_outputs[j])
                             cur_ground_index = torch.tensor([int(cur_parsing_index[j]) - int(stack_head[0])])
-                            cur_ground_index = cur_ground_index.to(self._device)
+                            cur_ground_index = cur_ground_index.to(self.device)
                             loss_tree_batch = loss_tree_batch + loss_function(log_atten_weights, cur_ground_index)
 
                             # Compute Classifier Loss
