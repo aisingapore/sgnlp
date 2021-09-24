@@ -88,12 +88,14 @@ class CrosentGecTokenizer(GPT2Tokenizer):
     def convert_tokens_to_string(self, tokens):
         """Converts a sequence of tokens (string) in a single string."""
         text = ""
-        for token in tokens:
+        for token in tokens[:-1]:
             text += bytearray([self.byte_decoder[c] for c in token]).decode(
                 "utf-8", errors=self.errors
             )
             text += " "
-        text.rstrip(" ")
+        text += bytearray([self.byte_decoder[c] for c in tokens[-1]]).decode(
+            "utf-8", errors=self.errors
+        )
         text = (
             text.replace(",@@ ", ", ")
             .replace("@@ ", "")

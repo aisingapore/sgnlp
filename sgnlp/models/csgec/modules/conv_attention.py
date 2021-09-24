@@ -32,7 +32,6 @@ class ConvAttention(nn.Module):
         ES : torch Tensor
             Elementwise sum of the token embeddings and encoder outputs of all source/context tokens. Shape of (batch size, sequence length, token embedding dim).
         """
-        residual_Y = Y
 
         Z = (self.in_projection(Y) + T) * sqrt(
             self.normalization_constant
@@ -55,7 +54,7 @@ class ConvAttention(nn.Module):
 
         # Scale the atteniton outputs (respecting potentially different lengths) (?)
         if encoder_padding_mask is None:
-            x = x * (s * math.sqrt(1.0 / s))
+            x = x * (s * sqrt(1.0 / s))
         else:
             s = s - encoder_padding_mask.type_as(x).sum(
                 dim=1, keepdim=True

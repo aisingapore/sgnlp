@@ -38,7 +38,7 @@ class PositionalEmbedding(nn.Embedding):
         if incremental_state is not None:
             # positions is the same for every token when decoding a single step
             position_ids = input_ids.data.new(1, 1).fill_(
-                self.padding_idx + input.size(1)
+                self.padding_idx + input_ids.size(1)
             )
         else:
             position_ids = self.make_positions(input_ids)
