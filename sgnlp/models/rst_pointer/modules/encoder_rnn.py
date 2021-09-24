@@ -14,7 +14,7 @@ class EncoderRNN(nn.Module):
         self.word_dim = word_dim
         self.hidden_size = hidden_size
         self.rnn_layers = rnn_layers
-        self.nnDropout = nn.Dropout(dropout)
+        self.dropout_layer = nn.Dropout(dropout)
         self.batchnorm_input = nn.BatchNorm1d(word_dim, affine=False, track_running_stats=False)
         self.gru = nn.GRU(
             word_dim,
@@ -42,7 +42,7 @@ class EncoderRNN(nn.Module):
         embeddings = embeddings.permute(0, 2, 1)
 
         # apply dropout
-        embeddings = self.nnDropout(embeddings)
+        embeddings = self.dropout_layer(embeddings)
 
         # added enforce_sorted=False because input_lengths are not sorted. enfore_sorted=True is only reuqired for
         # ONNX export. Reference: https://pytorch.org/docs/stable/generated/torch.nn.utils.rnn.pack_padded_sequence.html
@@ -58,7 +58,7 @@ class EncoderRNN(nn.Module):
 
         # apply dropout
         outputs = outputs.contiguous()
-        outputs = self.nnDropout(outputs)
+        outputs = self.dropout_layer(outputs)
 
         # sum bidirectional GRU outputs
         outputs = outputs[:, :, :self.hidden_size] + outputs[:, :, self.hidden_size:]
@@ -71,5 +71,7 @@ class EncoderRNN(nn.Module):
 
     def init_hidden(self, batch_size):
         h_0 = torch.zeros(2 * self.rnn_layers, batch_size, self.hidden_size)
+        device = self.gru.all_weights[0][0].device  # checks device that layer has been put on
+        h_0 = h_0.to(device)
 
         return h_0
