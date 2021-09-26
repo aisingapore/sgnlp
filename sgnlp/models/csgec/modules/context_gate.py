@@ -26,8 +26,12 @@ class ContextGate(nn.Module):
         C : torch Tensor
             Summarised representation of encoder states (ie, attention transformed context encoder outputs). Shape of (batch size, sequence length, hidden dim).
         """
-
+        # print("inside gate Y", Y.shape)
+        # print("inside gate C", C.shape)
         transformed_y = self.decoder_state_proj(Y)
         transformed_c = self.attn_proj(C)
+
+        # print("after gate Y", Y.shape)
+        # print("after gate C", C.shape)
 
         return torch.sigmoid((transformed_y + transformed_c))

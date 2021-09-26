@@ -1,4 +1,5 @@
 from math import sqrt
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -36,6 +37,8 @@ class ConvDecoder(nn.Module):
         """
 
         super(ConvDecoder, self).__init__()
+
+        self.kernel_size = kernel_size
 
         self.embed_tokens = nn.Embedding(
             num_embeddings=num_embeddings,
@@ -97,9 +100,14 @@ class ConvDecoder(nn.Module):
         auxencoder_ES = auxencoder_out_dict["encoder_out"][1]
         auxencoder_padding_mask = auxencoder_out_dict["encoder_padding_mask"]
 
+        if not torch.any(auxencoder_padding_mask):
+            auxencoder_padding_mask = None
+
         encoder_E = encoder_out_dict["encoder_out"][0]
         encoder_ES = encoder_out_dict["encoder_out"][1]
         encoder_padding_mask = encoder_out_dict["encoder_padding_mask"]
+        if not torch.any(encoder_padding_mask):
+            encoder_padding_mask = None
 
         pos_embed = self.embed_positions(prev_output_tokens, incremental_state)
         if incremental_state is not None:
@@ -107,16 +115,33 @@ class ConvDecoder(nn.Module):
         x = self._embed_tokens(prev_output_tokens, incremental_state)
         x += pos_embed
         target_embedding = x
+        # print("target_embedding \n", target_embedding)
         # x = F.dropout(x, p=self.dropout, training=self.training) # need to handle this
         Y = self.fc1(x)
+        # print("after fc1 \n", Y)
 
         for conv, aux_attention, enc_attention, aux_gate in zip(
             self.convolutions, self.aux_attention, self.enc_attention, self.aux_gates
         ):
             # Dropout before the conv layers
             # x = F.dropout(x, p=self.dropout, training=self.training)
+            # print("Y", Y.shape)
             residual_Y = Y
+            if incremental_state is not None and len(incremental_state) >= 7:
+                Y = torch.cat(
+                    (incremental_state.get_first_element()[:, 1:, :], Y), dim=1
+                )
+                incremental_state.add_element(Y)
+            else:
+                Y = F.pad(
+                    Y.transpose(1, 2), (self.kernel_size - Y.shape[1], 0), value=0
+                ).transpose(1, 2)
+                incremental_state.add_element(Y)
+
+            # print("Y", Y.shape)
             Y = conv(Y)
+            # print("Y after conv \n", Y, "\n")
+            # print("Y shape after conv \n", Y.shape, "\n")
             acx = aux_attention(
                 Y,
                 target_embedding,
@@ -124,24 +149,31 @@ class ConvDecoder(nn.Module):
                 auxencoder_ES,
                 auxencoder_padding_mask,
             )
+
+            # print("acx \n", acx, "\n")
             ctx = enc_attention(
                 Y,
                 target_embedding,
                 encoder_E,
-                encoder_E,
+                encoder_ES,
                 encoder_padding_mask,
             )
+            # print("ctx \n", ctx, "\n")
 
             auxgt = aux_gate(Y, ctx)
+            # print("auxgt \n", auxgt, "\n")
+            # print("Y before last", Y.shape)
 
             Y = (Y + ctx) * sqrt(self.normalization_constant)
             Y = (Y + auxgt * acx) * sqrt(self.normalization_constant)
             Y = (Y + residual_Y) * sqrt(self.normalization_constant)
+            # print("Y after iteration", Y.shape)
+            # print("Y after each layer", Y)
 
         x = self.fc2(Y)
         # x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.fc3(x)
-
+        # print("after fc3", x)
         return x
 
     def _embed_tokens(self, tokens, incremental_state):

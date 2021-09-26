@@ -73,8 +73,11 @@ class ConvGLUDecoder(nn.Module):
         H : torch Tensor
             Output from the previous encoder layer. Shape of (batch size, sequence length, hidden dim / number of "channels").
         """
+        # print("H", H.shape)
         H = H.transpose(1, 2)
-        H = F.pad(H, (self.kernel_size - 1, 0), value=0)  # TODO Check the padding idx
+        H = F.pad(
+            H, (self.kernel_size - H.shape[2], 0), value=0
+        )  # TODO Check the padding idx
         H = self.conv(H)
         H = H.transpose(1, 2)
         H = F.glu(H)

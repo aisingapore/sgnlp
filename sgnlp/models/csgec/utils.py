@@ -1,34 +1,24 @@
-from datasets import load_dataset
-from torch.utils.data import DataLoader
+class Buffer:
+    def __init__(self, max_len):
+        self.max_len = max_len
+        self.elements = []
 
+    def get_first_element(self):
+        return self.elements.pop(0)
 
-def load_transform_dataset(train_data, batch_size, source_tokenizer, context_tokenizer, target_tokenizer):
-    """
-    train_data
-        Path to the train data json file
-    batch_size : int
-        Batch size
-    source_tokenizer : CSGTokenizerFast
-        Tokenizer object for source sequences
-    context_tokenizer : CSGTokenizerFast
-        Tokenizer object for context sequences
-    target_tokenizer : CSGTokenizerFast
-        Tokenizer object for target sequences
-    """
+    def get_element(self, idx):
+        return self.elements.pop(idx)
 
-    #TODO make the cache_dir an argument
-    dataset = load_dataset('json', data_files=train_data, field='data', cache_dir="/polyaxon-data/SG-NLP/crosentgec_refactor/data/")
-    dataset = dataset.map(lambda x: encode_dataset(x, source_tokenizer, context_tokenizer, target_tokenizer), batched=True)
-    dataset.set_format(type='torch', columns=['source_ids', 'context_ids', 'target_ids'])
-    dataloader = DataLoader(dataset["train"], batch_size=batch_size)
-    return dataloader
+    def get_current_len(self):
+        return len(self.elements)
 
+    def __len__(self):
+        return len(self.elements)
 
-def encode_dataset(examples, source_tokenizer, context_tokenizer, target_tokenizer):
-    output = {
-        "source_ids": source_tokenizer(examples['source'], truncation=True, padding='max_length').input_ids,
-        "context_ids": context_tokenizer(examples['context'], truncation=True, padding='max_length').input_ids,
-        "target_ids": target_tokenizer(examples['target'], truncation=True, padding='max_length').input_ids,
-    }
-    return output
+    def add_element(self, element):
+        assert self.get_current_len() < self.max_len, "Exceeded max buffer length."
+        self.elements.append(element)
+        return
 
+    def __repr__(self):
+        return str(self.elements)

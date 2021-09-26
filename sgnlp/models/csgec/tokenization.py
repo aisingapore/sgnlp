@@ -15,7 +15,7 @@ def get_pairs(word):
     return pairs
 
 
-class CrosentGecTokenizer(GPT2Tokenizer):
+class CSGTokenizer(GPT2Tokenizer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
