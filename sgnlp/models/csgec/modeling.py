@@ -83,6 +83,8 @@ class CSGModel(CSGPreTrainedModel):
                 encoder_out_dict=encoder_out_dict,
                 auxencoder_out_dict=auxencoder_out_dict,
                 beam_size=self.config.beam_size,
+                max_len=source_ids.shape[1]
+                + 5,  # +5 is arbitrary. Normally we'd add 1 for the EOS token
             )
             output += [best_sentence_indices[1:-1]]
 
