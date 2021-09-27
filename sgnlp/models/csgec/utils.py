@@ -1,6 +1,43 @@
 from math import inf
 
 
+def download_tokenizer_files_from_azure(azure_path: str, local_path: str) -> None:
+    """Download all required files for tokenizer from Azure storage.
+
+    Args:
+        azure_path (str): url to the tokenizer files on the Azure blob.
+        local_path (str): path ot the folder on the local machine.
+    """
+    tokenizer_files = [
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+        "vocab.json",
+        "merges.txt",
+    ]
+
+    file_paths = [urllib.parse.urljoin(azure_path, path) for path in tokenizer_files]
+    for fp in file_paths:
+        download_url_file(fp, local_path)
+
+
+def download_url_file(url: str, save_folder: str) -> None:
+    """Helpder method to download url file.
+
+    Args:
+        url (str): url file address string.
+        save_folder (str): local folder name to save downloaded files.
+    """
+    os.makedirs(save_folder, exist_ok=True)
+    fn_start_pos = url.rfind("/") + 1
+    file_name = url[fn_start_pos:]
+    save_file_name = pathlib.Path(save_folder).joinpath(file_name)
+    req = requests.get(url)
+    if req.status_code == requests.codes.ok:
+        with open(save_file_name, "wb") as f:
+            for data in req:
+                f.write(data)
+
+
 class Buffer:
     def __init__(self, max_len):
         self.max_len = max_len
