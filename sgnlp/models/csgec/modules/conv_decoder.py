@@ -37,7 +37,7 @@ class ConvDecoder(nn.Module):
         """
 
         super(ConvDecoder, self).__init__()
-
+        self.num_conv_layers = num_conv_layers
         self.kernel_size = kernel_size
 
         self.embed_tokens = nn.Embedding(
@@ -127,7 +127,10 @@ class ConvDecoder(nn.Module):
             # x = F.dropout(x, p=self.dropout, training=self.training)
             # print("Y", Y.shape)
             residual_Y = Y
-            if incremental_state is not None and len(incremental_state) >= 7:
+            if (
+                incremental_state is not None
+                and len(incremental_state) >= self.num_conv_layers
+            ):
                 Y = torch.cat(
                     (incremental_state.get_first_element()[:, 1:, :], Y), dim=1
                 )
