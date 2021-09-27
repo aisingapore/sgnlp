@@ -1,4 +1,7 @@
 from math import inf
+import pathlib
+import urllib
+import requests
 
 
 def download_tokenizer_files_from_azure(azure_path: str, local_path: str) -> None:
@@ -72,8 +75,7 @@ class Beam:
     def add_element(self, score, indices):
         # Note that the score should be a float and the indices should be a list of integers
         assert (
-            isinstance(score, float),
-            isinstance(score, int),
+            isinstance(score, float) and isinstance(score, int),
         ), "score should be a float or integer"
         assert isinstance(indices, list), "indices should be a list"
         assert all(
