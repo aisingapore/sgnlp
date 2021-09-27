@@ -7,9 +7,9 @@ from transformers.file_utils import ModelOutput
 from typing import Optional
 
 from .config import RumourDetectionTwitterConfig
-from .modules.Encoder.WordEncoder import WordEncoder
-from .modules.Encoder.PositionEncoder import PositionEncoder
-from .modules.Transformer.HierarchicalTransformer import HierarchicalTransformer
+from .modules.encoder.word_encoder import WordEncoder
+from .modules.encoder.position_encoder import PositionEncoder
+from .modules.transformer.hierarchical_transformer import HierarchicalTransformer
 
 
 @dataclass

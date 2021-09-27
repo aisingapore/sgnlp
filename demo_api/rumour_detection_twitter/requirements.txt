@@ -4,4 +4,4 @@ torch==1.8.1
 numpy
 flask
 gunicorn
-sgnlp==0.0.1
+sgnlp==0.1.1
