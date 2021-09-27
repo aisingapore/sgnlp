@@ -259,7 +259,7 @@ def get_accuracy(model, preprocessor, input_sentences, edu_breaks, decoder_input
     return np.mean(loss_tree_all), np.mean(loss_label_all), span_points, relation_points, nuclearity_points
 
 
-def learning_rate_adjust(optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
+def adjust_learning_rate(optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
     if (epoch % lr_decay_epoch == 0) and (epoch != 0):
         for param_group in optimizer.param_groups:
             param_group['lr'] = param_group['lr'] * lr_decay
@@ -366,7 +366,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     best_f1_relation = 0
     best_f1_span = 0
     for current_epoch in range(epochs):
-        learning_rate_adjust(optimizer, current_epoch, 0.8, lr_decay_epoch)
+        adjust_learning_rate(optimizer, current_epoch, 0.8, lr_decay_epoch)
 
         for current_iteration in range(num_iterations):
             input_sentences_batch, edu_breaks_batch, decoder_input_batch, \
@@ -482,7 +482,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
 
 
 # Segmenter training code
-def sample_a_sorted_batch_from_numpy(input_x, output_y, batch_size, use_cuda):
+def sample_a_sorted_batch_from_numpy(input_x, output_y, batch_size):
     input_x = np.array(input_x, dtype="object")
     output_y = np.array(output_y, dtype="object")
 
@@ -536,6 +536,101 @@ def get_batch_test(x, y, batch_size):
     return batch_x, batch_y, all_lens
 
 
+def sample_dev(x, y, sample_size):
+    select_index = random.sample(range(len(y)), sample_size)
+    x = np.array(x, dtype="object")
+    y = np.array(y, dtype="object")
+
+    return x[select_index], y[select_index]
+
+
+def get_batch_micro_metric(pre_b, ground_b):
+    all_c = []
+    all_r = []
+    all_g = []
+    for i in range(len(ground_b)):
+        index_of_1 = np.array(ground_b[i])
+        index_pre = pre_b[i]
+
+        index_pre = np.array(index_pre)
+
+        end_b = index_of_1[-1]
+        index_pre = index_pre[index_pre != end_b]
+        index_of_1 = index_of_1[index_of_1 != end_b]
+
+        no_correct = len(np.intersect1d(list(index_of_1), list(index_pre)))
+        all_c.append(no_correct)
+        all_r.append(len(index_pre))
+        all_g.append(len(index_of_1))
+
+    return all_c, all_r, all_g
+
+
+# Unused
+def get_batch_metric(pre_b, ground_b):
+    b_pr = []
+    b_re = []
+    b_f1 = []
+    for i, cur_seq_y in enumerate(ground_b):
+        index_of_1 = np.where(cur_seq_y == 1)[0]
+        index_pre = pre_b[i]
+
+        no_correct = len(np.intersect1d(index_of_1, index_pre))
+
+        cur_pre = no_correct / len(index_pre)
+        cur_rec = no_correct / len(index_of_1)
+        cur_f1 = 2 * cur_pre * cur_rec / (cur_pre + cur_rec)
+
+        b_pr.append(cur_pre)
+        b_re.append(cur_rec)
+        b_f1.append(cur_f1)
+
+    return b_pr, b_re, b_f1
+
+
+def check_accuracy(model, x, y, batch_size):
+    num_loops = int(np.ceil(len(y) / batch_size))
+
+    all_ave_loss = []
+    all_start_boundaries = []
+    all_end_boundaries = []
+    all_index_decoder_y = []
+    all_x_save = []
+
+    all_c = []
+    all_r = []
+    all_g = []
+    for i in range(num_loops):
+        start_idx = i * batch_size
+        end_idx = (i + 1) * batch_size
+        if end_idx > len(y):
+            end_idx = len(y)
+
+        batch_x, batch_y, all_lens = get_batch_test(x[start_idx:end_idx], y[start_idx:end_idx], None)
+
+        output = model(batch_x, all_lens, batch_y)
+        batch_ave_loss = output.batch_loss
+        batch_start_boundaries = output.batch_start_boundaries
+        batch_end_boundaries = output.batch_end_boundaries
+
+        all_ave_loss.extend([batch_ave_loss.cpu().data.numpy()])
+        all_start_boundaries.extend(batch_start_boundaries)
+        all_end_boundaries.extend(batch_end_boundaries)
+
+        ba_c, ba_r, ba_g = get_batch_micro_metric(batch_end_boundaries, batch_y)
+
+        all_c.extend(ba_c)
+        all_r.extend(ba_r)
+        all_g.extend(ba_g)
+
+    ba_pre = np.sum(all_c) / np.sum(all_r)
+    ba_rec = np.sum(all_c) / np.sum(all_g)
+    ba_f1 = 2 * ba_pre * ba_rec / (ba_pre + ba_rec)
+
+    return np.mean(all_ave_loss), ba_pre, ba_rec, ba_f1, \
+           (all_x_save, all_index_decoder_y, all_start_boundaries, all_end_boundaries)
+
+
 class TrainSolver(object):
     def __init__(self, model, train_x, train_y, dev_x, dev_y, save_path, batch_size, eval_size, epoch, lr,
                  lr_decay_epoch, weight_decay, use_cuda):
@@ -554,108 +649,8 @@ class TrainSolver(object):
         self.save_path = save_path
         self.weight_decay = weight_decay
 
-    def sample_dev(self):
-
-        select_index = random.sample(range(len(self.train_y)), self.eval_size)
-
-        train_x = np.array(self.train_x, dtype="object")
-        train_y = np.array(self.train_y, dtype="object")
-        test_tr_x = train_x[select_index]
-        test_tr_y = train_y[select_index]
-
-        return test_tr_x, test_tr_y
-
-    def get_batch_micro_metric(self, pre_b, ground_b):
-        All_C = []
-        All_R = []
-        All_G = []
-        for i in range(len(ground_b)):
-            index_of_1 = np.array(ground_b[i])
-            index_pre = pre_b[i]
-
-            index_pre = np.array(index_pre)
-
-            END_B = index_of_1[-1]
-            index_pre = index_pre[index_pre != END_B]
-            index_of_1 = index_of_1[index_of_1 != END_B]
-
-            no_correct = len(np.intersect1d(list(index_of_1), list(index_pre)))
-            All_C.append(no_correct)
-            All_R.append(len(index_pre))
-            All_G.append(len(index_of_1))
-
-        return All_C, All_R, All_G
-
-    def get_batch_metric(self, pre_b, ground_b):
-        b_pr = []
-        b_re = []
-        b_f1 = []
-        for i, cur_seq_y in enumerate(ground_b):
-            index_of_1 = np.where(cur_seq_y == 1)[0]
-            index_pre = pre_b[i]
-
-            no_correct = len(np.intersect1d(index_of_1, index_pre))
-
-            cur_pre = no_correct / len(index_pre)
-            cur_rec = no_correct / len(index_of_1)
-            cur_f1 = 2 * cur_pre * cur_rec / (cur_pre + cur_rec)
-
-            b_pr.append(cur_pre)
-            b_re.append(cur_rec)
-            b_f1.append(cur_f1)
-
-        return b_pr, b_re, b_f1
-
-    def check_accuracy(self, x, y):
-        num_loops = int(np.ceil(len(y) / self.batch_size))
-
-        all_ave_loss = []
-        all_start_boundaries = []
-        all_end_boundaries = []
-        all_index_decoder_y = []
-        all_x_save = []
-
-        all_C = []
-        all_R = []
-        all_G = []
-        for i in range(num_loops):
-            start_idx = i * self.batch_size
-            end_idx = (i + 1) * self.batch_size
-            if end_idx > len(y):
-                end_idx = len(y)
-
-            batch_x, batch_y, all_lens = get_batch_test(x[start_idx:end_idx], y[start_idx:end_idx], None)
-
-            output = self.model(batch_x, all_lens, batch_y)
-            batch_ave_loss = output.batch_loss
-            batch_start_boundaries = output.batch_start_boundaries
-            batch_end_boundaries = output.batch_end_boundaries
-            # batch_ave_loss, batch_start_boundaries, batch_end_boundaries = self.model(batch_x, all_lens, batch_y)
-
-            all_ave_loss.extend([batch_ave_loss.cpu().data.numpy()])
-            all_start_boundaries.extend(batch_start_boundaries)
-            all_end_boundaries.extend(batch_end_boundaries)
-
-            ba_C, ba_R, ba_G = self.get_batch_micro_metric(batch_end_boundaries, batch_y)
-
-            all_C.extend(ba_C)
-            all_R.extend(ba_R)
-            all_G.extend(ba_G)
-
-        ba_pre = np.sum(all_C) / np.sum(all_R)
-        ba_rec = np.sum(all_C) / np.sum(all_G)
-        ba_f1 = 2 * ba_pre * ba_rec / (ba_pre + ba_rec)
-
-        return np.mean(all_ave_loss), ba_pre, ba_rec, ba_f1, \
-               (all_x_save, all_index_decoder_y, all_start_boundaries, all_end_boundaries)
-
-    def adjust_learning_rate(self, optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
-        if (epoch % lr_decay_epoch == 0) and (epoch != 0):
-            for param_group in optimizer.param_groups:
-                param_group['lr'] *= lr_decay
-
     def train(self):
-        test_train_x, test_train_y = self.sample_dev()
+        test_train_x, test_train_y = sample_dev(self.train_x, self.train_y, self.eval_size)
 
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=self.lr,
                                      weight_decay=self.weight_decay)
@@ -668,13 +663,12 @@ class TrainSolver(object):
         best_f1 = 0
 
         for current_epoch in range(self.num_epochs):
-
-            self.adjust_learning_rate(optimizer, current_epoch, 0.8, self.lr_decay_epoch)
+            adjust_learning_rate(optimizer, current_epoch, 0.8, self.lr_decay_epoch)
 
             track_epoch_loss = []
             for current_iter in range(num_iterations):
                 batch_x, batch_x_index, batch_y, all_lens = sample_a_sorted_batch_from_numpy(
-                    self.train_x, self.train_y, self.batch_size, self.use_cuda)
+                    self.train_x, self.train_y, self.batch_size)
 
                 self.model.zero_grad()
 
@@ -693,10 +687,11 @@ class TrainSolver(object):
             self.model.eval()
 
             logger.info('Running end of epoch evaluations on sample train data and test data...')
-            tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = self.check_accuracy(test_train_x,
-                                                                                       test_train_y)
+            tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = check_accuracy(self.model, test_train_x,
+                                                                                  test_train_y, self.batch_size)
 
-            dev_batch_ave_loss, dev_pre, dev_rec, dev_f1, dev_visdata = self.check_accuracy(self.dev_x, self.dev_y)
+            dev_batch_ave_loss, dev_pre, dev_rec, dev_f1, dev_visdata = check_accuracy(self.model, self.dev_x,
+                                                                                       self.dev_y, self.batch_size)
             _, _, _, all_end_boundaries = dev_visdata
 
             logger.info(f'train sample -- loss: {tr_batch_ave_loss:.3f}, '
@@ -755,6 +750,7 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     batch_size = cfg.bsize
     lrdepoch = cfg.lrdepoch
     elmo_size = cfg.elmo_size
+    epochs = cfg.epochs
 
     is_bidirectional = cfg.isbi == 'True'
     finetune = cfg.fine == 'True'
@@ -784,12 +780,77 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     eval_size = len(dev_x) * 2 // 3
 
     save_path = os.path.join(save_dir, filename)
-    mysolver = TrainSolver(model, tr_x, tr_y, dev_x, dev_y, save_path,
-                           batch_size=batch_size, eval_size=eval_size, epoch=cfg.epochs, lr=lr, lr_decay_epoch=lrdepoch,
-                           weight_decay=wd,
-                           use_cuda=use_cuda)
+    test_train_x, test_train_y = sample_dev(tr_x, tr_y, eval_size)
 
-    best_epoch, best_pre, best_rec, best_f1 = mysolver.train()
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr,
+                                 weight_decay=wd)
+
+    num_iterations = int(np.round(len(tr_y) / batch_size))
+
+    os.makedirs(save_path, exist_ok=True)
+
+    best_epoch = 0
+    best_f1 = 0
+
+    for current_epoch in range(epochs):
+        adjust_learning_rate(optimizer, current_epoch, 0.8, lrdepoch)
+
+        track_epoch_loss = []
+        for current_iter in range(num_iterations):
+            batch_x, batch_x_index, batch_y, all_lens = sample_a_sorted_batch_from_numpy(
+                tr_x, tr_y, batch_size)
+
+            model.zero_grad()
+
+            neg_loss = model.neg_log_likelihood(batch_x, batch_x_index, batch_y, all_lens)
+            neg_loss_v = float(neg_loss.data)
+
+            track_epoch_loss.append(neg_loss_v)
+            logger.info(f'Epoch: {current_epoch + 1}/{epochs}, '
+                        f'iteration: {current_iter + 1}/{num_iterations}, '
+                        f'loss: {neg_loss_v:.3f}')
+
+            neg_loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
+            optimizer.step()
+
+        model.eval()
+
+        logger.info('Running end of epoch evaluations on sample train data and test data...')
+        tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = check_accuracy(model, test_train_x,
+                                                                              test_train_y, batch_size)
+
+        dev_batch_ave_loss, dev_pre, dev_rec, dev_f1, dev_visdata = check_accuracy(model, dev_x,
+                                                                                   dev_y, batch_size)
+        _, _, _, all_end_boundaries = dev_visdata
+
+        logger.info(f'train sample -- loss: {tr_batch_ave_loss:.3f}, '
+                    f'precision: {tr_pre:.3f}, recall: {tr_rec:.3f}, f1: {tr_f1:.3f}')
+        logger.info(f'test sample -- loss: {dev_batch_ave_loss:.3f}, '
+                    f'precision: {dev_pre:.3f}, recall: {dev_rec:.3f}, f1: {dev_f1:.3f}')
+
+        if best_f1 < dev_f1:
+            best_f1 = dev_f1
+            best_rec = dev_rec
+            best_pre = dev_pre
+            best_epoch = current_epoch
+
+        save_data = [current_epoch, tr_batch_ave_loss, tr_pre, tr_rec, tr_f1,
+                     dev_batch_ave_loss, dev_pre, dev_rec, dev_f1]
+
+        save_file_name = f'bs_{batch_size}_es_{eval_size}_lr_{lr}_lrdc_{lrdepoch}_' \
+                         f'wd_{wd}_epoch_loss_acc_pk_wd.txt'
+        with open(os.path.join(save_path, save_file_name), 'a+') as f:
+            f.write(','.join(map(str, save_data)) + '\n')
+
+        if current_epoch == best_epoch:
+            logger.info('Saving best model...')
+            model.save_pretrained(save_path)
+
+            with open(os.path.join(save_path, 'best_segmentation.pickle'), 'wb') as f:
+                pickle.dump(all_end_boundaries, f)
+
+        model.train()
 
     with open(os.path.join(save_dir, 'results.csv'), 'a') as f:
         writer = csv.DictWriter(f, fieldnames=["best_epoch", "precision", "recall", "f1"])
