@@ -5,9 +5,8 @@ local build_and_push_staging(module_name, image_name) = {
   script: [
     "echo 'Logging in to AISG Docker Registry...'",
     "echo $STG_REGISTRY_PASSWORD | docker login registry.aisingapore.net -u $STG_DOCKER_USER --password-stdin",
-    "cd demo_api/%s" % module_name,
     "echo 'Building and pushing image...'",
-    "docker build --no-cache -t %s ." % module_name,
+    "docker build --no-cache -t %s -f demo_api/%s/Dockerfile demo_api/" % [module_name, module_name],
     "docker tag %s registry.aisingapore.net/sg-nlp/%s:latest" % [module_name, image_name],
     "docker push registry.aisingapore.net/sg-nlp/%s:latest" % image_name,
   ],
@@ -95,30 +94,15 @@ local api_names = {
     image_name: "reccon-emotion-entailment",
     deployment_name: "emotion-entailment"
   },
-  "lif_3way_ap": {
-    module_name: "lif_3way_ap",
-    image_name: "lif-3way-ap",
-    deployment_name: "lif-3way-ap"
-  },
   "lsr": {
     module_name: "lsr",
     image_name: "lsr",
     deployment_name: "lsr"
   },
-  "nea": {
-    module_name: "nea",
-    image_name: "nea",
-    deployment_name: "nea"
-  },
   "span_extraction": {
     module_name: "span_extraction",
     image_name: "reccon-span-extraction",
     deployment_name: "span-extraction"
-  },
-  "ufd": {
-    module_name: "ufd",
-    image_name: "ufd",
-    deployment_name: "ufd"
   },
   "rumour_detection_twitter": {
     module_name: "rumour_detection_twitter",
