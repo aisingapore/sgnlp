@@ -1,5 +1,6 @@
 import pathlib
 import json
+import re
 
 from flask import Flask, jsonify, request
 from nltk import word_tokenize, sent_tokenize
@@ -61,8 +62,8 @@ def predict():
 
     predicted_sentences = []
     for src_text, ctx_text in prepared_inputs:
-        src_ids = src_tokenizer(src_text).input_ids.reshape(1, -1)
-        ctx_ids = ctx_tokenizer(ctx_text).input_ids.reshape(1, -1)
+        src_ids = torch.LongTensor(src_tokenizer(src_text).input_ids).reshape(1, -1)
+        ctx_ids = torch.LongTensor(ctx_tokenizer(ctx_text).input_ids).reshape(1, -1)
 
         predicted_indices = model.decode(
             src_ids,
@@ -72,7 +73,7 @@ def predict():
             prepare_output_sentence(tgt_tokenizer.decode(predicted_indices))
         ]
 
-    output = {"output": list(zip(original_sentences, results))}
+    output = {"output": list(zip(original_sentences, predicted_sentences))}
     return json.dumps(output)
 
 
@@ -85,7 +86,7 @@ def prepare_sentences(text):
 
     output = []
     ctx = []
-    for idx, src in enumerate(sents):
+    for idx, src in enumerate(original_sentences):
         if idx == 0:
             output += [[src, [src]]]
         else:
