@@ -2,6 +2,7 @@ import pathlib
 import json
 import re
 
+
 from flask import Flask, jsonify, request
 from nltk import word_tokenize, sent_tokenize
 import torch
@@ -74,6 +75,7 @@ def predict():
         ]
 
     output = {"output": list(zip(original_sentences, predicted_sentences))}
+  
     return json.dumps(output)
 
 
@@ -86,6 +88,7 @@ def prepare_sentences(text):
 
     output = []
     ctx = []
+
     for idx, src in enumerate(original_sentences):
         if idx == 0:
             output += [[src, [src]]]
