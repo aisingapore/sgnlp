@@ -40,7 +40,7 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         self.word_dim = config.word_dim
         self.hidden_dim = config.hidden_dim
         self.dropout_prob = config.dropout_prob
-        self.is_bi_encoder_rnn = config.is_bi_encoder_rnn
+        self.use_bilstm = config.use_bilstm
         self.num_rnn_layers = config.num_rnn_layers
         self.rnn_type = config.rnn_type
         self.with_finetuning = config.with_finetuning
@@ -53,8 +53,8 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
 
         if self.rnn_type in ['LSTM', 'GRU']:
             self.decoder_rnn = getattr(nn, self.rnn_type)(
-                input_size=2 * self.hidden_dim if self.is_bi_encoder_rnn else self.hidden_dim,
-                hidden_size=2 * self.hidden_dim if self.is_bi_encoder_rnn else self.hidden_dim,
+                input_size=2 * self.hidden_dim if self.use_bilstm else self.hidden_dim,
+                hidden_size=2 * self.hidden_dim if self.use_bilstm else self.hidden_dim,
                 num_layers=self.num_rnn_layers,
                 dropout=self.dropout_prob,
                 batch_first=True)
@@ -63,7 +63,7 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
                 input_size=self.word_dim,
                 hidden_size=self.hidden_dim,
                 num_layers=self.num_rnn_layers,
-                bidirectional=self.is_bi_encoder_rnn,
+                bidirectional=self.use_bilstm,
                 dropout=self.dropout_prob,
                 batch_first=True)
         else:
@@ -71,7 +71,7 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
 
         self.use_cuda = config.use_cuda
 
-        if self.is_bi_encoder_rnn:
+        if self.use_bilstm:
             self.num_encoder_bi = 2
         else:
             self.num_encoder_bi = 1

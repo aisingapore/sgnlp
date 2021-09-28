@@ -7,7 +7,7 @@ class RstPointerSegmenterConfig(PretrainedConfig):
             word_dim=1024,
             hidden_dim=64,
             dropout_prob=0.2,
-            is_bi_encoder_rnn=True,
+            use_bilstm=True,
             num_rnn_layers=6,
             rnn_type="GRU",
             with_finetuning=False,
@@ -19,7 +19,7 @@ class RstPointerSegmenterConfig(PretrainedConfig):
         self.word_dim = word_dim
         self.hidden_dim = hidden_dim
         self.dropout_prob = dropout_prob
-        self.is_bi_encoder_rnn = is_bi_encoder_rnn
+        self.use_bilstm = use_bilstm
         self.num_rnn_layers = num_rnn_layers
         self.rnn_type = rnn_type
         self.with_finetuning = with_finetuning

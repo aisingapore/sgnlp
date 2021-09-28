@@ -1,4 +1,3 @@
-import csv
 import os
 import copy
 import pickle
@@ -7,7 +6,6 @@ import random
 import logging
 import numpy as np
 from typing import List
-from torch.backends import cudnn
 
 from sgnlp.utils.csv_writer import CsvWriter
 from .preprocess import RSTPreprocessor
@@ -631,100 +629,6 @@ def check_accuracy(model, x, y, batch_size):
            (all_x_save, all_index_decoder_y, all_start_boundaries, all_end_boundaries)
 
 
-class TrainSolver(object):
-    def __init__(self, model, train_x, train_y, dev_x, dev_y, save_path, batch_size, eval_size, epoch, lr,
-                 lr_decay_epoch, weight_decay, use_cuda):
-
-        self.lr = lr
-        self.model = model
-        self.num_epochs = epoch
-        self.train_x = train_x
-        self.train_y = train_y
-        self.use_cuda = use_cuda
-        self.batch_size = batch_size
-        self.lr_decay_epoch = lr_decay_epoch
-        self.eval_size = eval_size
-        self.dev_x, self.dev_y = dev_x, dev_y
-        self.model = model
-        self.save_path = save_path
-        self.weight_decay = weight_decay
-
-    def train(self):
-        test_train_x, test_train_y = sample_dev(self.train_x, self.train_y, self.eval_size)
-
-        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=self.lr,
-                                     weight_decay=self.weight_decay)
-
-        num_iterations = int(np.round(len(self.train_y) / self.batch_size))
-
-        os.makedirs(self.save_path, exist_ok=True)
-
-        best_epoch = 0
-        best_f1 = 0
-
-        for current_epoch in range(self.num_epochs):
-            adjust_learning_rate(optimizer, current_epoch, 0.8, self.lr_decay_epoch)
-
-            track_epoch_loss = []
-            for current_iter in range(num_iterations):
-                batch_x, batch_x_index, batch_y, all_lens = sample_a_sorted_batch_from_numpy(
-                    self.train_x, self.train_y, self.batch_size)
-
-                self.model.zero_grad()
-
-                neg_loss = self.model.neg_log_likelihood(batch_x, batch_x_index, batch_y, all_lens)
-                neg_loss_v = float(neg_loss.data)
-
-                track_epoch_loss.append(neg_loss_v)
-                logger.info(f'Epoch: {current_epoch + 1}/{self.num_epochs}, '
-                            f'iteration: {current_iter + 1}/{num_iterations}, '
-                            f'loss: {neg_loss_v:.3f}')
-
-                neg_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
-                optimizer.step()
-
-            self.model.eval()
-
-            logger.info('Running end of epoch evaluations on sample train data and test data...')
-            tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = check_accuracy(self.model, test_train_x,
-                                                                                  test_train_y, self.batch_size)
-
-            dev_batch_ave_loss, dev_pre, dev_rec, dev_f1, dev_visdata = check_accuracy(self.model, self.dev_x,
-                                                                                       self.dev_y, self.batch_size)
-            _, _, _, all_end_boundaries = dev_visdata
-
-            logger.info(f'train sample -- loss: {tr_batch_ave_loss:.3f}, '
-                        f'precision: {tr_pre:.3f}, recall: {tr_rec:.3f}, f1: {tr_f1:.3f}')
-            logger.info(f'test sample -- loss: {dev_batch_ave_loss:.3f}, '
-                        f'precision: {dev_pre:.3f}, recall: {dev_rec:.3f}, f1: {dev_f1:.3f}')
-
-            if best_f1 < dev_f1:
-                best_f1 = dev_f1
-                best_rec = dev_rec
-                best_pre = dev_pre
-                best_epoch = current_epoch
-
-            save_data = [current_epoch, tr_batch_ave_loss, tr_pre, tr_rec, tr_f1,
-                         dev_batch_ave_loss, dev_pre, dev_rec, dev_f1]
-
-            save_file_name = f'bs_{self.batch_size}_es_{self.eval_size}_lr_{self.lr}_lrdc_{self.lr_decay_epoch}_' \
-                             f'wd_{self.weight_decay}_epoch_loss_acc_pk_wd.txt'
-            with open(os.path.join(self.save_path, save_file_name), 'a+') as f:
-                f.write(','.join(map(str, save_data)) + '\n')
-
-            if current_epoch == best_epoch:
-                logger.info('Saving best model...')
-                self.model.save_pretrained(self.save_path)
-
-                with open(os.path.join(self.save_path, 'best_segmentation.pickle'), 'wb') as f:
-                    pickle.dump(all_end_boundaries, f)
-
-            self.model.train()
-
-        return best_epoch, best_pre, best_rec, best_f1
-
-
 def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     logger.info(f'===== Training RST Pointer Segmenter =====')
 
@@ -737,24 +641,21 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda:0' if use_cuda else 'cpu')
     logger.info(f'Using CUDA: {use_cuda}')
-    iscudnn = cfg.iscudnn == 'True'
 
-    cudnn.enabled = iscudnn
-    hidden_dim = cfg.hdim
+    hidden_dim = cfg.hidden_dim
     rnn_type = cfg.rnn
-    rnn_layers = cfg.rnnlayers
+    rnn_layers = cfg.rnn_layers
     lr = cfg.lr
-    dout = cfg.dout
-    wd = cfg.wd
-    myseed = cfg.seed
-    batch_size = cfg.bsize
-    lrdepoch = cfg.lrdepoch
+    dropout = cfg.dropout
+    wd = cfg.weight_decay
+    batch_size = cfg.batch_size
+    lr_decay_epoch = cfg.lr_decay_epoch
     elmo_size = cfg.elmo_size
     epochs = cfg.epochs
 
-    is_bidirectional = cfg.isbi == 'True'
-    finetune = cfg.fine == 'True'
-    is_batch_norm = cfg.isbarnor == 'True'
+    use_bilstm = cfg.use_bilstm
+    finetune = cfg.finetune
+    is_batch_norm = cfg.use_batch_norm
 
     tr_x = pickle.load(open(os.path.join(train_data_dir, "tokenized_sentences.pickle"), "rb"))
     tr_y = pickle.load(open(os.path.join(train_data_dir, "edu_breaks.pickle"), "rb"))
@@ -762,16 +663,10 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     dev_x = pickle.load(open(os.path.join(test_data_dir, "tokenized_sentences.pickle"), "rb"))
     dev_y = pickle.load(open(os.path.join(test_data_dir, "edu_breaks.pickle"), "rb"))
 
-    filename = 'elmoLarge_dot_' + str(myseed) + 'seed_' + str(hidden_dim) + 'hidden_' + \
-               str(is_bidirectional) + 'bi_' + rnn_type + 'rnn_' + str(finetune) + 'Fined_' + str(rnn_layers) + \
-               'rnnlayers_' + str(lr) + 'lr_' + str(dout) + 'dropout_' + str(wd) + 'weightdecay_' + str(
-        batch_size) + 'bsize_' + str(lrdepoch) + 'lrdepoch_' + \
-               str(is_batch_norm) + 'barnor_' + str(iscudnn) + 'iscudnn'
-
     model_config = RstPointerSegmenterConfig(hidden_dim=hidden_dim,
-                                             is_bi_encoder_rnn=is_bidirectional,
+                                             use_bilstm=use_bilstm,
                                              rnn_type=rnn_type, rnn_layers=rnn_layers,
-                                             dropout_prob=dout, use_cuda=use_cuda, with_finetuning=finetune,
+                                             dropout_prob=dropout, use_cuda=use_cuda, with_finetuning=finetune,
                                              is_batch_norm=is_batch_norm, elmo_size=elmo_size)
     model = RstPointerSegmenterModel(model_config)
     model.to(device=device)
@@ -779,7 +674,6 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     # Arbitrary eval_size
     eval_size = len(dev_x) * 2 // 3
 
-    save_path = os.path.join(save_dir, filename)
     test_train_x, test_train_y = sample_dev(tr_x, tr_y, eval_size)
 
     optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr,
@@ -787,13 +681,18 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
 
     num_iterations = int(np.round(len(tr_y) / batch_size))
 
-    os.makedirs(save_path, exist_ok=True)
+    os.makedirs(save_dir, exist_ok=True)
+    best_results_writer = CsvWriter(file_path=os.path.join(save_dir, 'best_results.csv'),
+                                    fieldnames=["best_epoch", "precision", "recall", "f1"])
+    results_writer = CsvWriter(file_path=os.path.join(save_dir, 'results.csv'),
+                               fieldnames=["current_epoch", "train_loss", "train_precision", "train_recall", "train_f1",
+                                           "dev_loss", "dev_precision", "dev_recall", "dev_f1"])
 
     best_epoch = 0
     best_f1 = 0
 
     for current_epoch in range(epochs):
-        adjust_learning_rate(optimizer, current_epoch, 0.8, lrdepoch)
+        adjust_learning_rate(optimizer, current_epoch, 0.8, lr_decay_epoch)
 
         track_epoch_loss = []
         for current_iter in range(num_iterations):
@@ -835,31 +734,33 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
             best_pre = dev_pre
             best_epoch = current_epoch
 
-        save_data = [current_epoch, tr_batch_ave_loss, tr_pre, tr_rec, tr_f1,
-                     dev_batch_ave_loss, dev_pre, dev_rec, dev_f1]
-
-        save_file_name = f'bs_{batch_size}_es_{eval_size}_lr_{lr}_lrdc_{lrdepoch}_' \
-                         f'wd_{wd}_epoch_loss_acc_pk_wd.txt'
-        with open(os.path.join(save_path, save_file_name), 'a+') as f:
-            f.write(','.join(map(str, save_data)) + '\n')
+        results_writer.writerow({
+            "current_epoch": current_epoch,
+            "train_loss": tr_batch_ave_loss,
+            "train_precision": tr_pre,
+            "train_recall": tr_rec,
+            "train_f1": tr_f1,
+            "dev_loss": dev_batch_ave_loss,
+            "dev_precision": dev_pre,
+            "dev_recall": dev_rec,
+            "dev_f1": dev_f1
+        })
 
         if current_epoch == best_epoch:
             logger.info('Saving best model...')
-            model.save_pretrained(save_path)
+            model.save_pretrained(save_dir)
 
-            with open(os.path.join(save_path, 'best_segmentation.pickle'), 'wb') as f:
+            with open(os.path.join(save_dir, 'best_segmentation.pickle'), 'wb') as f:
                 pickle.dump(all_end_boundaries, f)
 
         model.train()
 
-    with open(os.path.join(save_dir, 'results.csv'), 'a') as f:
-        writer = csv.DictWriter(f, fieldnames=["best_epoch", "precision", "recall", "f1"])
-        writer.writerow({
-            'best_epoch': best_epoch,
-            'precision': best_pre,
-            'recall': best_rec,
-            'f1': best_f1
-        })
+    best_results_writer.writerow({
+        'best_epoch': best_epoch,
+        'precision': best_pre,
+        'recall': best_rec,
+        'f1': best_f1
+    })
 
 
 if __name__ == "__main__":
