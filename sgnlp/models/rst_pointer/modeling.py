@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.utils.rnn as R
-from allennlp.modules.elmo import batch_to_ids
 from torch.autograd import Variable
 from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
@@ -23,9 +22,9 @@ from .utils import get_relation_and_nucleus
 
 @dataclass
 class RstPointerSegmenterModelOutput(ModelOutput):
-    batch_loss: float = None
-    batch_start_boundaries: np.array = None
-    batch_end_boundaries: np.array = None
+    loss: float = None
+    start_boundaries: np.array = None
+    end_boundaries: np.array = None
 
 
 class RstPointerSegmenterPreTrainedModel(PreTrainedModel):
@@ -69,31 +68,19 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         else:
             raise ValueError('rnn_type should be one of [\'LSTM\', \'GRU\'].')
 
-        self.use_cuda = config.use_cuda
-
         if self.use_bilstm:
             self.num_encoder_bi = 2
         else:
             self.num_encoder_bi = 1
 
     def init_hidden(self, hsize, batchsize):
-
         if self.rnn_type == 'LSTM':
+            h_0 = Variable(torch.zeros(self.num_encoder_bi * self.num_rnn_layers, batchsize, hsize)).to(self.device)
+            c_0 = Variable(torch.zeros(self.num_encoder_bi * self.num_rnn_layers, batchsize, hsize)).to(self.device)
 
-            h_0 = Variable(torch.zeros(self.num_encoder_bi * self.num_rnn_layers, batchsize, hsize))
-            c_0 = Variable(torch.zeros(self.num_encoder_bi * self.num_rnn_layers, batchsize, hsize))
-
-            if self.use_cuda:
-                h_0 = h_0.cuda()
-                c_0 = c_0.cuda()
-
-            return (h_0, c_0)
+            return h_0, c_0
         else:
-
-            h_0 = Variable(torch.zeros(self.num_encoder_bi * self.num_rnn_layers, batchsize, hsize))
-
-            if self.use_cuda:
-                h_0 = h_0.cuda()
+            h_0 = Variable(torch.zeros(self.num_encoder_bi * self.num_rnn_layers, batchsize, hsize)).to(self.device)
 
             return h_0
 
@@ -110,30 +97,24 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
 
         return output, h
 
-    def pointer_encoder(self, batch_x, batch_x_lens):
+    def pointer_encoder(self, sentences_ids, sentences_lens):
         batch_norm = nn.BatchNorm1d(self.word_dim, affine=False, track_running_stats=False)
 
-        batch_size = len(batch_x)
+        batch_size = len(sentences_ids)
 
-        # # to convert input to ELMo embeddings
-        character_ids = batch_to_ids(batch_x)
-        if self.use_cuda:
-            character_ids = character_ids.cuda()
-        embeddings = self.embedding(character_ids)
+        embeddings = self.embedding(sentences_ids)
         batch_x_elmo = embeddings['elmo_representations'][0]  # two layers output  [batch,length,d_elmo]
-        if self.use_cuda:
-            batch_x_elmo = batch_x_elmo.cuda()
 
-        X = batch_x_elmo
+        x = batch_x_elmo
         if self.is_batch_norm:
-            X = X.permute(0, 2, 1)  # N C L
-            X = batch_norm(X)
-            X = X.permute(0, 2, 1)  # N L C
+            x = x.permute(0, 2, 1)  # N C L
+            x = batch_norm(x)
+            x = x.permute(0, 2, 1)  # N L C
 
-        X = self.dropout(X)
+        x = self.dropout(x)
 
         encoder_lstm_co_h_o = self.init_hidden(self.hidden_dim, batch_size)
-        output_encoder, hidden_states_encoder = self._run_rnn_packed(self.encoder_rnn, X, batch_x_lens,
+        output_encoder, hidden_states_encoder = self._run_rnn_packed(self.encoder_rnn, x, sentences_lens,
                                                                      encoder_lstm_co_h_o)  # batch_first=True
         output_encoder = output_encoder.contiguous()
         output_encoder = self.dropout(output_encoder)
@@ -154,15 +135,6 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         logits = F.log_softmax(attention_pointer, dim=1)
 
         return logits, att_weights
-
-    def neg_log_likelihood(self, batch_x, batch_x_index, batch_y, lens):
-        # TODO: No diff with forward actually
-        encoder_hn, encoder_h_end = self.pointer_encoder(batch_x, lens)
-
-        # loss = self.training_decoder(encoder_hn, encoder_h_end, batch_x_index, batch_y, lens)
-        _, _, _, loss = self.test_decoder(encoder_hn, encoder_h_end, lens, batch_y)
-
-        return loss
 
     def test_decoder(self, h_n, h_end, batch_x_lens, batch_y=None):
         """
@@ -243,9 +215,8 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
                     else:
                         cur_ground_y = cur_y_index[loop_j]
 
-                    cur_ground_y_var = Variable(torch.LongTensor([max(0, int(cur_ground_y) - cur_start_boundary)]))
-                    if self.use_cuda:
-                        cur_ground_y_var = cur_ground_y_var.cuda()
+                    cur_ground_y_var = Variable(torch.LongTensor([max(0, int(cur_ground_y) - cur_start_boundary)])).to(
+                        self.device)
 
                     batch_loss += loss_function(cur_logits, cur_ground_y_var)
 
@@ -270,26 +241,22 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
             batch_start_boundaries.append(cur_start_boundaries)
             batch_align_matrix.append(cur_align_matrix)
 
-        # batch_end_boundaries = np.array(batch_end_boundaries, dtype="object")
-        # batch_start_boundaries = np.array(batch_start_boundaries, dtype="object")
-        # batch_align_matrix = np.array(batch_align_matrix, dtype="object")
-
         batch_loss = batch_loss / total_loops if batch_y is not None else None
 
         return batch_start_boundaries, batch_end_boundaries, batch_align_matrix, batch_loss
 
-    def forward(self, x_batch, x_lens, y_batch=None):
-        encoder_h_n, encoder_h_end = self.pointer_encoder(x_batch, x_lens)
-        batch_start_boundaries, batch_end_boundaries, _, batch_loss = self.test_decoder(encoder_h_n, encoder_h_end,
-                                                                                        x_lens, y_batch)
-        return RstPointerSegmenterModelOutput(batch_loss, batch_start_boundaries, batch_end_boundaries)
+    def forward(self, tokenized_sentence_ids, sentence_lens, labels=None):
+        encoder_h_n, encoder_h_end = self.pointer_encoder(tokenized_sentence_ids, sentence_lens)
+        start_boundaries, end_boundaries, _, loss = self.test_decoder(encoder_h_n, encoder_h_end,
+                                                                      sentence_lens, labels)
+        return RstPointerSegmenterModelOutput(loss, start_boundaries, end_boundaries)
 
 
 @dataclass
 class RstPointerParserModelOutput(ModelOutput):
-    loss_tree_batch: np.array = None
-    loss_label_batch: np.array = None
-    split_batch: List[List[DiscourseTreeSplit]] = None
+    loss_tree: np.array = None
+    loss_label: np.array = None
+    splits: List[List[DiscourseTreeSplit]] = None
 
 
 class RstPointerParserPreTrainedModel(PreTrainedModel):

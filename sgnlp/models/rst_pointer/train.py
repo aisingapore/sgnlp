@@ -8,7 +8,7 @@ import numpy as np
 from typing import List
 
 from sgnlp.utils.csv_writer import CsvWriter
-from .preprocess import RSTPreprocessor
+from .preprocess import RstPreprocessor
 from .modeling import RstPointerParserModel, RstPointerParserConfig, RstPointerSegmenterModel, RstPointerSegmenterConfig
 from .utils import parse_args_and_load_config
 from .data_class import RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs
@@ -18,12 +18,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# Shared functions
 def setup(seed):
     # Set seeds
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
+
+
+def adjust_learning_rate(optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
+    if (epoch % lr_decay_epoch == 0) and (epoch != 0):
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = param_group['lr'] * lr_decay
 
 
 # Parser training code
@@ -228,9 +235,9 @@ def get_accuracy(model, preprocessor, input_sentences, edu_breaks, decoder_input
                            parsing_breaks[start_idx:end_idx],
                            golden_metric[start_idx:end_idx], batch_size)
 
-        input_sentences_ids_batch, sentence_lengths = preprocessor(input_sentences_batch)
+        input_sentences_ids_batch, sentence_lengths = preprocessor.get_elmo_char_ids(input_sentences_batch)
 
-        model_output = model.forward(
+        model_output = model(
             input_sentence=input_sentences_ids_batch,
             edu_breaks=edu_breaks_batch,
             label_index=relation_label_batch,
@@ -239,10 +246,10 @@ def get_accuracy(model, preprocessor, input_sentences, edu_breaks, decoder_input
             generate_splits=True
         )
 
-        loss_tree_all.append(model_output.loss_tree_batch)
-        loss_label_all.append(model_output.loss_label_batch)
+        loss_tree_all.append(model_output.loss_tree)
+        loss_label_all.append(model_output.loss_label)
         correct_span_batch, correct_relation_batch, correct_nuclearity_batch, \
-        no_system_batch, no_golden_batch = get_batch_measure(model_output.split_batch,
+        no_system_batch, no_golden_batch = get_batch_measure(model_output.splits,
                                                              golden_metric_splits_batch)
 
         correct_span = correct_span + correct_span_batch
@@ -255,20 +262,6 @@ def get_accuracy(model, preprocessor, input_sentences, edu_breaks, decoder_input
         correct_span, correct_relation, correct_nuclearity, no_system, no_golden)
 
     return np.mean(loss_tree_all), np.mean(loss_label_all), span_points, relation_points, nuclearity_points
-
-
-def adjust_learning_rate(optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
-    if (epoch % lr_decay_epoch == 0) and (epoch != 0):
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = param_group['lr'] * lr_decay
-
-
-def log_metrics(log_prefix, loss_tree, loss_label, f1_span, f1_relation, f1_nuclearity):
-    logger.info(f'{log_prefix} \n'
-                f'\t'
-                f'loss_tree: {loss_tree:.3f}, loss_label: {loss_label:.3f} \n'
-                f'\t'
-                f'f1_span: {f1_span:.3f}, f1_relation: {f1_relation:.3f}, f1_nuclearity: {f1_nuclearity:.3f}')
 
 
 def train_parser(cfg: RstPointerParserTrainArgs) -> None:
@@ -354,7 +347,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     model = RstPointerParserModel(model_config)
     model = model.to(device)
 
-    preprocessor = RSTPreprocessor(device=device)
+    preprocessor = RstPreprocessor()
 
     optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
                                  lr=lr, betas=(0.9, 0.9), weight_decay=weight_decay)
@@ -377,7 +370,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
 
             model.zero_grad()
 
-            input_sentences_ids_batch, sentence_lengths = preprocessor(input_sentences_batch)
+            input_sentences_ids_batch, sentence_lengths = preprocessor.get_elmo_char_ids(input_sentences_batch)
 
             loss_tree_batch, loss_label_batch = model.forward_train(
                 input_sentence_ids_batch=input_sentences_ids_batch,
@@ -436,20 +429,17 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
             best_recall_nuclearity = recall_nuclearity
 
         # Log evaluation and test metrics
-        log_metrics(log_prefix='Metrics on test data --',
-                    loss_tree=loss_tree_test, loss_label=loss_label_test,
-                    f1_span=f1_span, f1_relation=f1_relation, f1_nuclearity=f1_nuclearity)
-
-        logger.info(f'End of epoch {current_epoch + 1}')
-
-        results_writer.writerow({
+        epoch_metrics = {
             'current_epoch': current_epoch,
             'loss_tree_test': loss_tree_test,
             'loss_label_test': loss_label_test,
             'f1_span': f1_span,
             'f1_relation': f1_relation,
             'f1_nuclearity': f1_nuclearity
-        })
+        }
+        logger.info(f'Test metrics: {epoch_metrics}')
+
+        results_writer.writerow(epoch_metrics)
 
         # Saving model
         if best_epoch == current_epoch:
@@ -534,7 +524,7 @@ def get_batch_test(x, y, batch_size):
     return batch_x, batch_y, all_lens
 
 
-def sample_dev(x, y, sample_size):
+def sample_batch(x, y, sample_size):
     select_index = random.sample(range(len(y)), sample_size)
     x = np.array(x, dtype="object")
     y = np.array(y, dtype="object")
@@ -586,7 +576,7 @@ def get_batch_metric(pre_b, ground_b):
     return b_pr, b_re, b_f1
 
 
-def check_accuracy(model, x, y, batch_size):
+def check_accuracy(model, preprocessor, x, y, batch_size):
     num_loops = int(np.ceil(len(y) / batch_size))
 
     all_ave_loss = []
@@ -606,10 +596,12 @@ def check_accuracy(model, x, y, batch_size):
 
         batch_x, batch_y, all_lens = get_batch_test(x[start_idx:end_idx], y[start_idx:end_idx], None)
 
-        output = model(batch_x, all_lens, batch_y)
-        batch_ave_loss = output.batch_loss
-        batch_start_boundaries = output.batch_start_boundaries
-        batch_end_boundaries = output.batch_end_boundaries
+        input_sentences_ids_batch, _ = preprocessor.get_elmo_char_ids(batch_x)
+
+        output = model(input_sentences_ids_batch, all_lens, batch_y)
+        batch_ave_loss = output.loss
+        batch_start_boundaries = output.start_boundaries
+        batch_end_boundaries = output.end_boundaries
 
         all_ave_loss.extend([batch_ave_loss.cpu().data.numpy()])
         all_start_boundaries.extend(batch_start_boundaries)
@@ -671,10 +663,12 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     model = RstPointerSegmenterModel(model_config)
     model.to(device=device)
 
+    preprocessor = RstPreprocessor()
+
     # Arbitrary eval_size
     eval_size = len(dev_x) * 2 // 3
 
-    test_train_x, test_train_y = sample_dev(tr_x, tr_y, eval_size)
+    test_train_x, test_train_y = sample_batch(tr_x, tr_y, eval_size)
 
     optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr,
                                  weight_decay=wd)
@@ -701,25 +695,28 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
 
             model.zero_grad()
 
-            neg_loss = model.neg_log_likelihood(batch_x, batch_x_index, batch_y, all_lens)
-            neg_loss_v = float(neg_loss.data)
+            input_sentences_ids_batch, _ = preprocessor.get_elmo_char_ids(batch_x)
 
-            track_epoch_loss.append(neg_loss_v)
+            output = model(x=input_sentences_ids_batch, x_lens=all_lens, y=batch_y)
+            loss = output.loss
+            loss_value = float(loss.data)
+
+            track_epoch_loss.append(loss_value)
             logger.info(f'Epoch: {current_epoch + 1}/{epochs}, '
                         f'iteration: {current_iter + 1}/{num_iterations}, '
-                        f'loss: {neg_loss_v:.3f}')
+                        f'loss: {loss_value:.3f}')
 
-            neg_loss.backward()
+            loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
             optimizer.step()
 
         model.eval()
 
         logger.info('Running end of epoch evaluations on sample train data and test data...')
-        tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = check_accuracy(model, test_train_x,
+        tr_batch_ave_loss, tr_pre, tr_rec, tr_f1, tr_visdata = check_accuracy(model, preprocessor, test_train_x,
                                                                               test_train_y, batch_size)
 
-        dev_batch_ave_loss, dev_pre, dev_rec, dev_f1, dev_visdata = check_accuracy(model, dev_x,
+        dev_batch_ave_loss, dev_pre, dev_rec, dev_f1, dev_visdata = check_accuracy(model, preprocessor, dev_x,
                                                                                    dev_y, batch_size)
         _, _, _, all_end_boundaries = dev_visdata
 
