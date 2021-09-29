@@ -236,6 +236,7 @@ def get_accuracy(model, preprocessor, input_sentences, edu_breaks, decoder_input
                            golden_metric[start_idx:end_idx], batch_size)
 
         input_sentences_ids_batch, sentence_lengths = preprocessor.get_elmo_char_ids(input_sentences_batch)
+        input_sentences_ids_batch = input_sentences_ids_batch.to(device=model.device)
 
         model_output = model(
             input_sentence=input_sentences_ids_batch,
@@ -371,6 +372,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
             model.zero_grad()
 
             input_sentences_ids_batch, sentence_lengths = preprocessor.get_elmo_char_ids(input_sentences_batch)
+            input_sentences_ids_batch = input_sentences_ids_batch.to(device=model.device)
 
             loss_tree_batch, loss_label_batch = model.forward_train(
                 input_sentence_ids_batch=input_sentences_ids_batch,
@@ -597,6 +599,7 @@ def check_accuracy(model, preprocessor, x, y, batch_size):
         batch_x, batch_y, all_lens = get_batch_test(x[start_idx:end_idx], y[start_idx:end_idx], None)
 
         input_sentences_ids_batch, _ = preprocessor.get_elmo_char_ids(batch_x)
+        input_sentences_ids_batch = input_sentences_ids_batch.to(device=model.device)
 
         output = model(input_sentences_ids_batch, all_lens, batch_y)
         batch_ave_loss = output.loss
@@ -696,8 +699,9 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
             model.zero_grad()
 
             input_sentences_ids_batch, _ = preprocessor.get_elmo_char_ids(batch_x)
+            input_sentences_ids_batch = input_sentences_ids_batch.to(device=model.device)
 
-            output = model(x=input_sentences_ids_batch, x_lens=all_lens, y=batch_y)
+            output = model(input_sentences_ids_batch, all_lens, batch_y)
             loss = output.loss
             loss_value = float(loss.data)
 
