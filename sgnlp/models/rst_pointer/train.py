@@ -239,11 +239,11 @@ def get_accuracy(model, preprocessor, input_sentences, edu_breaks, decoder_input
         input_sentences_ids_batch = input_sentences_ids_batch.to(device=model.device)
 
         model_output = model(
-            input_sentence=input_sentences_ids_batch,
+            input_sentence_ids=input_sentences_ids_batch,
             edu_breaks=edu_breaks_batch,
+            sentence_lengths=sentence_lengths,
             label_index=relation_label_batch,
             parsing_index=parsing_breaks_batch,
-            sentence_lengths=sentence_lengths,
             generate_splits=True
         )
 
