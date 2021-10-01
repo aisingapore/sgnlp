@@ -29,7 +29,10 @@ class RstPointerSegmenterModelOutput(ModelOutput):
 
 class RstPointerSegmenterPreTrainedModel(PreTrainedModel):
     config_class = RstPointerSegmenterConfig
-    base_model_prefix = "RSTPointerNetwork"
+    base_model_prefix = "rst_pointer_segmenter"
+
+    def _init_weights(self, module):
+        pass
 
 
 class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
@@ -261,7 +264,10 @@ class RstPointerParserModelOutput(ModelOutput):
 
 class RstPointerParserPreTrainedModel(PreTrainedModel):
     config_class = RstPointerParserConfig
-    base_model_prefix = "RSTPointerNetwork"
+    base_model_prefix = "rst_pointer_parser"
+
+    def _init_weights(self, module):
+        pass
 
 
 class RstPointerParserModel(RstPointerParserPreTrainedModel):
@@ -294,16 +300,26 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
         self.pointer = PointerAtten(
             atten_model=self.atten_model,
             hidden_size=self.hidden_size)
-        self.getlabel = LabelClassifier(
+        self.classifier = LabelClassifier(
             input_size=self.classifier_input_size,
             classifier_hidden_size=self.classifier_hidden_size,
             classes_label=self.classes_label,
             bias=self.classifier_bias,
             dropout=config.dropout_c)
 
-    def forward(self, input_sentence, edu_breaks, label_index, parsing_index, sentence_lengths, generate_splits=True):
+    def forward(self, input_sentence_ids, edu_breaks, sentence_lengths,
+                label_index=None, parsing_index=None, generate_splits=True):
+        """
+        Args:
+            input_sentence_ids:
+            edu_breaks: Token positions of edu breaks.
+            sentence_lengths: Lengths of sentences.
+            label_index: Needed only if loss needs to be computed.
+            parsing_index: Needed only if loss needs to be computed.
+            generate_splits
+        """
         # Obtain encoder outputs and last hidden states
-        embeddings = self.embedding(input_sentence)
+        embeddings = self.embedding(input_sentence_ids)
         encoder_outputs, last_hidden_states = self.encoder(embeddings, sentence_lengths)
 
         loss_function = nn.NLLLoss()
@@ -319,12 +335,15 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
         if generate_splits:
             splits_batch = []
 
+        calculate_loss = True if (label_index and parsing_index) else False
+
         for i in range(len(edu_breaks)):
 
-            cur_label_index = label_index[i]
-            cur_label_index = torch.tensor(cur_label_index)
-            cur_label_index = cur_label_index.to(self.device)
-            cur_parsing_index = parsing_index[i]
+            if calculate_loss:
+                cur_label_index = label_index[i]
+                cur_label_index = torch.tensor(cur_label_index)
+                cur_label_index = cur_label_index.to(self.device)
+                cur_parsing_index = parsing_index[i]
 
             if len(edu_breaks[i]) == 1:
                 # For a sentence containing only ONE EDU, it has no
@@ -343,7 +362,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                 #  Directly run the classifier to obain predicted label
                 input_left = cur_encoder_outputs[0].unsqueeze(0)
                 input_right = cur_encoder_outputs[1].unsqueeze(0)
-                relation_weights, log_relation_weights = self.getlabel(input_left, input_right)
+                relation_weights, log_relation_weights = self.classifier(input_left, input_right)
                 _, topindex = relation_weights.topk(1)
                 label_predict = int(topindex[0][0])
                 tree_batch.append([0])
@@ -396,7 +415,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                         # Predict relation label
                         input_left = cur_encoder_outputs[stack_head[0]].unsqueeze(0)
                         input_right = cur_encoder_outputs[stack_head[-1]].unsqueeze(0)
-                        relation_weights, log_relation_weights = self.getlabel(input_left, input_right)
+                        relation_weights, log_relation_weights = self.classifier(input_left, input_right)
                         _, topindex = relation_weights.topk(1)
                         label_predict = int(topindex[0][0])
                         cur_label.append(label_predict)
@@ -409,14 +428,15 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                         _, cur_decoder_hidden = self.decoder(cur_decoder_input, cur_decoder_hidden)
 
                         # Align ground truth label
-                        if loop_index > (len(cur_parsing_index) - 1):
-                            cur_label_true = cur_label_index[-1]
-                        else:
-                            cur_label_true = cur_label_index[loop_index]
+                        if calculate_loss:
+                            if loop_index > (len(cur_parsing_index) - 1):
+                                cur_label_true = cur_label_index[-1]
+                            else:
+                                cur_label_true = cur_label_index[loop_index]
 
-                        loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
-                                                                            cur_label_true.unsqueeze(0))
-                        loop_label_batch = loop_label_batch + 1
+                            loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
+                                                                                cur_label_true.unsqueeze(0))
+                            loop_label_batch = loop_label_batch + 1
                         loop_index = loop_index + 1
                         del stacks[-1]
 
@@ -476,37 +496,38 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                         # Predict the Label
                         input_left = cur_encoder_outputs[tree_predict].unsqueeze(0)
                         input_right = cur_encoder_outputs[stack_head[-1]].unsqueeze(0)
-                        relation_weights, log_relation_weights = self.getlabel(input_left, input_right)
+                        relation_weights, log_relation_weights = self.classifier(input_left, input_right)
                         _, topindex_label = relation_weights.topk(1)
                         label_predict = int(topindex_label[0][0])
                         cur_label.append(label_predict)
 
                         # Align ground true label and tree
-                        if loop_index > (len(cur_parsing_index) - 1):
-                            cur_label_true = cur_label_index[-1]
-                            cur_tree_true = cur_parsing_index[-1]
-                        else:
-                            cur_label_true = cur_label_index[loop_index]
-                            cur_tree_true = cur_parsing_index[loop_index]
+                        if calculate_loss:
+                            if loop_index > (len(cur_parsing_index) - 1):
+                                cur_label_true = cur_label_index[-1]
+                                cur_tree_true = cur_parsing_index[-1]
+                            else:
+                                cur_label_true = cur_label_index[loop_index]
+                                cur_tree_true = cur_parsing_index[loop_index]
 
-                        temp_ground = max(0, (int(cur_tree_true) - int(stack_head[0])))
-                        if temp_ground >= (len(stack_head) - 1):
-                            temp_ground = stack_head[-2] - stack_head[0]
-                        # Compute Tree Loss
-                        cur_ground_index = torch.tensor([temp_ground])
-                        cur_ground_index = cur_ground_index.to(self.device)
-                        loss_tree_batch = loss_tree_batch + loss_function(log_atten_weights, cur_ground_index)
+                            temp_ground = max(0, (int(cur_tree_true) - int(stack_head[0])))
+                            if temp_ground >= (len(stack_head) - 1):
+                                temp_ground = stack_head[-2] - stack_head[0]
+                            # Compute Tree Loss
+                            cur_ground_index = torch.tensor([temp_ground])
+                            cur_ground_index = cur_ground_index.to(self.device)
+                            loss_tree_batch = loss_tree_batch + loss_function(log_atten_weights, cur_ground_index)
 
-                        # Compute Classifier Loss
-                        loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
-                                                                            cur_label_true.unsqueeze(0))
+                            # Compute Classifier Loss
+                            loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
+                                                                                cur_label_true.unsqueeze(0))
+                            loop_label_batch = loop_label_batch + 1
+                            loop_tree_batch = loop_tree_batch + 1
 
                         # Stacks stuff
                         stack_down = stack_head[(tree_predict - stack_head[0] + 1):]
                         stack_top = stack_head[:(tree_predict - stack_head[0] + 1)]
                         del stacks[-1]
-                        loop_label_batch = loop_label_batch + 1
-                        loop_tree_batch = loop_tree_batch + 1
                         loop_index = loop_index + 1
 
                         # Sibling information
@@ -538,13 +559,17 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                 if generate_splits:
                     splits_batch.append(splits)
 
-        if loop_label_batch != 0:
-            loss_label_batch = loss_label_batch / loop_label_batch
-            loss_label_batch = loss_label_batch.detach().cpu().numpy()
+        if calculate_loss:
+            if loop_label_batch != 0:
+                loss_label_batch = loss_label_batch / loop_label_batch
+                loss_label_batch = loss_label_batch.detach().cpu().numpy()
 
-        if loss_tree_batch != 0:
-            loss_tree_batch = loss_tree_batch / loop_tree_batch
-            loss_tree_batch = loss_tree_batch.detach().cpu().numpy()
+            if loss_tree_batch != 0:
+                loss_tree_batch = loss_tree_batch / loop_tree_batch
+                loss_tree_batch = loss_tree_batch.detach().cpu().numpy()
+        else:
+            loss_tree_batch = None
+            loss_label_batch = None
 
         return RstPointerParserModelOutput(loss_tree_batch, loss_label_batch,
                                            (splits_batch if generate_splits else None))
@@ -586,7 +611,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                 # beween these two span.
                 input_left = cur_encoder_outputs[0].unsqueeze(0)
                 input_right = cur_encoder_outputs[1].unsqueeze(0)
-                _, log_relation_weights = self.getlabel(input_left, input_right)
+                _, log_relation_weights = self.classifier(input_left, input_right)
 
                 loss_label_batch = loss_label_batch + loss_function(log_relation_weights, cur_label_index)
                 loop_label_batch = loop_label_batch + 1
@@ -648,7 +673,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                             # Compute Classifier Loss
                             input_left = cur_encoder_outputs[cur_parsing_index[j]].unsqueeze(0)
                             input_right = cur_encoder_outputs[stack_head[-1]].unsqueeze(0)
-                            _, log_relation_weights = self.getlabel(input_left, input_right)
+                            _, log_relation_weights = self.classifier(input_left, input_right)
 
                             loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
                                                                                 cur_label_index[j].unsqueeze(0))
@@ -668,7 +693,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                             # Compute Classifier Loss
                             input_left = cur_encoder_outputs[cur_parsing_index[j]].unsqueeze(0)
                             input_right = cur_encoder_outputs[stack_head[-1]].unsqueeze(0)
-                            _, log_relation_weights = self.getlabel(input_left, input_right)
+                            _, log_relation_weights = self.classifier(input_left, input_right)
 
                             loss_label_batch = loss_label_batch + loss_function(log_relation_weights,
                                                                                 cur_label_index[j].unsqueeze(0))

@@ -1,11 +1,9 @@
 import logging
 from typing import List
 
-from transformers import PreTrainedTokenizer
 
-
-class RSTPostprocessor:
-    def __init__(self, detokenizer: PreTrainedTokenizer = None):
+class RstPostprocessor:
+    def __init__(self, detokenizer=None):
         if detokenizer is not None:
             self.detokenizer = detokenizer
         else:
@@ -23,18 +21,24 @@ class RSTPostprocessor:
             tokenized_sentences: List[List[str]],
             end_boundaries,
             discourse_tree_splits):
-        edus = []
-        current_start = 0
-        for edu_break in end_boundaries[0]:
-            edus.append(self.detokenizer.detokenize(tokenized_sentences[0][current_start:edu_break + 1]))
-            current_start = edu_break + 1
 
-        hierplane_tree = self._transform_discourse_tree_splits_to_hierplane_tree_format(
-            discourse_tree_splits[0],
-            sentences,
-            edus)
+        trees = []
+        for sentence, tokenized_sentence, end_boundary, discourse_tree_split in \
+                zip(sentences, tokenized_sentences, end_boundaries, discourse_tree_splits):
 
-        return hierplane_tree
+            edus = []
+            current_start = 0
+            for edu_break in end_boundary:
+                edus.append(self.detokenizer.detokenize(tokenized_sentence[current_start:edu_break + 1]))
+                current_start = edu_break + 1
+
+            hierplane_tree = self._transform_discourse_tree_splits_to_hierplane_tree_format(
+                discourse_tree_split,
+                sentence,
+                edus)
+            trees.append(hierplane_tree)
+
+        return trees
 
     def _transform_discourse_tree_splits_to_hierplane_tree_format(self, discourse_tree_splits, original_sentence, edus):
         hierplane_tree = {

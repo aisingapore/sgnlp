@@ -38,7 +38,7 @@ class RstPreprocessor:
         """
         tokenized_sentences = [np.array(self.tokenizer(sentence)) for sentence in sentences]
         character_ids, sentence_lengths = self.get_elmo_char_ids(tokenized_sentences)
-        return character_ids, sentence_lengths
+        return character_ids, tokenized_sentences, sentence_lengths
 
     def get_elmo_char_ids(self, tokenized_sentences: List[str]):
         """
