@@ -368,8 +368,9 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                 tree_batch.append([0])
                 label_batch.append([label_predict])
 
-                loss_label_batch = loss_label_batch + loss_function(log_relation_weights, cur_label_index)
-                loop_label_batch = loop_label_batch + 1
+                if calculate_loss:
+                    loss_label_batch = loss_label_batch + loss_function(log_relation_weights, cur_label_index)
+                    loop_label_batch = loop_label_batch + 1
 
                 if generate_splits:
                     nuclearity_left, nuclearity_right, relation_left, relation_right = \
