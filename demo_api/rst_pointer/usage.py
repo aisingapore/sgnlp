@@ -26,8 +26,8 @@ parser = RstPointerParserModel.from_pretrained(
 parser.eval()
 
 sentences = [
-    "James ate some cheese whilst thinking about the play.",
-    "CRISPR-Cas9 is a versatile genome editing technology for studying the functions of genetic elements."
+    "Thumbs began to be troublesome about 4 months ago and I made an appointment with the best hand surgeon in the Valley to see if my working activities were the problem.",
+    "Every rule has exceptions, but the tragic and too-common tableaux of hundreds or even thousands of people snake-lining up for any task with a paycheck illustrates a lack of jobs, not laziness."
 ]
 
 tokenized_sentences_ids, tokenized_sentences, lengths = preprocessor(sentences)

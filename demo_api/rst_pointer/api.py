@@ -38,7 +38,8 @@ def predict():
     req_body = request.get_json()
     sentence = req_body['sentence']
 
-    tokenized_sentence_ids, tokenized_sentence, length = preprocessor([sentence])
+    sentence = [sentence]  # Treat it as a batch size of 1
+    tokenized_sentence_ids, tokenized_sentence, length = preprocessor(sentence)
 
     segmenter_output = segmenter(tokenized_sentence_ids, length)
     end_boundaries = segmenter_output.end_boundaries
