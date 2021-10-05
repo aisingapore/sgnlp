@@ -40,10 +40,21 @@ generate_demo_api_yaml:
   image: alpine:latest
   script:
     - apk add -U jsonnet
-    - jsonnet gitlab-ci.jsonnet > generated-config.yml
+    - jsonnet jsonnet/demo-api.jsonnet > generated-config.yml
   artifacts:
     paths:
       - generated-config.yml
+
+generate_dev_demo_api_yaml:
+  stage: pre
+    image: alpine:latest
+    script:
+      - apk add -U jsonnet
+      - jsonnet jsonnet/dev-demo-api.jsonnet > generated-config.yml
+    artifacts:
+      paths:
+        - generated-config.yml
+
 
 build_and_push_demo_api:
   stage: build
@@ -54,3 +65,13 @@ build_and_push_demo_api:
     include:
       - artifact: generated-config.yml
         job: generate_demo_api_yaml
+
+build_and_push_dev_demo_api:
+  stage: build
+  allow_failure: true
+  needs:
+    - generate_dev_demo_api_yaml
+  trigger:
+    include:
+      - artifact: generated-config.yml
+        job: generate_dev_demo_api_yaml
