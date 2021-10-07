@@ -45,8 +45,8 @@ class TestLsr(unittest.TestCase):
 
     @pytest.mark.slow
     def test_from_pretrained(self):
-        config = LsrConfig.from_pretrained("https://sgnlp.blob.core.windows.net/models/lsr/config.json")
-        model = LsrModel.from_pretrained("https://sgnlp.blob.core.windows.net/models/lsr/pytorch_model.bin",
+        config = LsrConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/lsr/config.json")
+        model = LsrModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin",
                                          config=config)
 
         output = model(**self.test_input_with_labels)

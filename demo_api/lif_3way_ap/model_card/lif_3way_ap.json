@@ -20,12 +20,12 @@
   },
   "trainingTime": "~13 hours for 25 epochs on a single V100 GPU.",
   "modelWeights": {
-    "text": "https://sgnlp.blob.core.windows.net/models/lif_3way_ap/pytorch_model.bin",
-    "url": "https://sgnlp.blob.core.windows.net/models/lif_3way_ap/pytorch_model.bin"
+    "text": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/pytorch_model.bin"
   },
   "modelConfig": {
-    "text": "https://sgnlp.blob.core.windows.net/models/lif_3way_ap/config.json",
-    "url": "https://sgnlp.blob.core.windows.net/models/lif_3way_ap/config.json"
+    "text": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/config.json",
+    "url": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/config.json"
   },
   "modelInput": "Context, historical questions and answers pairs, and candidate question.",
   "modelOutput": "Probability score of whether candidate question is a valid follow-up question.",

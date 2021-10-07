@@ -69,8 +69,8 @@ class RumourDetectionTwitterModel(RumourDetectionTwitterPreTrainedModel):
             >>> config = RumourDetectionTwitterConfig()
             >>> model = RumourDetectionTwitterModel(config)
             >>> # 2. From pretrained
-            >>> config = RumourDetectionTwitterConfig.from_pretrained("https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/config.json")
-            >>> model = RumourDetectionTwitterModel.from_pretrained("https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/pytorch_model.bin", config=config)
+            >>> config = RumourDetectionTwitterConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/config.json")
+            >>> model = RumourDetectionTwitterModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/pytorch_model.bin", config=config)
     """
 
     def __init__(self, config: RumourDetectionTwitterConfig):

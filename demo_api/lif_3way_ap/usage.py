@@ -2,14 +2,14 @@ from sgnlp.models.lif_3way_ap import LIF3WayAPModel, LIF3WayAPConfig, LIF3WayAPP
 from transformers import cached_path
 
 # Load model
-config = LIF3WayAPConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lif_3way_ap/config.json')
-model = LIF3WayAPModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lif_3way_ap/pytorch_model.bin',
+config = LIF3WayAPConfig.from_pretrained('https://storage.googleapis.com/sgnlp/models/lif_3way_ap/config.json')
+model = LIF3WayAPModel.from_pretrained('https://storage.googleapis.com/sgnlp/models/lif_3way_ap/pytorch_model.bin',
                                        config=config)
 model.eval()
 
 # Load preprocessor
-word_vocab_path = cached_path('https://sgnlp.blob.core.windows.net/models/lif_3way_ap/word_vocab.pt')
-char_vocab_path = cached_path('https://sgnlp.blob.core.windows.net/models/lif_3way_ap/char_vocab.pt')
+word_vocab_path = cached_path('https://storage.googleapis.com/sgnlp/models/lif_3way_ap/word_vocab.pt')
+char_vocab_path = cached_path('https://storage.googleapis.com/sgnlp/models/lif_3way_ap/char_vocab.pt')
 
 preprocessor = LIF3WayAPPreprocessor(min_word_padding_size=config.char_embedding_args["kernel_size"])
 preprocessor.load_vocab(word_vocab_path, char_vocab_path)

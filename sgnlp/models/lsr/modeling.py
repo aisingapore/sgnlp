@@ -79,8 +79,8 @@ class LsrModel(LsrPreTrainedModel):
         model = LsrModel(config)
 
         # Method 2: Loading from pretrained
-        config = LsrConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/config.json')
-        model = LsrModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/pytorch_model.bin',
+        config = LsrConfig.from_pretrained('https://storage.googleapis.com/sgnlp/models/lsr/config.json')
+        model = LsrModel.from_pretrained('https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin',
                                          config=config)
     """
 
