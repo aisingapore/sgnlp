@@ -1,0 +1,4 @@
+-e.
+allennlp
+flask
+gunicorn
