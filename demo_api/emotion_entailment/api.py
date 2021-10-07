@@ -16,11 +16,11 @@ from sgnlp.models.emotion_entailment.utils import (
 app = create_api(app_name=__name__, model_card_path="model_card/emotion_entailment.json")
 
 config = RecconEmotionEntailmentConfig.from_pretrained(
-    "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/config.json"
+    "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json"
 )
 tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")
 model = RecconEmotionEntailmentModel.from_pretrained(
-    "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/pytorch_model.bin",
+    "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin",
     config=config,
 )
 preprocessor = RecconEmotionEntailmentPreprocessor(tokenizer)

@@ -22,8 +22,8 @@ class RecconSpanExtractionModel(BertForQuestionAnswering):
             model = RecconSpanExtractionModel(config)
 
             # 2. load from pretrained
-            config = RecconSpanExtractionConfig.from_pretrained("https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/config.json")
-            model = RecconSpanExtractionModel.from_pretrained("https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/pytorch_model.bin", config=config)
+            config = RecconSpanExtractionConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json")
+            model = RecconSpanExtractionModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin", config=config)
 
             # Using model
             tokenizer = RecconSpanExtractionTokenizer.from_pretrained("mrm8488/spanbert-finetuned-squadv2")

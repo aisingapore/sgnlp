@@ -9,10 +9,10 @@ from sgnlp.models.emotion_entailment import (
 
 # Downloads pretrained config, tokenizer and model
 config = RecconEmotionEntailmentConfig.from_pretrained(
-    "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/config.json"
+    "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json"
 )
 tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")
 model = RecconEmotionEntailmentModel.from_pretrained(
-    "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/pytorch_model.bin",
+    "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin",
     config=config,
 )

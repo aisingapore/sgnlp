@@ -2,11 +2,9 @@ import pathlib
 import json
 import re
 
-
 from flask import Flask, jsonify, request
 from nltk import word_tokenize, sent_tokenize
 import torch
-from torch.nn.functional import softmax
 from sgnlp.models.csgec import (
     CSGConfig,
     CSGModel,
@@ -14,26 +12,25 @@ from sgnlp.models.csgec import (
     download_tokenizer_files_from_azure,
 )
 
-
 app = Flask(__name__)
 
 config = CSGConfig.from_pretrained(
-    "https://sgnlp.blob.core.windows.net/models/csgec/config.json"
+    "https://storage.googleapis.com/sgnlp/models/csgec/config.json"
 )
 model = CSGModel.from_pretrained(
-    "https://sgnlp.blob.core.windows.net/models/csgec/pytorch_model.bin",
+    "https://storage.googleapis.com/sgnlp/models/csgec/pytorch_model.bin",
     config=config,
 )
 download_tokenizer_files_from_azure(
-    "https://sgnlp.blob.core.windows.net/models/csgec/src_tokenizer/",
+    "https://storage.googleapis.com/sgnlp/models/csgec/src_tokenizer/",
     "csgec_src_tokenizer",
 )
 download_tokenizer_files_from_azure(
-    "https://sgnlp.blob.core.windows.net/models/csgec/ctx_tokenizer/",
+    "https://storage.googleapis.com/sgnlp/models/csgec/ctx_tokenizer/",
     "csgec_ctx_tokenizer",
 )
 download_tokenizer_files_from_azure(
-    "https://sgnlp.blob.core.windows.net/models/csgec/tgt_tokenizer/",
+    "https://storage.googleapis.com/sgnlp/models/csgec/tgt_tokenizer/",
     "csgec_tgt_tokenizer",
 )
 src_tokenizer = CSGTokenizer.from_pretrained("csgec_src_tokenizer")
@@ -75,7 +72,7 @@ def predict():
         ]
 
     output = {"output": list(zip(original_sentences, predicted_sentences))}
-  
+
     return json.dumps(output)
 
 

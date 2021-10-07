@@ -96,10 +96,10 @@ class SpanExtractionTest(unittest.TestCase):
     @pytest.mark.slow
     def test_from_pretrained(self):
         config = self.config.from_pretrained(
-            "https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/config.json"
+            "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json"
         )
         model = self.model.from_pretrained(
-            "https://sgnlp.blob.core.windows.net/models/reccon_span_extraction/pytorch_model.bin",
+            "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin",
             config=config,
         )
         output = model(**self.model_inputs)
