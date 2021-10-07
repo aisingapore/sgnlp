@@ -1,0 +1,28 @@
+{
+  "name": "Cross Sentence GEC",
+  "languages": "English",
+  "description": "This model is based on the convoluntional encoder-decoder architecture described in the associated paper.",
+  "paper": {
+    "text": "Chollampatt, S., Wang, W., & Ng, H. T. (2019). Cross-sentence grammatical error correction. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, July 2019 (pp. 435-445).",
+    "url": "https://aclanthology.org/P19-1042"
+  },
+  "trainingDataset": {
+    "text": "The train dataset comprises of the Lang-8 and NUCLE datasets. Both datasets have to be requested from NAIST and NUS respectively.",
+    "url": ""
+  },
+  "evaluationDataset": {
+    "text": "The evaluation scores reported are based on evaluation on CoNLL-2014 benchmark. The full dataset can be downloaded from their respective shared task pages.",
+    "url": "https://www.comp.nus.edu.sg/~nlp/conll14st.html"
+  },
+  "evaluationScores": "Retrained scores: N/A. Demo uses the author's original code | Scores reported in paper: (Single Model F0.5: 53.06, Ensemble + BERT Rescoring F0.5: 54.87%) ",
+  "modelInput": "Source Sentence - sentence to be corrected, context - the two immediately preceeding sentences, target - either padding tokens and the start token or the last 3 previously predicted tokens.",
+  "modelOutput": "Array of logits for each token in the target vocabulary. This can be converted into the probability distribution for the next word using the softmax function.",
+  "inferenceInfo": "Not available.",
+  "usageScenarios": "Grammar and spell checker app / feature.",
+  "originalCode": {
+    "text": "https://github.com/nusnlp/crosentgec",
+    "url": "https://github.com/nusnlp/crosentgec"
+  },
+  "contact": "sg-nlp@aisingapore.org",
+  "additionalInfo": "Not available."
+}

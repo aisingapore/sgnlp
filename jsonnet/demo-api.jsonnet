@@ -108,6 +108,11 @@ local api_names = {
     module_name: "rumour_detection_twitter",
     image_name: "rumour-detection-twitter",
     deployment_name: "rumour-detection-twitter"
+  },
+  "csgec": {
+    module_name: "csgec",
+    image_name: "csgec",
+    deployment_name: "csgec"
   }
 };
 
