@@ -1,35 +1,33 @@
-import pathlib
-import json
 import re
-
-from flask import Flask, jsonify, request
-from nltk import word_tokenize, sent_tokenize
+import json
 import torch
+from flask import request
+from nltk import word_tokenize, sent_tokenize
+
+from demo_api.common import create_api
 from sgnlp.models.csgec import (
     CSGConfig,
     CSGModel,
     CSGTokenizer,
-    download_tokenizer_files_from_azure,
+    download_tokenizer_files,
 )
 
-app = Flask(__name__)
+app = create_api(app_name=__name__, model_card_path="model_card/csgec.json")
 
-config = CSGConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/csgec/config.json"
-)
+config = CSGConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/csgec/config.json")
 model = CSGModel.from_pretrained(
     "https://storage.googleapis.com/sgnlp/models/csgec/pytorch_model.bin",
     config=config,
 )
-download_tokenizer_files_from_azure(
+download_tokenizer_files(
     "https://storage.googleapis.com/sgnlp/models/csgec/src_tokenizer/",
     "csgec_src_tokenizer",
 )
-download_tokenizer_files_from_azure(
+download_tokenizer_files(
     "https://storage.googleapis.com/sgnlp/models/csgec/ctx_tokenizer/",
     "csgec_ctx_tokenizer",
 )
-download_tokenizer_files_from_azure(
+download_tokenizer_files(
     "https://storage.googleapis.com/sgnlp/models/csgec/tgt_tokenizer/",
     "csgec_tgt_tokenizer",
 )
@@ -37,18 +35,7 @@ src_tokenizer = CSGTokenizer.from_pretrained("csgec_src_tokenizer")
 ctx_tokenizer = CSGTokenizer.from_pretrained("csgec_ctx_tokenizer")
 tgt_tokenizer = CSGTokenizer.from_pretrained("csgec_tgt_tokenizer")
 
-
-@app.route("/model-card", methods=["GET"])
-def get_model_card():
-    """GET method for model card
-
-    Returns:
-        json: return the model card in json format
-    """
-    model_card_path = pathlib.Path(__file__).parent / "model_card/csgec.json"
-    with open(model_card_path) as f:
-        model_card = json.load(f)
-    return jsonify(**model_card)
+app.logger.info('Model initialization complete.')
 
 
 @app.route("/predict", methods=["POST"])
@@ -63,13 +50,8 @@ def predict():
         src_ids = torch.LongTensor(src_tokenizer(src_text).input_ids).reshape(1, -1)
         ctx_ids = torch.LongTensor(ctx_tokenizer(ctx_text).input_ids).reshape(1, -1)
 
-        predicted_indices = model.decode(
-            src_ids,
-            ctx_ids,
-        )[0]
-        predicted_sentences += [
-            prepare_output_sentence(tgt_tokenizer.decode(predicted_indices))
-        ]
+        predicted_indices = model.decode(src_ids, ctx_ids)[0]
+        predicted_sentences += [prepare_output_sentence(tgt_tokenizer.decode(predicted_indices))]
 
     output = {"output": list(zip(original_sentences, predicted_sentences))}
 
