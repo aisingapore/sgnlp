@@ -3,14 +3,14 @@ import torch
 import torch.nn as nn
 from transformers import PreTrainedModel
 
-from .config import CSGConfig
+from .config import CsgConfig
 from .modules.conv_decoder import ConvDecoder
 from .modules.conv_encoder import ConvEncoder
 from .utils import Buffer, Beam
 
 
-class CSGPreTrainedModel(PreTrainedModel):
-    config_class = CSGConfig
+class CsgPreTrainedModel(PreTrainedModel):
+    config_class = CsgConfig
     base_model_prefix = "csg"
 
     def _init_weights(self, module):
@@ -30,8 +30,8 @@ class CSGPreTrainedModel(PreTrainedModel):
             module.weight.data.fill_(1.0)
 
 
-class CSGModel(CSGPreTrainedModel):
-    def __init__(self, config: CSGConfig):
+class CsgModel(CsgPreTrainedModel):
+    def __init__(self, config: CsgConfig):
         super().__init__(config)
         self.config = config
         self.encoder = ConvEncoder(

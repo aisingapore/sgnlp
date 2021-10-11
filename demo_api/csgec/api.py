@@ -2,18 +2,18 @@ from flask import request
 
 from demo_api.common import create_api
 from sgnlp.models.csgec import (
-    CSGConfig,
-    CSGModel,
-    CSGTokenizer,
-    download_tokenizer_files,
+    CsgConfig,
+    CsgModel,
+    CsgTokenizer,
     CsgecPreprocessor,
     CsgecPostprocessor,
+    download_tokenizer_files,
 )
 
 app = create_api(app_name=__name__, model_card_path="model_card/csgec.json")
 
-config = CSGConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/csgec/config.json")
-model = CSGModel.from_pretrained(
+config = CsgConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/csgec/config.json")
+model = CsgModel.from_pretrained(
     "https://storage.googleapis.com/sgnlp/models/csgec/pytorch_model.bin",
     config=config,
 )
@@ -29,9 +29,9 @@ download_tokenizer_files(
     "https://storage.googleapis.com/sgnlp/models/csgec/tgt_tokenizer/",
     "csgec_tgt_tokenizer",
 )
-src_tokenizer = CSGTokenizer.from_pretrained("csgec_src_tokenizer")
-ctx_tokenizer = CSGTokenizer.from_pretrained("csgec_ctx_tokenizer")
-tgt_tokenizer = CSGTokenizer.from_pretrained("csgec_tgt_tokenizer")
+src_tokenizer = CsgTokenizer.from_pretrained("csgec_src_tokenizer")
+ctx_tokenizer = CsgTokenizer.from_pretrained("csgec_ctx_tokenizer")
+tgt_tokenizer = CsgTokenizer.from_pretrained("csgec_tgt_tokenizer")
 
 preprocessor = CsgecPreprocessor(src_tokenizer=src_tokenizer, ctx_tokenizer=ctx_tokenizer)
 postprocessor = CsgecPostprocessor(tgt_tokenizer=tgt_tokenizer)

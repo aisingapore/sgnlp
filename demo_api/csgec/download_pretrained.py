@@ -1,11 +1,11 @@
 from sgnlp.models.csgec import (
-    CSGConfig,
-    CSGModel,
+    CsgConfig,
+    CsgModel,
     download_tokenizer_files,
 )
 
-config = CSGConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/csgec/config.json")
-model = CSGModel.from_pretrained(
+config = CsgConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/csgec/config.json")
+model = CsgModel.from_pretrained(
     "https://storage.googleapis.com/sgnlp/models/csgec/pytorch_model.bin",
     config=config,
 )

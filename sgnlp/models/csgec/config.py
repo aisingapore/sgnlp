@@ -1,7 +1,7 @@
 from transformers import PretrainedConfig
 
 
-class CSGConfig(PretrainedConfig):
+class CsgConfig(PretrainedConfig):
     def __init__(
         self,
         source_vocab_size=30004,
