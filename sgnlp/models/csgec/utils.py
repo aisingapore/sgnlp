@@ -5,11 +5,11 @@ import urllib
 import requests
 
 
-def download_tokenizer_files_from_azure(azure_path: str, local_path: str) -> None:
-    """Download all required files for tokenizer from Azure storage.
+def download_tokenizer_files(base_url: str, local_path: str) -> None:
+    """Download all required files for tokenizer from online storage.
 
     Args:
-        azure_path (str): url to the tokenizer files on the Azure blob.
+        base_url (str): Base url of storage location.
         local_path (str): path ot the folder on the local machine.
     """
     tokenizer_files = [
@@ -19,13 +19,13 @@ def download_tokenizer_files_from_azure(azure_path: str, local_path: str) -> Non
         "merges.txt",
     ]
 
-    file_paths = [urllib.parse.urljoin(azure_path, path) for path in tokenizer_files]
+    file_paths = [urllib.parse.urljoin(base_url, path) for path in tokenizer_files]
     for fp in file_paths:
         download_url_file(fp, local_path)
 
 
 def download_url_file(url: str, save_folder: str) -> None:
-    """Helpder method to download url file.
+    """Helper method to download url file.
 
     Args:
         url (str): url file address string.

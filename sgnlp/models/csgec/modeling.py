@@ -3,16 +3,14 @@ import torch
 import torch.nn as nn
 from transformers import PreTrainedModel
 
-
-from .config import CSGConfig
+from .config import CsgConfig
 from .modules.conv_decoder import ConvDecoder
 from .modules.conv_encoder import ConvEncoder
 from .utils import Buffer, Beam
 
 
-class CSGPreTrainedModel(PreTrainedModel):
-
-    config_class = CSGConfig
+class CsgPreTrainedModel(PreTrainedModel):
+    config_class = CsgConfig
     base_model_prefix = "csg"
 
     def _init_weights(self, module):
@@ -32,8 +30,8 @@ class CSGPreTrainedModel(PreTrainedModel):
             module.weight.data.fill_(1.0)
 
 
-class CSGModel(CSGPreTrainedModel):
-    def __init__(self, config: CSGConfig):
+class CsgModel(CsgPreTrainedModel):
+    def __init__(self, config: CsgConfig):
         super().__init__(config)
         self.config = config
         self.encoder = ConvEncoder(
@@ -73,29 +71,31 @@ class CSGModel(CSGPreTrainedModel):
     def forward(self, *args, **kwargs):
         assert False, "Please use the decode method to get model predictions."
 
-    def decode(self, source_ids, context_ids):
-        output = []
-        for idx in range(source_ids.shape[0]):
+    def decode(self, batch_source_ids, batch_context_ids):
+        batch_output = []
 
-            encoder_out_dict = self.encoder(source_ids[idx : idx + 1, :])
-            auxencoder_out_dict = self.auxencoder(context_ids[idx : idx + 1, :])
-            best_sentence_indices = self._decode_one(
-                encoder_out_dict=encoder_out_dict,
-                auxencoder_out_dict=auxencoder_out_dict,
-                beam_size=self.config.beam_size,
-                max_len=source_ids.shape[1]
-                + 5,  # +5 is arbitrary. Normally we'd add 1 for the EOS token
-            )
-            output += [best_sentence_indices[1:-1]]
+        for text_source_ids, text_context_ids in zip(batch_source_ids, batch_context_ids):
+            text_output = []
+            for sentence_source_ids, sentence_context_ids in zip(text_source_ids, text_context_ids):
+                encoder_out_dict = self.encoder(sentence_source_ids.reshape(1, -1))
+                auxencoder_out_dict = self.auxencoder(sentence_context_ids.reshape(1, -1))
+                best_sentence_indices = self._decode_one(
+                    encoder_out_dict=encoder_out_dict,
+                    auxencoder_out_dict=auxencoder_out_dict,
+                    beam_size=self.config.beam_size,
+                    max_len=len(sentence_source_ids) + 5,  # +5 is arbitrary. Normally we'd add 1 for the EOS token
+                )
+                text_output += [best_sentence_indices[1:-1]]
+            batch_output.append(text_output)
 
-        return output
+        return batch_output
 
     def _decode_one(
-        self,
-        encoder_out_dict,
-        auxencoder_out_dict,
-        beam_size,
-        max_len=None,
+            self,
+            encoder_out_dict,
+            auxencoder_out_dict,
+            beam_size,
+            max_len=None,
     ):
         max_len = max_len if max_len is not None else self.config.trg_max_seq_len
         incremental_state_buffer = Buffer(max_len=self.config.num_decoders)
@@ -164,7 +164,7 @@ class CSGModel(CSGPreTrainedModel):
                 log_proba = torch.log_softmax(decoder_output, dim=2)
                 log_proba[:, :, self.config.padding_idx] = -inf
                 seq_values = (
-                    log_proba.reshape(beam_size, -1) + seq_values.reshape(beam_size, -1)
+                        log_proba.reshape(beam_size, -1) + seq_values.reshape(beam_size, -1)
                 ).reshape(-1)
                 seq_values, topk_cand = torch.topk(seq_values.data, num_cands)
 
@@ -207,12 +207,9 @@ class CSGModel(CSGPreTrainedModel):
                     )
 
                 # Retain only the top beam_size worth of unfinalised hypotheses
-                unfinalised_new_token_vocab_indices = new_token_vocab_indices[
-                    unfinalised_indices
-                ][:beam_size].reshape(beam_size, -1)
-                unfinalised_prev_sequence_indices = prev_sequence_indices[
-                    unfinalised_indices
-                ][:beam_size]
+                unfinalised_new_token_vocab_indices = new_token_vocab_indices[unfinalised_indices][:beam_size].reshape(
+                    beam_size, -1)
+                unfinalised_prev_sequence_indices = prev_sequence_indices[unfinalised_indices][:beam_size]
                 prev_output_tokens = torch.cat(
                     (
                         prev_output_tokens[unfinalised_prev_sequence_indices],
@@ -224,17 +221,14 @@ class CSGModel(CSGPreTrainedModel):
                 seq_values = seq_values[unfinalised_indices][:beam_size]
 
                 for idx in range(self.config.num_decoders):
-                    temp = incremental_state_buffer.get_first_element()[
-                        unfinalised_prev_sequence_indices, :, :
-                    ]
+                    temp = incremental_state_buffer.get_first_element()[unfinalised_prev_sequence_indices, :, :]
                     incremental_state_buffer.add_element(temp)
 
                 # If the score of the unfinalised outputs are smaller than the score
                 # of the worst finalised candidate, then it can't get any better and we
                 # stop the generation
-                if (
-                    (seq_values / max_len)[0] < finalised_cands_beam.get_lowest_score()
-                ) and len(finalised_cands_beam.get_elements()) != 0:
+                if ((seq_values / max_len)[0] < finalised_cands_beam.get_lowest_score()) and len(
+                        finalised_cands_beam.get_elements()) != 0:
                     break
 
         return finalised_cands_beam.get_best_element()["indices"]
