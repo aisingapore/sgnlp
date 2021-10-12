@@ -1,4 +1,5 @@
 from typing import Tuple
+
 from transformers import PretrainedConfig
 
 
@@ -10,7 +11,6 @@ class LsrConfig(PretrainedConfig):
 
     Configuration objects inherit from :class:`~transformers.PretrainedConfig` and can be used to control the model
     outputs. Read the documentation from :class:`~transformers.PretrainedConfig` for more information.
-
 
     Args:
         finetune_emb (:obj:`bool`, `optional`, defaults to :obj:`False`):
@@ -47,10 +47,9 @@ class LsrConfig(PretrainedConfig):
             Initializer range for weights.
 
     Example::
-
         from sgnlp.models.lsr import LsrConfig
 
-        # Initializing with default values
+        # Initialize with default values
         configuration = LsrConfig()
     """
 
