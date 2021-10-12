@@ -1,18 +1,19 @@
-import os
 import copy
-import pickle
-import torch
-import random
 import logging
-import numpy as np
+import os
+import pickle
+import random
 from typing import List
 
+import numpy as np
+import torch
+
 from sgnlp.utils.csv_writer import CsvWriter
-from .preprocess import RstPreprocessor
-from .modeling import RstPointerParserModel, RstPointerParserConfig, RstPointerSegmenterModel, RstPointerSegmenterConfig
-from .utils import parse_args_and_load_config
 from .data_class import RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs
+from .modeling import RstPointerParserModel, RstPointerParserConfig, RstPointerSegmenterModel, RstPointerSegmenterConfig
 from .modules.type import DiscourseTreeNode, DiscourseTreeSplit
+from .preprocess import RstPreprocessor
+from .utils import parse_args_and_load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -329,7 +330,6 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     logger.info('--------------------------------------------------------------------')
     # Initialize model
     model_config = RstPointerParserConfig(
-        batch_size=batch_size,
         hidden_size=hidden_size,
         decoder_input_size=hidden_size,
         atten_model=atten_model,
@@ -649,7 +649,6 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     epochs = cfg.epochs
 
     use_bilstm = cfg.use_bilstm
-    finetune = cfg.finetune
     is_batch_norm = cfg.use_batch_norm
 
     tr_x = pickle.load(open(os.path.join(train_data_dir, "tokenized_sentences.pickle"), "rb"))
@@ -661,7 +660,7 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     model_config = RstPointerSegmenterConfig(hidden_dim=hidden_dim,
                                              use_bilstm=use_bilstm,
                                              rnn_type=rnn_type, rnn_layers=rnn_layers,
-                                             dropout_prob=dropout, use_cuda=use_cuda, with_finetuning=finetune,
+                                             dropout_prob=dropout, use_cuda=use_cuda,
                                              is_batch_norm=is_batch_norm, elmo_size=elmo_size)
     model = RstPointerSegmenterModel(model_config)
     model.to(device=device)

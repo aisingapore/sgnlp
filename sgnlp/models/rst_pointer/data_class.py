@@ -9,7 +9,6 @@ class RstPointerSegmenterTrainArgs:
     hidden_dim: int = field(default=64, metadata={"help": "Hidden dimension size."})
     rnn: str = field(default="GRU", metadata={"help": "RNN type."})
     rnn_layers: int = field(default=6, metadata={"help": "Number of RNN layers."})
-    finetune: bool = field(default=False, metadata={"help": "Fine tune word embedding."})
     use_bilstm: bool = field(default=True, metadata={"help": "Use BI-LSTM for encoding."})
     lr: float = field(default=0.01, metadata={"help": "Learning rate."})
     dropout: float = field(default=0.2, metadata={"help": "Dropout rate."})

@@ -11,11 +11,11 @@ from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
 
 from .config import RstPointerSegmenterConfig, RstPointerParserConfig
+from .modules.classifier import LabelClassifier
+from .modules.decoder_rnn import DecoderRNN
 from .modules.elmo import initialize_elmo
 from .modules.encoder_rnn import EncoderRNN
-from .modules.decoder_rnn import DecoderRNN
 from .modules.pointer_attention import PointerAtten
-from .modules.classifier import LabelClassifier
 from .modules.type import DiscourseTreeNode, DiscourseTreeSplit
 from .utils import get_relation_and_nucleus
 
@@ -45,12 +45,9 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         self.use_bilstm = config.use_bilstm
         self.num_rnn_layers = config.num_rnn_layers
         self.rnn_type = config.rnn_type
-        self.with_finetuning = config.with_finetuning
-
-        self.dropout = nn.Dropout(config.dropout_prob)
-
         self.is_batch_norm = config.is_batch_norm
 
+        self.dropout = nn.Dropout(config.dropout_prob)
         self.embedding, self.word_dim = initialize_elmo(config.elmo_size)
 
         if self.rnn_type in ['LSTM', 'GRU']:
@@ -591,7 +588,7 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
         loop_label_batch = 0
         loop_tree_batch = 0
 
-        for i in range(self.batch_size):
+        for i in range(input_sentence_ids_batch.shape[0]):
             cur_label_index = label_index_batch[i]
             cur_label_index = torch.tensor(cur_label_index)
             cur_label_index = cur_label_index.to(self.device)

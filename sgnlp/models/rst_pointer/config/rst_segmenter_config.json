@@ -5,7 +5,6 @@
     "hidden_dim": 64,
     "rnn": "GRU",
     "rnn_layers": 6,
-    "finetune": false,
     "use_bilstm": true,
     "lr": 0.01,
     "dropout": 0.2,
