@@ -28,6 +28,11 @@ class RstPointerSegmenterModelOutput(ModelOutput):
 
 
 class RstPointerSegmenterPreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = RstPointerSegmenterConfig
     base_model_prefix = "rst_pointer_segmenter"
 
@@ -36,6 +41,35 @@ class RstPointerSegmenterPreTrainedModel(PreTrainedModel):
 
 
 class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
+    """This model performs discourse segmentation.
+
+    This model is also a PyTorch `torch.nn.Module <https://pytorch.org/docs/stable/nn.html#torch.nn.Module>`__
+    subclass. Use it as a regular PyTorch Module and refer to the PyTorch documentation for all matter related to
+    general usage and behavior.
+
+    Args:
+        config (:class:`~sgnlp.models.rst_pointer.RstPointerSegmenterConfig`):
+            Model configuration class with all the parameters of the model. Initializing with a config file does not
+            load the weights associated with the model, only the configuration.
+            Use the :obj:`.from_pretrained` method to load the model weights.
+
+    Example::
+
+        from sgnlp.models.rst_pointer import RstPointerSegmenterConfig, RstPointerSegmenterModel
+
+        # Method 1: Loading a default model
+        segmenter_config = RstPointerSegmenterConfig()
+        segmenter = RstPointerSegmenterModel(segmenter_config)
+
+        # Method 2: Loading from pretrained
+        segmenter_config = RstPointerSegmenterConfig.from_pretrained(
+            'https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/config.json')
+        segmenter = RstPointerSegmenterModel.from_pretrained(
+            'https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/pytorch_model.bin',
+            config=segmenter_config)
+
+    """
+
     def __init__(self, config: RstPointerSegmenterConfig):
         super().__init__(config)
 
@@ -122,11 +156,6 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         return output_encoder, hidden_states_encoder
 
     def pointer_layer(self, encoder_states, cur_decoder_state):
-        """
-        :param encoder_states:  [Length, hidden_size]
-        :param cur_decoder_state:  [hidden_size,1]
-        """
-
         # we use simple dot product attention to computer pointer
         attention_pointer = torch.matmul(encoder_states, cur_decoder_state).unsqueeze(1)
         attention_pointer = attention_pointer.permute(1, 0)
@@ -136,13 +165,16 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
 
         return logits, att_weights
 
-    def test_decoder(self, h_n, h_end, batch_x_lens, batch_y=None):
+    def decoder(self, h_n, h_end, batch_x_lens, batch_y=None):
         """
-        :param h_n: all hidden states
-        :param h_end: final hidden state
-        :param batch_x_lens: lengths of x (i.e. number of tokens)
-        :param batch_y: optional. provide to get loss metric.
-        :return: A tuple containing the following values:
+        Args:
+            h_n: all hidden states
+            h_end: final hidden state
+            batch_x_lens: lengths of x (i.e. number of tokens)
+            batch_y: optional. provide to get loss metric.
+
+        Returns:
+            A tuple containing the following values:
                 batch_start_boundaries: array of start tokens for each predicted edu
                 batch_end_boundaries: array of end tokens for each predicted edu
                 batch_align_matrix: -
@@ -246,9 +278,18 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
         return batch_start_boundaries, batch_end_boundaries, batch_align_matrix, batch_loss
 
     def forward(self, tokenized_sentence_ids, sentence_lens, labels=None):
+        """
+        Args:
+            tokenized_sentence_ids: Token IDs.
+            sentence_lens: Sentence lengths.
+            labels: Optional. Provide if loss is needed.
+
+        Returns:
+            output (:class:`~sgnlp.models.rst_pointer.modeling.RstPointerSegmenterModelOutput`)
+        """
         encoder_h_n, encoder_h_end = self.pointer_encoder(tokenized_sentence_ids, sentence_lens)
-        start_boundaries, end_boundaries, _, loss = self.test_decoder(encoder_h_n, encoder_h_end,
-                                                                      sentence_lens, labels)
+        start_boundaries, end_boundaries, _, loss = self.decoder(encoder_h_n, encoder_h_end,
+                                                                 sentence_lens, labels)
         return RstPointerSegmenterModelOutput(loss, start_boundaries, end_boundaries)
 
 
@@ -260,6 +301,10 @@ class RstPointerParserModelOutput(ModelOutput):
 
 
 class RstPointerParserPreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
     config_class = RstPointerParserConfig
     base_model_prefix = "rst_pointer_parser"
 
@@ -268,6 +313,35 @@ class RstPointerParserPreTrainedModel(PreTrainedModel):
 
 
 class RstPointerParserModel(RstPointerParserPreTrainedModel):
+    """This model performs discourse parsing.
+
+    This model is also a PyTorch `torch.nn.Module <https://pytorch.org/docs/stable/nn.html#torch.nn.Module>`__
+    subclass. Use it as a regular PyTorch Module and refer to the PyTorch documentation for all matter related to
+    general usage and behavior.
+
+    Args:
+        config (:class:`~sgnlp.models.rst_pointer.RstPointerParserConfig`):
+            Model configuration class with all the parameters of the model. Initializing with a config file does not
+            load the weights associated with the model, only the configuration.
+            Use the :obj:`.from_pretrained` method to load the model weights.
+
+    Example::
+
+        from sgnlp.models.rst_pointer import RstPointerParserConfig, RstPointerParserModel
+
+        # Method 1: Loading a default model
+        parser_config = RstPointerParserConfig()
+        parser = RstPointerParserModel(parser_config)
+
+        # Method 2: Loading from pretrained
+        parser_config = RstPointerParserConfig.from_pretrained(
+            'https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json')
+        parser = RstPointerParserModel.from_pretrained(
+            'https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin',
+            config=parser_config)
+
+    """
+
     def __init__(self, config: RstPointerParserConfig):
         super().__init__(config)
         self.batch_size = config.batch_size
@@ -308,12 +382,15 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
                 label_index=None, parsing_index=None, generate_splits=True):
         """
         Args:
-            input_sentence_ids:
+            input_sentence_ids: Input sentence IDs.
             edu_breaks: Token positions of edu breaks.
             sentence_lengths: Lengths of sentences.
-            label_index: Needed only if loss needs to be computed.
-            parsing_index: Needed only if loss needs to be computed.
-            generate_splits
+            label_index: Label IDs. Needed only if loss needs to be computed.
+            parsing_index: Parsing IDs. Needed only if loss needs to be computed.
+            generate_splits: Whether to return splits.
+
+        Returns:
+            output (:class:`~sgnlp.models.rst_pointer.modeling.RstPointerParserModelOutput`)
         """
         # Obtain encoder outputs and last hidden states
         embeddings = self.embedding(input_sentence_ids)
