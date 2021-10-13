@@ -2,17 +2,15 @@ import argparse
 import json
 import logging
 import os
+
 import torch
-import torch.nn as nn
 from tqdm import tqdm
 from transformers import set_seed
 
 from .config import RumourDetectionTwitterConfig
 from .modeling import RumourDetectionTwitterModel
 from .modules.optimizer.scheduler import WarmupScheduler
-from .tokenization import RumourDetectionTwitterTokenizer
 from .utils import load_datasets
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,7 +26,7 @@ def parse_args():
     return args
 
 
-def train(args):
+def train_model(args):
     # Load train args
     with open(args.train_args_config, "r") as f:
         train_args = json.load(f)
@@ -86,7 +84,7 @@ def train(args):
 
     # Set up the optimizer
     assert (
-        train_args["optim"] == "sgd" or train_args["optim"] == "adam"
+            train_args["optim"] == "sgd" or train_args["optim"] == "adam"
     ), "Only sgd and adam optimizers are supported"
     if train_args["optim"] == "sgd":
         optimizer = torch.optim.SGD(
@@ -120,9 +118,9 @@ def train(args):
             )
             token_attention_mask = (
                 torch.stack(batch["token_attention_mask"])
-                .transpose(0, 1)
-                .type(torch.Tensor)
-                .to(device)
+                    .transpose(0, 1)
+                    .type(torch.Tensor)
+                    .to(device)
             )
             post_attention_mask = (
                 batch["post_attention_mask"].type(torch.Tensor).to(device)
@@ -169,4 +167,4 @@ def train(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    train(args)
+    train_model(args)

@@ -22,6 +22,7 @@ class RstPointerSegmenterConfig(PretrainedConfig):
         elmo_size (:obj:`bool`, defaults to "Large"): Elmo size. Supported choices: ["Large", "Medium", "Small"].
 
     Example::
+
         from sgnlp.models.rst_pointer import RstPointerSegmenterConfig
 
         # Initialize with default values
@@ -75,6 +76,13 @@ class RstPointerParserConfig(PretrainedConfig):
         dropout_d (:obj:`float`, defaults to 0.5): Dropout rate for decoder layer.
         dropout_c (:obj:`float`, defaults to 0.5): Dropout rate for classifier layer.
         elmo_size (:obj:`bool`, defaults to "Large"): Elmo size. Supported choices: ["Large", "Medium", "Small"].
+
+    Example::
+
+        from sgnlp.models.rst_pointer import RstPointerParserConfig
+
+        # Initialize with default values
+        config = RstPointerParserConfig()
     """
     def __init__(
             self,

@@ -47,6 +47,7 @@ class LsrConfig(PretrainedConfig):
             Initializer range for weights.
 
     Example::
+
         from sgnlp.models.lsr import LsrConfig
 
         # Initialize with default values

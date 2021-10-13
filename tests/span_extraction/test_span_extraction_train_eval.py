@@ -1,11 +1,11 @@
-import os
 import pathlib
 import shutil
 import unittest
+
 import pytest
 
 from sgnlp.models.span_extraction import (
-    train,
+    train_model,
     evaluate,
     RecconSpanExtractionArguments,
 )
@@ -48,7 +48,7 @@ class SpanExtractionTrainTest(unittest.TestCase):
 
     @pytest.mark.slow
     def test_train(self):
-        train(self.args)
+        train_model(self.args)
 
         output_dir = pathlib.Path(self.args.train_args["output_dir"]) / "checkpoint-1/"
 

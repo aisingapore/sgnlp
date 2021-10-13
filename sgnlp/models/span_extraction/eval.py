@@ -6,9 +6,9 @@ from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.sampler import SequentialSampler
 from tqdm import tqdm
 
-from .tokenization import RecconSpanExtractionTokenizer
-from .modeling import RecconSpanExtractionModel
 from .data_class import RecconSpanExtractionArguments
+from .modeling import RecconSpanExtractionModel
+from .tokenization import RecconSpanExtractionTokenizer
 from .utils import (
     parse_args_and_load_config,
     RawResult,
@@ -30,12 +30,12 @@ def evaluate(cfg: RecconSpanExtractionArguments):
 
     Example::
 
-            import json
-            from sgnlp.models.span_extraction import evaluate
-            from sgnlp.models.span_extraction.utils import parse_args_and_load_config
+        import json
+        from sgnlp.models.span_extraction import evaluate
+        from sgnlp.models.span_extraction.utils import parse_args_and_load_config
 
-            cfg = parse_args_and_load_config('config/span_extraction_config.json')
-            evaluate(cfg)
+        cfg = parse_args_and_load_config('config/span_extraction_config.json')
+        evaluate(cfg)
     """
     device = (
         torch.device("cuda")
@@ -125,7 +125,7 @@ def evaluate(cfg: RecconSpanExtractionArguments):
     r = evaluate_results(texts)
 
     with open(
-        os.path.join(cfg.eval_args["results_path"], "results.txt"), "w"
+            os.path.join(cfg.eval_args["results_path"], "results.txt"), "w"
     ) as result_file:
         result_file.write(r)
 

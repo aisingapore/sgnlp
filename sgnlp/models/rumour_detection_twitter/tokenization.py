@@ -10,6 +10,7 @@ class RumourDetectionTwitterTokenizer(TransfoXLTokenizer):
             input text string to tokenize
 
     Example::
+
         # 1. From local vocab file
         vocab_file = 'vocab.txt'
         tokenizer = RumourDetectionTwitterTokenizer(vocab_file=vocab_file)
@@ -25,7 +26,7 @@ class RumourDetectionTwitterTokenizer(TransfoXLTokenizer):
             ]
         )
 
-        # 2. Download pretrained from Azure storage
+        # 2. Download pretrained from storage
         #TODO
     """
 
@@ -49,7 +50,7 @@ class RumourDetectionTwitterTokenizer(TransfoXLTokenizer):
             :List[List[int]]: attention mask (0 or 1) for each token in each Tweet. Each tweet/thread would have been padded (or truncated) to `max_length`/`max_posts` respectively.
         """
         assert (
-            max_length is not None
+                max_length is not None
         ), "Please specify the maximum sequence length for each tweet. This is required to fit all the token indices in a single tensor."
 
         input_ids = []

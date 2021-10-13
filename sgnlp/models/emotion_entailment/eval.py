@@ -1,17 +1,17 @@
 import numpy as np
 import pandas as pd
-from transformers import Trainer
 from sklearn.metrics import classification_report
+from transformers import Trainer
 from transformers.training_args import TrainingArguments
 
-from .tokenization import RecconEmotionEntailmentTokenizer
+from .data_class import RecconEmotionEntailmentArguments
 from .modeling import RecconEmotionEntailmentModel
+from .tokenization import RecconEmotionEntailmentTokenizer
 from .utils import (
     RecconEmotionEntailmentData,
     convert_df_to_dataset,
     parse_args_and_load_config,
 )
-from .data_class import RecconEmotionEntailmentArguments
 
 
 def evaluate(cfg: RecconEmotionEntailmentArguments):
@@ -24,12 +24,12 @@ def evaluate(cfg: RecconEmotionEntailmentArguments):
 
     Example::
 
-            import json
-            from sgnlp.models.emotion_entailment import evaluate
-            from sgnlp.models.emotion_entailment.utils import parse_args_and_load_config
+        import json
+        from sgnlp.models.emotion_entailment import evaluate
+        from sgnlp.models.emotion_entailment.utils import parse_args_and_load_config
 
-            cfg = parse_args_and_load_config('config/emotion_entailment_config.json')
-            evaluate(cfg)
+        cfg = parse_args_and_load_config('config/emotion_entailment_config.json')
+        evaluate(cfg)
     """
 
     tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained(cfg.model_name)
