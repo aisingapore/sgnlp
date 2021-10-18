@@ -344,7 +344,6 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
 
     def __init__(self, config: RstPointerParserConfig):
         super().__init__(config)
-        self.batch_size = config.batch_size
         self.word_dim = config.word_dim
         self.hidden_size = config.hidden_size
         self.decoder_input_size = config.decoder_input_size
