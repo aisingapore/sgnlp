@@ -277,7 +277,7 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     save_dir = cfg.save_dir
     batch_size = cfg.batch_size
     hidden_size = cfg.hidden_size
-    rnn_layers = cfg.rnn_layers
+    rnn_layers = cfg.num_rnn_layers
     dropout_e = cfg.dropout_e
     dropout_d = cfg.dropout_d
     dropout_c = cfg.dropout_c
@@ -292,9 +292,8 @@ def train_parser(cfg: RstPointerParserTrainArgs) -> None:
     weight_decay = cfg.weight_decay
     highorder = cfg.highorder
 
-    USE_CUDA = torch.cuda.is_available()
-    device = torch.device("cuda:" + str(cfg.gpu_id) if USE_CUDA else "cpu")
-    logger.info(f'Using CUDA: {USE_CUDA}')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f'Device: {device}')
 
     # Create directory and files
     os.makedirs(save_dir, exist_ok=True)
@@ -633,13 +632,12 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     test_data_dir = cfg.test_data_dir
     save_dir = cfg.save_dir
 
-    use_cuda = torch.cuda.is_available()
-    device = torch.device('cuda:0' if use_cuda else 'cpu')
-    logger.info(f'Using CUDA: {use_cuda}')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    logger.info(f'Device: {device}')
 
     hidden_dim = cfg.hidden_dim
     rnn_type = cfg.rnn
-    rnn_layers = cfg.rnn_layers
+    num_rnn_layers = cfg.num_rnn_layers
     lr = cfg.lr
     dropout = cfg.dropout
     wd = cfg.weight_decay
@@ -657,11 +655,14 @@ def train_segmenter(cfg: RstPointerSegmenterTrainArgs) -> None:
     dev_x = pickle.load(open(os.path.join(test_data_dir, "tokenized_sentences.pickle"), "rb"))
     dev_y = pickle.load(open(os.path.join(test_data_dir, "edu_breaks.pickle"), "rb"))
 
-    model_config = RstPointerSegmenterConfig(hidden_dim=hidden_dim,
-                                             use_bilstm=use_bilstm,
-                                             rnn_type=rnn_type, rnn_layers=rnn_layers,
-                                             dropout_prob=dropout, use_cuda=use_cuda,
-                                             is_batch_norm=is_batch_norm, elmo_size=elmo_size)
+    model_config = RstPointerSegmenterConfig(
+        hidden_dim=hidden_dim,
+        dropout_prob=dropout,
+        use_bilstm=use_bilstm,
+        num_rnn_layers=num_rnn_layers,
+        rnn_type=rnn_type,
+        is_batch_norm=is_batch_norm,
+        elmo_size=elmo_size)
     model = RstPointerSegmenterModel(model_config)
     model.to(device=device)
 

@@ -6,7 +6,7 @@
     "elmo_size": "Large",
     "batch_size": 64,
     "hidden_size": 64,
-    "rnn_layers": 6,
+    "num_rnn_layers": 6,
     "dropout_e": 0.33,
     "dropout_d": 0.5,
     "dropout_c": 0.5,
