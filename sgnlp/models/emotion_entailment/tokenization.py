@@ -16,11 +16,11 @@ class RecconEmotionEntailmentTokenizer(RobertaTokenizer):
 
     Example::
 
-            from sg_nlp import RecconEmotionEntailmentTokenizer
+        from sg_nlp import RecconEmotionEntailmentTokenizer
 
-            tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")
-            text = "surprise <SEP> Me ? You're the one who pulled out in front of me ! <SEP> Why don't you watch where you're going ? <SEP> Why don't you watch where you're going ? Me ? You're the one who pulled out in front of me !"
-            inputs = tokenizer(text, return_tensors="pt")
+        tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")
+        text = "surprise <SEP> Me ? You're the one who pulled out in front of me ! <SEP> Why don't you watch where you're going ? <SEP> Why don't you watch where you're going ? Me ? You're the one who pulled out in front of me !"
+        inputs = tokenizer(text, return_tensors="pt")
 
     """
 

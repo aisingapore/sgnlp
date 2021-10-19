@@ -1,8 +1,9 @@
-import unittest
-import pytest
-import pickle
-import torch
 import pathlib
+import pickle
+import unittest
+
+import pytest
+import torch
 
 from sgnlp.models.lsr import (
     LsrConfig,

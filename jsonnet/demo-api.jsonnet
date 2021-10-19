@@ -113,7 +113,12 @@ local api_names = {
     module_name: "csgec",
     image_name: "csgec",
     deployment_name: "csgec"
-  }
+  },
+  "rst_pointer": {
+    module_name: "rst_pointer",
+    image_name: "rst-pointer",
+    deployment_name: "rst-pointer"
+  },
 };
 
 {

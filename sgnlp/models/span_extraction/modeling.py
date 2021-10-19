@@ -15,29 +15,29 @@ class RecconSpanExtractionModel(BertForQuestionAnswering):
 
     Example::
 
-            from sgnlp.models.span_extraction import RecconSpanExtractionConfig, RecconSpanExtractionTokenizer, RecconSpanExtractionModel, utils
+        from sgnlp.models.span_extraction import RecconSpanExtractionConfig, RecconSpanExtractionTokenizer, RecconSpanExtractionModel, utils
 
-            # 1. load from default
-            config = RecconSpanExtractionConfig()
-            model = RecconSpanExtractionModel(config)
+        # 1. load from default
+        config = RecconSpanExtractionConfig()
+        model = RecconSpanExtractionModel(config)
 
-            # 2. load from pretrained
-            config = RecconSpanExtractionConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json")
-            model = RecconSpanExtractionModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin", config=config)
+        # 2. load from pretrained
+        config = RecconSpanExtractionConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json")
+        model = RecconSpanExtractionModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin", config=config)
 
-            # Using model
-            tokenizer = RecconSpanExtractionTokenizer.from_pretrained("mrm8488/spanbert-finetuned-squadv2")
-            text = {
-                'context': "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited !",
-                'qas': [{
-                    'id': 'dailydialog_tr_1097_utt_1_true_cause_utt_1_span_0',
-                    'is_impossible': False,
-                    'question': "The target utterance is Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! The evidence utterance is Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
-                    'answers': [{'text': "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan",
-                    'answer_start': 0}]}]}
-            dataset, _, _ = utils.load_examples(text, tokenizer)
-            inputs = {"input_ids": dataset[0], "attention_mask": dataset[1], "token_type_ids": dataset[2]}
-            outputs = model(**inputs)
+        # Using model
+        tokenizer = RecconSpanExtractionTokenizer.from_pretrained("mrm8488/spanbert-finetuned-squadv2")
+        text = {
+            'context': "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited !",
+            'qas': [{
+                'id': 'dailydialog_tr_1097_utt_1_true_cause_utt_1_span_0',
+                'is_impossible': False,
+                'question': "The target utterance is Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! The evidence utterance is Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited ! What is the causal span from context that is relevant to the target utterance's emotion happiness ?",
+                'answers': [{'text': "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan",
+                'answer_start': 0}]}]}
+        dataset, _, _ = utils.load_examples(text, tokenizer)
+        inputs = {"input_ids": dataset[0], "attention_mask": dataset[1], "token_type_ids": dataset[2]}
+        outputs = model(**inputs)
     """
 
     def __init__(self, config):

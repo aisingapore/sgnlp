@@ -14,20 +14,20 @@ class RecconEmotionEntailmentModel(RobertaForSequenceClassification):
 
     Example::
 
-            from sgnlp.models.emotion_entailment import RecconEmotionEntailmentConfig, RecconEmotionEntailmentModel, RecconEmotionEntailmentTokenizer
+        from sgnlp.models.emotion_entailment import RecconEmotionEntailmentConfig, RecconEmotionEntailmentModel, RecconEmotionEntailmentTokenizer
 
-            # 1. load from default
-            config = RecconEmotionEntailmentConfig()
-            model = RecconEmotionEntailmentModel(config)
-            # 2. load from pretrained
-            config = RecconEmotionEntailmentConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json")
-            model = RecconEmotionEntailmentModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin", config=config)
+        # 1. load from default
+        config = RecconEmotionEntailmentConfig()
+        model = RecconEmotionEntailmentModel(config)
+        # 2. load from pretrained
+        config = RecconEmotionEntailmentConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json")
+        model = RecconEmotionEntailmentModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin", config=config)
 
-            # Using model
-            tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")
-            text = "surprise <SEP> Me ? You're the one who pulled out in front of me ! <SEP> Why don't you watch where you're going ? <SEP> Why don't you watch where you're going ? Me ? You're the one who pulled out in front of me !"
-            inputs = tokenizer(text, return_tensors="pt")
-            outputs = model(**inputs)
+        # Using model
+        tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")
+        text = "surprise <SEP> Me ? You're the one who pulled out in front of me ! <SEP> Why don't you watch where you're going ? <SEP> Why don't you watch where you're going ? Me ? You're the one who pulled out in front of me !"
+        inputs = tokenizer(text, return_tensors="pt")
+        outputs = model(**inputs)
 
     """
 

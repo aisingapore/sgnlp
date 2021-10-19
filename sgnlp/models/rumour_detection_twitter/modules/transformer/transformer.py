@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
 from ..layer import layer
 
 __author__ = "Serena Khoo"
@@ -30,13 +30,13 @@ class Transformer(nn.Module):
         )
 
     def forward(
-        self,
-        query,
-        key,
-        val,
-        key_structure=None,
-        val_structure=None,
-        attention_mask=None,
+            self,
+            query,
+            key,
+            val,
+            key_structure=None,
+            val_structure=None,
+            attention_mask=None,
     ):
 
         """
@@ -56,7 +56,6 @@ class Transformer(nn.Module):
 
         # Passing through the MHA layers
         for layer in self.input_stack:
-
             self_atten_output, self_atten_weights = layer(
                 query=self_atten_output,
                 key=key,

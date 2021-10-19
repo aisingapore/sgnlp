@@ -122,7 +122,7 @@ Dataset Preparation
 -------------------
 Prepare the training and evaluation dataset in the format that is the same
 as the RECCON dataset in the authors' repo. You can refer to the sample dataset
-`here <https://github.com/declare-lab/RECCON/tree/main/data/subtask2/fold1>`_.
+`here <https://github.com/declare-lab/RECCON/tree/main/data/subtask2/fold1>`__.
 Use the dataset with context.
 
 Config Preparation
@@ -131,7 +131,7 @@ Create a copy of the config file. Update the following parameters:
 `train_data_path`, `val_data_path` and `train_args/output_dir`. For the other parameters,
 you can either use the default values or modify it. You can refer to an example
 of the config file
-`here <https://github.com/aimakerspace/sgnlp/blob/main/sgnlp/models/span_extraction/config/span_extraction_config.json>`_.
+`here <https://github.com/aimakerspace/sgnlp/blob/main/sgnlp/models/span_extraction/config/span_extraction_config.json>`__.
 
 +----------------------------------------+---------------------------------------------------------------------------------------------------+
 | Configuration key                      | Description                                                                                       |
@@ -159,7 +159,7 @@ of the config file
 | train_args/warmup_ratio                | Ratio of total training steps used for a linear warmup from 0 to learning_rate                    |
 +----------------------------------------+---------------------------------------------------------------------------------------------------+
 
-You may refer to the other *train_args* parameters `here <https://huggingface.co/transformers/main_classes/trainer.html#transformers.TrainingArguments>`_.
+You may refer to the other *train_args* parameters `here <https://huggingface.co/transformers/main_classes/trainer.html#transformers.TrainingArguments>`__.
 
 Running Train Code
 ----------------------
@@ -186,7 +186,7 @@ Dataset Preparation
 -------------------
 Prepare the test dataset in the format that is the same
 as the RECCON dataset in the authors' repo. You can refer to the sample dataset
-`here <https://github.com/declare-lab/RECCON/tree/main/data/subtask2/fold1>`_.
+`here <https://github.com/declare-lab/RECCON/tree/main/data/subtask2/fold1>`__.
 Use the dataset with context.
 
 Config Preparation
@@ -195,7 +195,7 @@ Create a copy of the config file. Update the following parameters:
 `eval_args/trained_model_dir` , `eval_args/x_test_path` and `results_path`.
 For the other parameters, you can either use the default values or modify it.
 You can refer to an example of the config file
-`here <https://github.com/aimakerspace/sgnlp/blob/main/sgnlp/models/span_extraction/config/span_extraction_config.json>`_.
+`here <https://github.com/aimakerspace/sgnlp/blob/main/sgnlp/models/span_extraction/config/span_extraction_config.json>`__.
 
 
 +-------------------------------------+---------------------------------------------------------------------------------------------------+

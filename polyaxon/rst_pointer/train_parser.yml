@@ -22,5 +22,5 @@ logging:
 
 run:
   cmd: python -m sgnlp.models.rst_pointer.train \
-    --config_path="/polyaxon-data/workspace/jonheng/rst-pointer/parser-experiment-4/rst_parser_config.json" \
+    --config_path="/polyaxon-data/workspace/jonheng/rst-pointer/parser-experiment-5/rst_parser_config.json" \
     --train_type="parser"

@@ -1,7 +1,6 @@
-import numpy as np
-import re
 import argparse
 import json
+import re
 from typing import Union
 
 from .data_class import RstPointerParserTrainArgs, RstPointerSegmenterTrainArgs
@@ -149,36 +148,6 @@ relation_table = [
     'TextualOrganization_NN', 'Topic-Comment_NN', 'Topic-Comment_NS',
     'Topic-Comment_SN'
 ]
-
-
-# TODO: Unused. Remove if not needed.
-def get_label_ordered(original_order):
-    """
-    Get the right order of label for stacks manner.
-    E.g.
-    [8,3,9,2,6,10,1,5,7,11,4] to [8,3,2,1,6,5,4,7,9,10,11]
-    """
-
-    original_order = np.array(original_order)
-    target = []
-    stacks = ['root', original_order]
-    while stacks[-1] != 'root':
-        head = stacks[-1]
-        if len(head) < 3:
-            target.extend(head.tolist())
-            del stacks[-1]
-        else:
-            target.append(head[0])
-            temp = np.arange(len(head))
-            top = head[temp[head < head[0]]]
-            down = head[temp[head > head[0]]]
-            del stacks[-1]
-            if down.size > 0:
-                stacks.append(down)
-            if top.size > 0:
-                stacks.append(top)
-
-    return [x for x in target]
 
 
 def get_relation_and_nucleus(label_index):

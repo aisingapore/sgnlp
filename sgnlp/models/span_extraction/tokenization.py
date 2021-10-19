@@ -14,11 +14,11 @@ class RecconSpanExtractionTokenizer(BertTokenizer):
 
     Example::
 
-            from sg_nlp import RecconSpanExtractionTokenizer
+        from sg_nlp import RecconSpanExtractionTokenizer
 
-            tokenizer = RecconSpanExtractionTokenizer.from_pretrained("mrm8488/spanbert-finetuned-squadv2")
-            text = "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited !"
-            inputs = tokenizer(text, return_tensors="pt")
+        tokenizer = RecconSpanExtractionTokenizer.from_pretrained("mrm8488/spanbert-finetuned-squadv2")
+        text = "Our company's wei-ya is tomorrow night ! It's your first Chinese New Year in Taiwan--you must be excited !"
+        inputs = tokenizer(text, return_tensors="pt")
 
     """
 

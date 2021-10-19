@@ -22,5 +22,5 @@ logging:
 
 run:
   cmd: python -m sgnlp.models.rst_pointer.train \
-    --config_path="/polyaxon-data/workspace/jonheng/rst-pointer/segmenter-experiment-4/rst_segmenter_config.json" \
+    --config_path="/polyaxon-data/workspace/jonheng/rst-pointer/segmenter-experiment-5/rst_segmenter_config.json" \
     --train_type="segmenter"

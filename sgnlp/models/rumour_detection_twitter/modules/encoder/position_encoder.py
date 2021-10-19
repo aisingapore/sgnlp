@@ -1,38 +1,29 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import os
-import numpy as np
 
 
 class PositionEncoder(nn.Module):
-
-    """
-    Encodes the information into vectors
+    """Encodes the position information into vectors
 
     There are 2 pieces of information that goes into the encoded information:
     1. Word Embedding
     2. Position Embedding
 
-    This set of codes would encode the position information
-
     """
 
     @staticmethod
     def pos_emb(pos, dim, d_model):
-
         return pos / np.power(10000, (2 * (dim // 2) / d_model))
 
     @staticmethod
     def cal_pos_emb(pos, d_emb_dim, d_model):
-
         return [
             PositionEncoder.pos_emb(pos, dim, d_model) for dim in range(d_emb_dim)
         ]  # Calculates for each dim
 
     @staticmethod
     def get_position_embedding(max_index, d_model, d_emb_dim, requires_grad=False):
-
         # position_embedding --> [[sin(0),cos(1),sin(2),cos(3)...], [sin(0),cos(1),sin(2),cos(3)...] ...]
 
         position_embedding = np.array(
@@ -55,7 +46,6 @@ class PositionEncoder(nn.Module):
         return position_embedding
 
     def __init__(self, config, max_index):
-
         super(PositionEncoder, self).__init__()
 
         self.config = config
@@ -79,20 +69,13 @@ class PositionEncoder(nn.Module):
         )
 
     def forward(self, src_seq):
+        """Encodes input according to position (The position encoding is based on the time stamp)
 
-        """
-        Ref:
-        https://pytorch.org/docs/stable/nn.html
+        Arg:
+            src_seq: Sequence to encode.
 
-        Does encoding for the input:
-        1. position encoding (The position encoding are based on the time stamp)
-
-        <--------- POS Embedding --------->
-        Input:
-                src_seq :
-
-        Output:
-                encoded_pos_features :
+        Returns:
+            encoded_pos_features: Encoded features.
 
         """
 
