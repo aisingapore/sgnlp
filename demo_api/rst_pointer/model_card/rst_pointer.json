@@ -18,9 +18,16 @@
     "Segmenter model test results (Trained/Reported) - Precision: 0.949/0.941, Recall: 0.968/0.966, F1: 0.958/0.954",
     "Parser model test results (Trained/Reported) - F1 Relation: 0.813/0.813, F1 Span: 0.966/0.969, F1 Nuclearity: 0.909/0.909"
   ],
-  "trainingConfig": {
-    "text": "Not available."
-  },
+  "trainingConfig": [
+    {
+      "text": "Segmenter training config",
+      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/training_config.json"
+    },
+    {
+      "text": "Parser training config",
+      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/training_config.json"
+    }
+  ],
   "trainingTime": "~2 hours for 100 epochs on a single V100 GPU for segmenter model. ~6 hours for 200 epochs on a single V100 GPU for parser model",
   "modelWeights": [
     {
