@@ -29,7 +29,7 @@ run_slow_unit_tests:
     - apt-get -y install build-essential
     - apt-get update
     - pip install -e .
-    - pip install -r test/requirements_test.txt
+    - pip install -r tests/requirements_test.txt
     - pip install -U pytest
     - python -m nltk.downloader punkt
     - echo 'Execute not slow unit tests'
