@@ -1,0 +1,2 @@
+allennlp
+networkx==2.4
