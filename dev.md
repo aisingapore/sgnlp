@@ -44,6 +44,14 @@ pytest -m 'not slow' tests/
 pytest <path/to/script>
 ```
 
+## Release guide
+
+- Merge all changes to be released into `dev` branch
+- Merge `dev` into `main`
+- Update version in `setup.py` to the correct version
+- Commit the change and tag it in Github
+- Publish to PyPI
+
 ## Publishing to PyPI
 
 - Requires `twine`
