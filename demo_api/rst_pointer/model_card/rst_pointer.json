@@ -14,7 +14,10 @@
     "text": "RST Discourse Treebank",
     "url": "https://catalog.ldc.upenn.edu/LDC2002T07"
   },
-  "evaluationScores": "Segmenter model test results (Trained/Reported) - Precision: 0.949/0.941, Recall: 0.968/0.966, F1: 0.958/0.954 \nParser model test results (Trained/Reported) - F1 Relation: 0.813/0.813, F1 Span: 0.966/0.969, F1 Nuclearity: 0.909/0.909",
+  "evaluationScores": [
+    "Segmenter model test results (Trained/Reported) - Precision: 0.949/0.941, Recall: 0.968/0.966, F1: 0.958/0.954",
+    "Parser model test results (Trained/Reported) - F1 Relation: 0.813/0.813, F1 Span: 0.966/0.969, F1 Nuclearity: 0.909/0.909"
+  ],
   "trainingConfig": {
     "text": "Not available."
   },
