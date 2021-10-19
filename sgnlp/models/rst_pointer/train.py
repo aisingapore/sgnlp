@@ -27,6 +27,10 @@ def setup(seed):
     np.random.seed(seed)
     random.seed(seed)
 
+    # See: https://pytorch.org/docs/stable/notes/randomness.html
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
 
 def adjust_learning_rate(optimizer, epoch, lr_decay=0.5, lr_decay_epoch=50):
     if (epoch % lr_decay_epoch == 0) and (epoch != 0):
