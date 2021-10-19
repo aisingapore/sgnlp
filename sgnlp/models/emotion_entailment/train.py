@@ -14,12 +14,12 @@ from .utils import (
 )
 
 
-def train_model(config: RecconEmotionEntailmentArguments):
+def train_model(train_config: RecconEmotionEntailmentArguments):
     """
     Method for training RecconEmotionEntailmentModel.
 
     Args:
-        config (:obj:`RecconEmotionEntailmentArguments`):
+        train_config (:obj:`RecconEmotionEntailmentArguments`):
             RecconEmotionEntailmentArguments config load from config file.
 
     Example::
@@ -32,33 +32,33 @@ def train_model(config: RecconEmotionEntailmentArguments):
         train(config)
     """
 
-    config = RecconEmotionEntailmentConfig.from_pretrained(config.model_name)
-    tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained(config.model_name)
-    model = RecconEmotionEntailmentModel.from_pretrained(config.model_name, config=config)
+    config = RecconEmotionEntailmentConfig.from_pretrained(train_config.model_name)
+    tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained(train_config.model_name)
+    model = RecconEmotionEntailmentModel.from_pretrained(train_config.model_name, config=config)
 
-    train_df = pd.read_csv(config.x_train_path)
-    val_df = pd.read_csv(config.x_valid_path)
+    train_df = pd.read_csv(train_config.x_train_path)
+    val_df = pd.read_csv(train_config.x_valid_path)
     train_dataset = convert_df_to_dataset(
-        df=train_df, max_seq_length=config.max_seq_length, tokenizer=tokenizer
+        df=train_df, max_seq_length=train_config.max_seq_length, tokenizer=tokenizer
     )
     val_dataset = convert_df_to_dataset(
-        df=val_df, max_seq_length=config.max_seq_length, tokenizer=tokenizer
+        df=val_df, max_seq_length=train_config.max_seq_length, tokenizer=tokenizer
     )
 
-    config.len = len(train_df)
-    config.train_args["eval_steps"] = (
-            config.len / config.train_args["per_device_train_batch_size"]
+    train_config.len = len(train_df)
+    train_config.train_args["eval_steps"] = (
+            train_config.len / train_config.train_args["per_device_train_batch_size"]
     )
-    config.train_args["warmup_steps"] = math.ceil(
+    train_config.train_args["warmup_steps"] = math.ceil(
         (
-                config.len
-                // config.train_args["gradient_accumulation_steps"]
-                * config.train_args["num_train_epochs"]
+                train_config.len
+                // train_config.train_args["gradient_accumulation_steps"]
+                * train_config.train_args["num_train_epochs"]
         )
-        * config.train_args["warmup_ratio"]
+        * train_config.train_args["warmup_ratio"]
     )
 
-    train_args = TrainingArguments(**config.train_args)
+    train_args = TrainingArguments(**train_config.train_args)
     trainer = Trainer(
         model=model,
         args=train_args,
