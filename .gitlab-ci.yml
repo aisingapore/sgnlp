@@ -6,15 +6,21 @@ stages:
   - pre
   - build
 
+cache:
+  paths:
+    - .venv
+
 run_non_slow_unit_tests:
   stage: unit_test_non_slow
+  before_script:
+    - python -m venv .venv
+    - source .venv/bin/activate
   script:
     - apt-get update
     - apt-get -y install build-essential
     - apt-get update
     - pip install -e .
     - pip install -r tests/requirements_test.txt
-    - pip install -U pytest
     - python -m nltk.downloader punkt
     - echo 'Execute not slow unit tests'
     - pytest -m 'not slow' tests/
@@ -22,6 +28,9 @@ run_non_slow_unit_tests:
 run_slow_unit_tests:
   stage: unit_test_slow
   when: manual
+  before_script:
+    - python -m venv .venv
+    - source .venv/bin/activate
   needs:
     - run_non_slow_unit_tests
   script:
@@ -30,7 +39,6 @@ run_slow_unit_tests:
     - apt-get update
     - pip install -e .
     - pip install -r tests/requirements_test.txt
-    - pip install -U pytest
     - python -m nltk.downloader punkt
     - echo 'Execute not slow unit tests'
     - pytest -m slow tests/

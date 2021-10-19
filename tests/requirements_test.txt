@@ -1,2 +1,3 @@
 allennlp
 networkx==2.4
+pytest
