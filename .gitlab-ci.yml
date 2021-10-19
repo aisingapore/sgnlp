@@ -6,32 +6,40 @@ stages:
   - pre
   - build
 
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache"
+
+cache:
+  paths:
+    - .cache/pip
+    - .venv
+
 run_non_slow_unit_tests:
   stage: unit_test_non_slow
+  before_script:
+    - python -m venv .venv
+    - source .venv/bin/activate
   script:
     - apt-get update
     - apt-get -y install build-essential
     - apt-get update
-    - pip install -e .
-    - pip install -r requirements_extra.txt
-    - pip install -U pytest
-    - python -m nltk.downloader punkt
+    - pip install -e . -r tests/requirements_test.txt
     - echo 'Execute not slow unit tests'
     - pytest -m 'not slow' tests/
 
 run_slow_unit_tests:
   stage: unit_test_slow
   when: manual
+  before_script:
+    - python -m venv .venv
+    - source .venv/bin/activate
   needs:
     - run_non_slow_unit_tests
   script:
     - apt-get update
     - apt-get -y install build-essential
     - apt-get update
-    - pip install -e .
-    - pip install -r requirements_extra.txt
-    - pip install -U pytest
-    - python -m nltk.downloader punkt
+    - pip install -e . -r tests/requirements_test.txt
     - echo 'Execute not slow unit tests'
     - pytest -m slow tests/
 
@@ -40,10 +48,21 @@ generate_demo_api_yaml:
   image: alpine:latest
   script:
     - apk add -U jsonnet
-    - jsonnet gitlab-ci.jsonnet > generated-config.yml
+    - jsonnet jsonnet/demo-api.jsonnet > generated-config.yml
   artifacts:
     paths:
       - generated-config.yml
+
+generate_dev_demo_api_yaml:
+  stage: pre
+  image: alpine:latest
+  script:
+    - apk add -U jsonnet
+    - jsonnet jsonnet/dev-demo-api.jsonnet > generated-config.yml
+  artifacts:
+    paths:
+      - generated-config.yml
+
 
 build_and_push_demo_api:
   stage: build
@@ -54,3 +73,13 @@ build_and_push_demo_api:
     include:
       - artifact: generated-config.yml
         job: generate_demo_api_yaml
+
+build_and_push_dev_demo_api:
+  stage: build
+  allow_failure: true
+  needs:
+    - generate_dev_demo_api_yaml
+  trigger:
+    include:
+      - artifact: generated-config.yml
+        job: generate_dev_demo_api_yaml

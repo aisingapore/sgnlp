@@ -1,15 +1,14 @@
-import os
 import pathlib
 import shutil
 import unittest
+
 import pytest
 
 from sgnlp.models.emotion_entailment import (
-    train,
+    train_model,
     evaluate,
     RecconEmotionEntailmentArguments,
 )
-
 
 TRAINING_OUTPUT_DIR = str(pathlib.Path(__file__).parent)
 
@@ -48,7 +47,7 @@ class EmotionEntailmentTrainTest(unittest.TestCase):
 
     @pytest.mark.slow
     def test_train(self):
-        train(self.args)
+        train_model(self.args)
 
         output_dir = pathlib.Path(self.args.train_args["output_dir"]) / "checkpoint-1/"
 

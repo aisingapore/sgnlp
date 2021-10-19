@@ -85,8 +85,8 @@ class TestLsrPostprocessor(unittest.TestCase):
                           {'score': 0.4059601426124573, 'relation': 'country', 'object_idx': 11, 'subject_idx': 7}]
         }]
 
-        rel2id_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/rel2id.json')
-        rel_info_path = cached_path('https://sgnlp.blob.core.windows.net/models/lsr/rel_info.json')
+        rel2id_path = cached_path('https://storage.googleapis.com/sgnlp/models/lsr/rel2id.json')
+        rel_info_path = cached_path('https://storage.googleapis.com/sgnlp/models/lsr/rel_info.json')
 
         postprocessor = LsrPostprocessor.from_file_paths(rel2id_path=rel2id_path, rel_info_path=rel_info_path)
         result = postprocessor(self.sample_model_prediction, [instance])

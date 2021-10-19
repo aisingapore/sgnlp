@@ -108,7 +108,17 @@ local api_names = {
     module_name: "rumour_detection_twitter",
     image_name: "rumour-detection-twitter",
     deployment_name: "rumour-detection-twitter"
-  }
+  },
+  "csgec": {
+    module_name: "csgec",
+    image_name: "csgec",
+    deployment_name: "csgec"
+  },
+  "rst_pointer": {
+    module_name: "rst_pointer",
+    image_name: "rst-pointer",
+    deployment_name: "rst-pointer"
+  },
 };
 
 {

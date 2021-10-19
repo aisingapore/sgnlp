@@ -1,16 +1,14 @@
+from dataclasses import dataclass
 from typing import Optional
 
 import torch
 import torch.nn as nn
-import numpy as np
-
-from dataclasses import dataclass
 from torch.nn.utils.rnn import pad_sequence
 from transformers import PreTrainedModel, BertModel
 
 from .config import LsrConfig
-from .modules.encoder import Encoder
 from .modules.attention import SelfAttention
+from .modules.encoder import Encoder
 from .modules.reasoner import DynamicReasoner
 from .modules.reasoner import StructInduction
 
@@ -79,8 +77,8 @@ class LsrModel(LsrPreTrainedModel):
         model = LsrModel(config)
 
         # Method 2: Loading from pretrained
-        config = LsrConfig.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/config.json')
-        model = LsrModel.from_pretrained('https://sgnlp.blob.core.windows.net/models/lsr/pytorch_model.bin',
+        config = LsrConfig.from_pretrained('https://storage.googleapis.com/sgnlp/models/lsr/config.json')
+        model = LsrModel.from_pretrained('https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin',
                                          config=config)
     """
 

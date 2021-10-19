@@ -1,13 +1,14 @@
 """
 Training or finetuning a LSR model on DocRED dataset.
 """
-import csv
-import os
-import json
-import torch
-import logging
 import argparse
+import csv
+import json
+import logging
+import os
+
 import numpy as np
+import torch
 from sklearn import metrics
 from torch.utils.data.dataloader import DataLoader, default_collate
 from transformers import set_seed
@@ -265,7 +266,7 @@ def parse_args():
     return args
 
 
-def train(args):
+def train_model(args):
     logger.info(f"Training arguments: {vars(args)}")
 
     # Defaults to cpu if gpu is unavailable
@@ -463,4 +464,4 @@ def train(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    train(args)
+    train_model(args)

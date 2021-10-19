@@ -39,10 +39,10 @@ Example
     )
 
     config = RecconEmotionEntailmentConfig.from_pretrained(
-        "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/config.json"
+        "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json"
     )
     model = RecconEmotionEntailmentModel.from_pretrained(
-        "https://sgnlp.blob.core.windows.net/models/reccon_emotion_entailment/pytorch_model.bin",
+        "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin",
         config=config,
     )
     tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")

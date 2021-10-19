@@ -1,0 +1,73 @@
+{
+  "name": "RST Pointer",
+  "languages": "English",
+  "description": "This is a pointer network-based segmenter and parser that is trained to identify the relations between different sections of a sentence according to rhetorical structure theory (RST).",
+  "paper": {
+    "text": "Lin, X., Joty, S., Jwalapuram, P., & Bari, M. S. (2019). A Unified Linear-Time Framework for Sentence-Level Discourse Parsing. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, July 2019 (pp. 4190-4200).",
+    "url": "https://aclanthology.org/P19-1410/"
+  },
+  "trainingDataset": {
+    "text": "RST Discourse Treebank",
+    "url": "https://catalog.ldc.upenn.edu/LDC2002T07"
+  },
+  "evaluationDataset": {
+    "text": "RST Discourse Treebank",
+    "url": "https://catalog.ldc.upenn.edu/LDC2002T07"
+  },
+  "evaluationScores": [
+    "Segmenter model test results (Trained/Reported) - Precision: 0.939/0.941, Recall: 0.979/0.966, F1: 0.959/0.954",
+    "Parser model test results (Trained/Reported) - F1 Relation: 0.813/0.813, F1 Span: 0.966/0.969, F1 Nuclearity: 0.909/0.909"
+  ],
+  "trainingConfig": [
+    {
+      "text": "Segmenter training config",
+      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/training_config.json"
+    },
+    {
+      "text": "Parser training config",
+      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/training_config.json"
+    }
+  ],
+  "trainingTime": "~2 hours for 100 epochs on a single V100 GPU for segmenter model. ~6 hours for 200 epochs on a single V100 GPU for parser model",
+  "modelWeights": [
+    {
+      "text": "Segmenter weights",
+      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/pytorch_model.bin"
+    },
+    {
+      "text": "Parser weights",
+      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin"
+    }
+  ],
+  "modelConfig": [
+    {
+      "text": "Segmenter config",
+      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/config.json"
+    },
+    {
+      "text": "Parser config",
+      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json"
+    }
+  ],
+  "modelInput": "A sentence.",
+  "modelOutput": "Discourse parsed tree.",
+  "modelSize": "~362MB for segmenter model, ~361MB for parser model",
+  "inferenceInfo": "Not available.",
+  "usageScenarios": "Construct additional features for downstream NLP tasks.",
+  "originalCode": {
+    "text": "https://github.com/shawnlimn/UnifiedParser_RST",
+    "url": "https://github.com/shawnlimn/UnifiedParser_RST"
+  },
+  "license": [
+    {
+      "text": "Model is released under CC BY-NC-SA 4.0.",
+      "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+    },
+    {
+      "text": "Code is released under MIT License.",
+      "url": "https://choosealicense.com/licenses/mit"
+    }
+  ],
+  "contact": "sg-nlp@aisingapore.org",
+  "additionalInfo": "The dataset (RST Discourse Treebank) that the model is trained on is a licensed dataset."
+}

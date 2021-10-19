@@ -1,14 +1,15 @@
 from dataclasses import dataclass
+from typing import Optional
+
 import numpy as np
 import torch
 import torch.nn as nn
 from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
-from typing import Optional
 
 from .config import RumourDetectionTwitterConfig
-from .modules.encoder.word_encoder import WordEncoder
 from .modules.encoder.position_encoder import PositionEncoder
+from .modules.encoder.word_encoder import WordEncoder
 from .modules.transformer.hierarchical_transformer import HierarchicalTransformer
 
 
@@ -65,12 +66,14 @@ class RumourDetectionTwitterModel(RumourDetectionTwitterPreTrainedModel):
         config (:class:`~RumourDetectionTwitterConfig`): Model configuration class with the default parameters required for the model. Initializing with a config file does not load the weights associated with the model, only the configuration. Use the :obj:`.from_pretrained` method to load the model weights.
 
     Example::
-            >>> # 1. From config / default parameters (untrained)
-            >>> config = RumourDetectionTwitterConfig()
-            >>> model = RumourDetectionTwitterModel(config)
-            >>> # 2. From pretrained
-            >>> config = RumourDetectionTwitterConfig.from_pretrained("https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/config.json")
-            >>> model = RumourDetectionTwitterModel.from_pretrained("https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/pytorch_model.bin", config=config)
+
+        # 1. From config / default parameters (untrained)
+        config = RumourDetectionTwitterConfig()
+        model = RumourDetectionTwitterModel(config)
+
+        # 2. From pretrained
+        config = RumourDetectionTwitterConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/config.json")
+        model = RumourDetectionTwitterModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/pytorch_model.bin", config=config)
     """
 
     def __init__(self, config: RumourDetectionTwitterConfig):
@@ -86,13 +89,13 @@ class RumourDetectionTwitterModel(RumourDetectionTwitterPreTrainedModel):
         self.init_weights()
 
     def forward(
-        self,
-        token_ids: torch.Tensor,
-        time_delay_ids: torch.Tensor,
-        structure_ids: torch.Tensor,
-        token_attention_mask=None,
-        post_attention_mask=None,
-        labels: Optional[torch.Tensor] = None,
+            self,
+            token_ids: torch.Tensor,
+            time_delay_ids: torch.Tensor,
+            structure_ids: torch.Tensor,
+            token_attention_mask=None,
+            post_attention_mask=None,
+            labels: Optional[torch.Tensor] = None,
     ):
         """Forward method to compute model output given a Twitter thread.
 

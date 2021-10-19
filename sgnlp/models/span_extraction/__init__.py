@@ -3,7 +3,7 @@ from .tokenization import RecconSpanExtractionTokenizer
 from .modeling import RecconSpanExtractionModel
 from .preprocess import RecconSpanExtractionPreprocessor
 from .postprocess import RecconSpanExtractionPostprocessor
-from .train import train
+from .train import train_model
 from .eval import evaluate
 from .utils import load_examples
 from .data_class import RecconSpanExtractionArguments

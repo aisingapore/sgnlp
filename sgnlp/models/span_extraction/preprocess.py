@@ -18,8 +18,8 @@ class RecconSpanExtractionPreprocessor:
     """
 
     def __init__(
-        self,
-        tokenizer: Optional[PreTrainedTokenizer] = None,
+            self,
+            tokenizer: Optional[PreTrainedTokenizer] = None,
     ):
         if tokenizer is None:
             self.tokenizer = RecconSpanExtractionTokenizer.from_pretrained(
@@ -29,7 +29,7 @@ class RecconSpanExtractionPreprocessor:
             self.tokenizer = tokenizer
 
     def __call__(
-        self, data_batch: Dict[str, List[str]]
+            self, data_batch: Dict[str, List[str]]
     ) -> Tuple[
         BatchEncoding,
         List[Dict[str, Union[int, str]]],
@@ -39,12 +39,9 @@ class RecconSpanExtractionPreprocessor:
         """Preprocess data then tokenize, so it can be used in RecconSpanExtractionModel
 
         Args:
-            data_batch (Dict[str, List[str]]): The dictionary should look like this:
-                                        {'emotion': ['happiness'],
-                                        'target_utterance': ['......'],
-                                        'evidence_utterance': ['......'],
-                                        'conversation_history': ['......']}
-                                The length of each value must be the same
+            data_batch (Dict[str, List[str]]):
+                The dictionary should contain the following keys 'emotion', 'target_utterance', 'evidence_utterance',
+                and 'conversation_history'. Each value should be a list of strings, with each list being of same length.
 
         Returns:
             Tuple[ BatchEncoding, List[Dict[str, Union[int, str]]], List[SquadExample], List[SquadFeatures] ]:
@@ -73,7 +70,7 @@ class RecconSpanExtractionPreprocessor:
         return output, evidences, examples, features
 
     def _concatenate_batch(
-        self, data_batch: Dict[str, List[str]]
+            self, data_batch: Dict[str, List[str]]
     ) -> Tuple[List[Dict[str, any]], List[Dict[str, any]]]:
         """Takes in data batch and converts them into a list of string which can be
         used with the tokenizer
@@ -100,10 +97,10 @@ class RecconSpanExtractionPreprocessor:
         conversation_history_batch = data_batch["conversation_history"]
 
         for i, (
-            emotion,
-            target_utterance,
-            evidence_utterance,
-            conversation_history,
+                emotion,
+                target_utterance,
+                evidence_utterance,
+                conversation_history,
         ) in enumerate(
             zip(
                 emotion_batch,
@@ -113,13 +110,13 @@ class RecconSpanExtractionPreprocessor:
             )
         ):
             concatenated_qns = (
-                "The target utterance is "
-                + target_utterance
-                + "The evidence utterance is "
-                + evidence_utterance
-                + "What is the causal span from context that is relevant to the target utterance's emotion "
-                + emotion
-                + " ?"
+                    "The target utterance is "
+                    + target_utterance
+                    + "The evidence utterance is "
+                    + evidence_utterance
+                    + "What is the causal span from context that is relevant to the target utterance's emotion "
+                    + emotion
+                    + " ?"
             )
             inputs = {
                 "id": i,
@@ -136,11 +133,11 @@ class RecconSpanExtractionPreprocessor:
         return concatenated_batch, evidences_batch
 
     def _concatenate_instance(
-        self,
-        emotion: str,
-        target_utterance: str,
-        evidence_utterance: str,
-        conversation_history: str,
+            self,
+            emotion: str,
+            target_utterance: str,
+            evidence_utterance: str,
+            conversation_history: str,
     ) -> str:
         """Concatenate a single instance into a single string
 
@@ -154,14 +151,14 @@ class RecconSpanExtractionPreprocessor:
             str: concated string of a single instance
         """
         concatenated_text = (
-            " "
-            + emotion
-            + " <SEP> "
-            + target_utterance
-            + " <SEP> "
-            + evidence_utterance
-            + " <SEP> "
-            + conversation_history
+                " "
+                + emotion
+                + " <SEP> "
+                + target_utterance
+                + " <SEP> "
+                + evidence_utterance
+                + " <SEP> "
+                + conversation_history
         )
 
         return concatenated_text

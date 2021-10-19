@@ -20,12 +20,12 @@
   },
   "trainingTime": "~6 hours on a single V100 GPU",
   "modelWeights": {
-    "text": "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/pytorch_model.bin",
-    "url": "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/pytorch_model.bin"
+    "text": "https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/pytorch_model.bin"
   },
   "modelConfig": {
-    "text": "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/config.json",
-    "url": "https://sgnlp.blob.core.windows.net/models/rumour_detection_twitter/config.json"
+    "text": "https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/config.json",
+    "url": "https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/config.json"
   },
   "modelInput": "Thread of tweets. The first tweet should be the target tweet.",
   "modelOutput": "Array of logits for each class (True, False, Unverified, Non-Rumour). This can be converted into probabilities using the softmax function.",

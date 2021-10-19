@@ -1,0 +1,4 @@
+sgnlp==0.2.0
+allennlp
+flask
+gunicorn

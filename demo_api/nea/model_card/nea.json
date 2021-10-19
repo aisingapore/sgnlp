@@ -17,12 +17,12 @@
   "evaluationScores": "0.822 Quadratic Weighted Kappa on validation set, 0.764 Quadratic Weighted Kappa on test set, 0.821 Quadratic Weighted Kappa reported by authors in paper on development set.",
   "trainingTime": "~3 hours for 50 epochs on a single V100 GPU.",
   "modelWeights": {
-    "text": "https://sgnlp.blob.core.windows.net/models/nea/pytorch_model.bin",
-    "url": "https://sgnlp.blob.core.windows.net/models/nea/pytorch_model.bin"
+    "text": "https://storage.googleapis.com/sgnlp/models/nea/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp/models/nea/pytorch_model.bin"
   },
   "modelConfig": {
-    "text": "https://sgnlp.blob.core.windows.net/models/nea/config.json",
-    "url": "https://sgnlp.blob.core.windows.net/models/nea/config.json"
+    "text": "https://storage.googleapis.com/sgnlp/models/nea/config.json",
+    "url": "https://storage.googleapis.com/sgnlp/models/nea/config.json"
   },
   "modelInput": "Essay.",
   "modelOutput": "Normalised essay score of between 0 and 1. The normalised essay score can be converted back to the original range.",
