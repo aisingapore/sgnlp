@@ -8,7 +8,7 @@ with open(path.join(dir, 'README.md')) as f:
 setup(
     name="sgnlp",
     packages=find_packages(),
-    version="0.2.0.dev",
+    version="0.2.0",
     description="Machine learning models from Singapore's NLP research community",
     long_description=long_description,
     long_description_content_type='text/markdown',
