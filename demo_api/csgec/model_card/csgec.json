@@ -1,7 +1,7 @@
 {
   "name": "Cross Sentence GEC",
   "languages": "English",
-  "description": "This model is based on the convoluntional encoder-decoder architecture described in the associated paper.",
+  "description": "This model is based on the convolutional encoder-decoder architecture described in the associated paper.",
   "paper": {
     "text": "Chollampatt, S., Wang, W., & Ng, H. T. (2019). Cross-sentence grammatical error correction. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, July 2019 (pp. 435-445).",
     "url": "https://aclanthology.org/P19-1042"
