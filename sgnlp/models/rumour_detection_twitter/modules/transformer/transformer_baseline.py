@@ -7,7 +7,6 @@ __author__ = "Serena Khoo"
 
 
 class TransformerBaseline(nn.Module):
-
     @staticmethod
     def init_weights(layer):
         if type(layer) == nn.Linear:
@@ -20,23 +19,41 @@ class TransformerBaseline(nn.Module):
         self.config = config
 
         # <----------- Getting a transformer (post level) ----------->
-        self.transformer_post = Transformer(self.config, self.config.n_mha_layers, self.config.d_model,
-                                            self.config.n_head)
+        self.transformer_post = Transformer(
+            self.config,
+            self.config.n_mha_layers,
+            self.config.d_model,
+            self.config.n_head,
+        )
 
         # <----------- Embedding the key, val and query ----------->
         self.emb_layer_query = nn.ModuleList(
-            [nn.Linear(self.config.emb_dim, self.config.emb_dim) for _ in range(self.config.num_emb_layers)])
+            [
+                nn.Linear(self.config.emb_dim, self.config.emb_dim)
+                for _ in range(self.config.num_emb_layers)
+            ]
+        )
         self.emb_layer_val = nn.ModuleList(
-            [nn.Linear(self.config.emb_dim, self.config.emb_dim) for _ in range(self.config.num_emb_layers)])
+            [
+                nn.Linear(self.config.emb_dim, self.config.emb_dim)
+                for _ in range(self.config.num_emb_layers)
+            ]
+        )
         self.emb_layer_key = nn.ModuleList(
-            [nn.Linear(self.config.emb_dim, self.config.emb_dim) for _ in range(self.config.num_emb_layers)])
+            [
+                nn.Linear(self.config.emb_dim, self.config.emb_dim)
+                for _ in range(self.config.num_emb_layers)
+            ]
+        )
 
         # <----------- Layer Normalization ----------->
         self.layer_norm = nn.LayerNorm(normalized_shape=self.config.emb_dim)
 
         # <----------- Final layer to predict the output class (4 classes) ----------->
-        self.final_layer = nn.Sequential(nn.Linear(self.config.d_model, self.config.num_classes),
-                                         nn.LogSoftmax(dim=1))
+        self.final_layer = nn.Sequential(
+            nn.Linear(self.config.d_model, self.config.num_classes),
+            nn.LogSoftmax(dim=1),
+        )
 
         # <----------- Initialization of weights ----------->
         self.emb_layer_query.apply(Transformer.init_weights)
@@ -84,7 +101,9 @@ class TransformerBaseline(nn.Module):
         val = val + time_delay
 
         # <----------- Passing through post level transformer (Not keeping the attention values for now) ----------->
-        self_atten_output, self_atten_weights_dict = self.transformer_post(query, key, val)
+        self_atten_output, self_atten_weights_dict = self.transformer_post(
+            query, key, val
+        )
 
         # Getting the average embedding for the self attended output
         self_atten_output = self_atten_output.permute(0, 2, 1).contiguous()

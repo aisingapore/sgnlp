@@ -15,11 +15,11 @@ def read_sentences(filepath: str, file_format: FileFormat):
     elif file_format == FileFormat.FILE:
         return read_sentences_for_file_format(filepath)
     else:
-        raise ValueError(f'Invalid FileFormat provided: {file_format}')
+        raise ValueError(f"Invalid FileFormat provided: {file_format}")
 
 
 def read_sentences_for_wsj_format(filepath: str):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         lines = f.readlines()
     # return lines that are not empty
     return [line.strip() for line in lines if line.strip()]
@@ -28,20 +28,20 @@ def read_sentences_for_wsj_format(filepath: str):
 def read_sentences_for_file_format(filepath: str):
     sentences = []
     current_sentence_idx = -1
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         lines = f.readlines()
         for line in lines:
             # lines that start with double space marks a new sentence
-            if line.startswith('  '):
+            if line.startswith("  "):
                 current_sentence_idx += 1
                 sentences.append(line.strip())
             else:
-                sentences[current_sentence_idx] += ' ' + line.strip()
+                sentences[current_sentence_idx] += " " + line.strip()
     return sentences
 
 
 def read_discourse_tree(filepath):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         raw_discourse_tree = f.readlines()
 
     discourse_tree_nodes = []
@@ -57,7 +57,7 @@ def read_discourse_tree(filepath):
 
 
 def read_edus(filepath):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         edus = f.readlines()
 
     return [edu.strip() for edu in edus]
@@ -77,17 +77,30 @@ def parse_discourse_tree(discourse_tree_nodes):
     sibling_index = []
     node_iter = iter(discourse_tree_nodes[1:])  # ignore root node
 
-    parse_discourse_tree_helper(node_iter, discourse_tree_splits, parent_index, sibling_index,
-                                current_span=discourse_tree_nodes[0].span, parent_span=None,
-                                left_sibling_span=None)
+    parse_discourse_tree_helper(
+        node_iter,
+        discourse_tree_splits,
+        parent_index,
+        sibling_index,
+        current_span=discourse_tree_nodes[0].span,
+        parent_span=None,
+        left_sibling_span=None,
+    )
 
     decoder_input_index = [split.right.span[1] for split in discourse_tree_splits]
 
     return discourse_tree_splits, parent_index, sibling_index, decoder_input_index
 
 
-def parse_discourse_tree_helper(node_iter, discourse_tree_splits, parent_index, sibling_index, current_span,
-                                parent_span, left_sibling_span):
+def parse_discourse_tree_helper(
+    node_iter,
+    discourse_tree_splits,
+    parent_index,
+    sibling_index,
+    current_span,
+    parent_span,
+    left_sibling_span,
+):
     try:
         # get left node
         left_node = next(node_iter)
@@ -107,9 +120,15 @@ def parse_discourse_tree_helper(node_iter, discourse_tree_splits, parent_index, 
 
         # expand left
         if span_length(left_node.span) > 1:
-            parse_discourse_tree_helper(node_iter, discourse_tree_splits, parent_index, sibling_index,
-                                        current_span=left_node.span, parent_span=current_span,
-                                        left_sibling_span=None)
+            parse_discourse_tree_helper(
+                node_iter,
+                discourse_tree_splits,
+                parent_index,
+                sibling_index,
+                current_span=left_node.span,
+                parent_span=current_span,
+                left_sibling_span=None,
+            )
 
         # get right node
         right_node = next(node_iter)
@@ -117,39 +136,47 @@ def parse_discourse_tree_helper(node_iter, discourse_tree_splits, parent_index, 
 
         # expand right
         if span_length(right_node.span) > 1:
-            parse_discourse_tree_helper(node_iter, discourse_tree_splits, parent_index, sibling_index,
-                                        current_span=right_node.span, parent_span=current_span,
-                                        left_sibling_span=left_node.span)
+            parse_discourse_tree_helper(
+                node_iter,
+                discourse_tree_splits,
+                parent_index,
+                sibling_index,
+                current_span=right_node.span,
+                parent_span=current_span,
+                left_sibling_span=left_node.span,
+            )
 
     except StopIteration:
         return
 
 
 def parse_discourse_tree_node(discourse_tree_node_raw):
-    doc = re.sub('[()]', '', discourse_tree_node_raw).split()
+    doc = re.sub("[()]", "", discourse_tree_node_raw).split()
 
     ns_type = doc[0]
     node_type = doc[1]
-    if ns_type == 'Root':
+    if ns_type == "Root":
         span_start = int(doc[2])
         span_end = int(doc[3])
         label = None
         text = None
-    elif node_type == 'span':
+    elif node_type == "span":
         span_start = int(doc[2])
         span_end = int(doc[3])
         label = doc[5]
         text = None
-    elif node_type == 'leaf':
+    elif node_type == "leaf":
         span_start = int(doc[2])
         span_end = span_start
         label = doc[4]
-        text = re.search('_!.*_!', discourse_tree_node_raw)
-        text = text.group(0).replace('_!', '')
+        text = re.search("_!.*_!", discourse_tree_node_raw)
+        text = text.group(0).replace("_!", "")
     else:
-        raise ValueError(f'Unknown node type found: {node_type}')
+        raise ValueError(f"Unknown node type found: {node_type}")
 
-    return DiscourseTreeNode(span=(span_start, span_end), ns_type=ns_type, label=label, text=text)
+    return DiscourseTreeNode(
+        span=(span_start, span_end), ns_type=ns_type, label=label, text=text
+    )
 
 
 def get_splits_order_label(discourse_tree_splits):
@@ -165,11 +192,11 @@ def get_edu_spans(sentences, edus):
     edu_spans = []
     edu_idx = 0
     for sentence in sentences:
-        formed_sentence = ''
+        formed_sentence = ""
         start_idx = edu_idx + 1
         while formed_sentence != sentence:
             if formed_sentence:
-                formed_sentence = ' '.join([formed_sentence, edus[edu_idx]])
+                formed_sentence = " ".join([formed_sentence, edus[edu_idx]])
             else:
                 formed_sentence = edus[edu_idx]
             edu_idx += 1
@@ -199,11 +226,20 @@ def get_sentence_edu_spans_from_discourse_tree_nodes(discourse_tree_nodes):
                     # NOTE! This implementation only checks for a single one ambiguous break in a sentence.
                     # Resolve ambiguous breaks
                     for ambiguous_break in ambiguous_breaks:
-                        if (sentence_start_span, sentence_end_span) in possible_sentence_spans:
-                            sentence_edu_spans.append((sentence_start_span, sentence_end_span))
+                        if (
+                            sentence_start_span,
+                            sentence_end_span,
+                        ) in possible_sentence_spans:
+                            sentence_edu_spans.append(
+                                (sentence_start_span, sentence_end_span)
+                            )
                         else:
-                            sentence_edu_spans.append((sentence_start_span, ambiguous_break))
-                            sentence_edu_spans.append((ambiguous_break + 1, sentence_end_span))
+                            sentence_edu_spans.append(
+                                (sentence_start_span, ambiguous_break)
+                            )
+                            sentence_edu_spans.append(
+                                (ambiguous_break + 1, sentence_end_span)
+                            )
                     ambiguous_breaks = []
                 else:
                     sentence_edu_spans.append((sentence_start_span, sentence_end_span))
@@ -214,7 +250,7 @@ def get_sentence_edu_spans_from_discourse_tree_nodes(discourse_tree_nodes):
 
     # Validate sentence_edu_spans matches with full_span
     if not contains_full_span(sentence_edu_spans, full_span):
-        raise ValueError('Sentence edu spans found does not match with full span!')
+        raise ValueError("Sentence edu spans found does not match with full span!")
 
     return sentence_edu_spans
 
@@ -236,12 +272,17 @@ def contains_full_span(sentence_edu_spans, full_span):
 
 def contains_ambiguous_end_of_sentence(node: DiscourseTreeNode):
     edu = node.text
-    return edu.endswith('--')
+    return edu.endswith("--")
 
 
 def contains_end_of_sentence(node: DiscourseTreeNode):
     edu = node.text
-    return edu.endswith('.') or edu.endswith('<P>') or edu.endswith('."') or node.label == 'TextualOrganization'
+    return (
+        edu.endswith(".")
+        or edu.endswith("<P>")
+        or edu.endswith('."')
+        or node.label == "TextualOrganization"
+    )
 
 
 def is_leaf(discourse_tree_node):
@@ -282,11 +323,11 @@ def span_within(outer_span, inner_span):
 def get_relation_label_from_split(discourse_tree_split: DiscourseTreeSplit):
     left_ns_type_char = discourse_tree_split.left.ns_type[0]
     right_ns_type_char = discourse_tree_split.right.ns_type[0]
-    suffix = '_' + left_ns_type_char + right_ns_type_char
+    suffix = "_" + left_ns_type_char + right_ns_type_char
 
     left_rhetorical_class = discourse_tree_split.left.label
 
-    if left_rhetorical_class != 'span':
+    if left_rhetorical_class != "span":
         return left_rhetorical_class + suffix
     else:
         right_rhetorical_class = discourse_tree_split.right.label
@@ -311,50 +352,67 @@ def get_tokenized_sentence_and_edu_breaks(sentence_edus):
     return tokenized_sentence, edu_breaks
 
 
-def transform_discourse_tree_splits_relation_label(discourse_tree_splits: DiscourseTreeSplit):
+def transform_discourse_tree_splits_relation_label(
+    discourse_tree_splits: DiscourseTreeSplit,
+):
     splits_copy = copy.deepcopy(discourse_tree_splits)
     for discourse_tree_split in splits_copy:
-        discourse_tree_split.left.label = relation_to_rhetorical_class_map[discourse_tree_split.left.label]
-        discourse_tree_split.right.label = relation_to_rhetorical_class_map[discourse_tree_split.right.label]
+        discourse_tree_split.left.label = relation_to_rhetorical_class_map[
+            discourse_tree_split.left.label
+        ]
+        discourse_tree_split.right.label = relation_to_rhetorical_class_map[
+            discourse_tree_split.right.label
+        ]
 
     return splits_copy
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Preprocess raw RST-DT data files and save in formats needed for model training')
+        description="Preprocess raw RST-DT data files and save in formats needed for model training"
+    )
 
-    parser.add_argument('--raw_data_dir', type=str, help='Directory of RST-DT data', required=True)
-    parser.add_argument('--save_dir', type=str, help='Directory for saving preprocessed files', required=True)
+    parser.add_argument(
+        "--raw_data_dir", type=str, help="Directory of RST-DT data", required=True
+    )
+    parser.add_argument(
+        "--save_dir",
+        type=str,
+        help="Directory for saving preprocessed files",
+        required=True,
+    )
 
     args = parser.parse_args()
 
-    RAW_DATA_DIR = args.raw_data_dir
-    SAVE_DIR = args.save_dir
+    raw_data_dir = args.raw_data_dir
+    save_dir = args.save_dir
 
-    wsj_format_regex = '^wsj.*out$'
-    file_format_regex = '^file[0-9]$'
+    wsj_format_regex = "^wsj.*out$"
+    file_format_regex = "^file[0-9]$"
 
-    filepaths = os.listdir(RAW_DATA_DIR)
+    filepaths = os.listdir(raw_data_dir)
 
-    base_filepaths = [os.path.join(RAW_DATA_DIR, filepath)
-                      for filepath in filepaths
-                      if re.search(wsj_format_regex, filepath) or re.search(file_format_regex, filepath)]
+    base_filepaths = [
+        os.path.join(raw_data_dir, filepath)
+        for filepath in filepaths
+        if re.search(wsj_format_regex, filepath)
+        or re.search(file_format_regex, filepath)
+    ]
 
     data = {
-        'tokenized_sentences': [],
-        'edu_breaks': [],
-        'discourse_tree_splits': [],  # aka Gold Discourse Tree Structure
-        'splits_order': [],  # aka Parsing_Label
-        'relation_index': [],
-        'decoder_input_index': [],
-        'parent_index': [],
-        'sibling_index': []
+        "tokenized_sentences": [],
+        "edu_breaks": [],
+        "discourse_tree_splits": [],  # aka Gold Discourse Tree Structure
+        "splits_order": [],  # aka Parsing_Label
+        "relation_index": [],
+        "decoder_input_index": [],
+        "parent_index": [],
+        "sibling_index": [],
     }
 
     for base_filepath in base_filepaths:
-        dis_filepath = base_filepath + '.dis'
-        edus_filepath = base_filepath + '.edus'
+        dis_filepath = base_filepath + ".dis"
+        edus_filepath = base_filepath + ".edus"
 
         # read files
         file_basename = os.path.basename(base_filepath)
@@ -363,49 +421,66 @@ def main():
         elif re.search(file_format_regex, file_basename):
             file_format = FileFormat.FILE
         else:
-            raise ValueError(f'Unrecognized file format for filepath: {file_basename}')
+            raise ValueError(f"Unrecognized file format for filepath: {file_basename}")
 
         file_discourse_tree = read_discourse_tree(dis_filepath)
         file_edus = read_edus(edus_filepath)
 
-        file_sentence_edu_spans = get_sentence_edu_spans_from_discourse_tree_nodes(file_discourse_tree)
+        file_sentence_edu_spans = get_sentence_edu_spans_from_discourse_tree_nodes(
+            file_discourse_tree
+        )
 
         for sentence_edu_span in file_sentence_edu_spans:
             # Each sentence_edu_span is equivalent to a sentence
             try:
-                discourse_nodes_slice = get_discourse_nodes_slice(file_discourse_tree, sentence_edu_span)
+                discourse_nodes_slice = get_discourse_nodes_slice(
+                    file_discourse_tree, sentence_edu_span
+                )
             except UnboundLocalError:
                 # No well formed discourse tree for sentence, skip it
                 continue
 
             discourse_nodes_slice = normalize_nodes_slice(discourse_nodes_slice)
-            discourse_tree_splits, parent_index, sibling_index, decoder_input_index \
-                = parse_discourse_tree(discourse_nodes_slice)
+            (
+                discourse_tree_splits,
+                parent_index,
+                sibling_index,
+                decoder_input_index,
+            ) = parse_discourse_tree(discourse_nodes_slice)
 
             # converts relation label to coarse form (39 classes)
-            discourse_tree_splits = transform_discourse_tree_splits_relation_label(discourse_tree_splits)
+            discourse_tree_splits = transform_discourse_tree_splits_relation_label(
+                discourse_tree_splits
+            )
 
-            sentence_relation_labels = [get_relation_label_from_split(split) for split in discourse_tree_splits]
-            sentence_relation_label_index = [get_relation_label_index(label) for label in sentence_relation_labels]
+            sentence_relation_labels = [
+                get_relation_label_from_split(split) for split in discourse_tree_splits
+            ]
+            sentence_relation_label_index = [
+                get_relation_label_index(label) for label in sentence_relation_labels
+            ]
 
-            sentence_edus = file_edus[sentence_edu_span[0] - 1:sentence_edu_span[1]]
-            tokenized_sentence, sentence_edu_breaks = get_tokenized_sentence_and_edu_breaks(sentence_edus)
+            sentence_edus = file_edus[sentence_edu_span[0] - 1 : sentence_edu_span[1]]
+            (
+                tokenized_sentence,
+                sentence_edu_breaks,
+            ) = get_tokenized_sentence_and_edu_breaks(sentence_edus)
 
             splits_order_label = get_splits_order_label(discourse_tree_splits)
 
-            data['tokenized_sentences'].append(tokenized_sentence)
-            data['edu_breaks'].append(sentence_edu_breaks)
-            data['discourse_tree_splits'].append(discourse_tree_splits)
-            data['splits_order'].append(splits_order_label)
-            data['relation_index'].append(sentence_relation_label_index)
-            data['decoder_input_index'].append(decoder_input_index)
-            data['parent_index'].append(parent_index)
-            data['sibling_index'].append(sibling_index)
+            data["tokenized_sentences"].append(tokenized_sentence)
+            data["edu_breaks"].append(sentence_edu_breaks)
+            data["discourse_tree_splits"].append(discourse_tree_splits)
+            data["splits_order"].append(splits_order_label)
+            data["relation_index"].append(sentence_relation_label_index)
+            data["decoder_input_index"].append(decoder_input_index)
+            data["parent_index"].append(parent_index)
+            data["sibling_index"].append(sibling_index)
 
     # Save data
-    os.makedirs(SAVE_DIR, exist_ok=True)
+    os.makedirs(save_dir, exist_ok=True)
     for key, value in data.items():
-        pickle.dump(value, open(os.path.join(SAVE_DIR, key + '.pickle'), 'wb'))
+        pickle.dump(value, open(os.path.join(save_dir, key + ".pickle"), "wb"))
 
 
 if __name__ == "__main__":

@@ -125,7 +125,7 @@ def evaluate(cfg: RecconSpanExtractionArguments):
     r = evaluate_results(texts)
 
     with open(
-            os.path.join(cfg.eval_args["results_path"], "results.txt"), "w"
+        os.path.join(cfg.eval_args["results_path"], "results.txt"), "w"
     ) as result_file:
         result_file.write(r)
 

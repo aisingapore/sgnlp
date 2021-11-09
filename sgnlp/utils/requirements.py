@@ -10,4 +10,5 @@ def check_requirements(requirements):
             missing_requirements.append(requirement)
     if len(missing_requirements) > 0:
         raise ModuleNotFoundError(
-            f"To use this model, please install the following dependencies: {', '.join(missing_requirements)}")
+            f"To use this model, please install the following dependencies: {', '.join(missing_requirements)}"
+        )

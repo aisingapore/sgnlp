@@ -16,17 +16,17 @@ class ConvDecoder(nn.Module):
     """
 
     def __init__(
-            self,
-            num_embeddings,
-            embedding_dim,
-            max_seq_len,
-            padding_idx,
-            token_dropout,
-            hidden_dim,
-            kernel_size,
-            dropout,
-            num_conv_layers,
-            normalization_constant=0.5,
+        self,
+        num_embeddings,
+        embedding_dim,
+        max_seq_len,
+        padding_idx,
+        token_dropout,
+        hidden_dim,
+        kernel_size,
+        dropout,
+        num_conv_layers,
+        normalization_constant=0.5,
     ):
         """
         input_dim : int
@@ -85,11 +85,11 @@ class ConvDecoder(nn.Module):
         self.fc3 = nn.Linear(in_features=embedding_dim, out_features=num_embeddings)
 
     def forward(
-            self,
-            prev_output_tokens,
-            encoder_out_dict,
-            auxencoder_out_dict,
-            incremental_state=None,
+        self,
+        prev_output_tokens,
+        encoder_out_dict,
+        auxencoder_out_dict,
+        incremental_state=None,
     ):
         auxencoder_E = auxencoder_out_dict["encoder_out"][0]
         auxencoder_ES = auxencoder_out_dict["encoder_out"][1]
@@ -116,13 +116,16 @@ class ConvDecoder(nn.Module):
         # print("after fc1 \n", Y)
 
         for conv, aux_attention, enc_attention, aux_gate in zip(
-                self.convolutions, self.aux_attention, self.enc_attention, self.aux_gates
+            self.convolutions, self.aux_attention, self.enc_attention, self.aux_gates
         ):
             # Dropout before the conv layers
             # x = F.dropout(x, p=self.dropout, training=self.training)
             # print("Y", Y.shape)
             residual_Y = Y
-            if incremental_state is not None and len(incremental_state) >= self.num_conv_layers:
+            if (
+                incremental_state is not None
+                and len(incremental_state) >= self.num_conv_layers
+            ):
                 Y = torch.cat(
                     (incremental_state.get_first_element()[:, 1:, :], Y), dim=1
                 )
