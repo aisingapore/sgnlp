@@ -6,6 +6,15 @@
 pip install -r requirements_dev.txt
 ```
 
+## Run formatter
+
+```
+black <directory>
+
+e.g.
+black sgnlp/
+```
+
 ## Running Unittests
 
 Unit and integration tests scripts are all stored in the `tests` folder.

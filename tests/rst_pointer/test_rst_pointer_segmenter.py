@@ -3,10 +3,7 @@ import unittest
 import pytest
 import torch
 
-from sgnlp.models.rst_pointer import (
-    RstPointerSegmenterConfig,
-    RstPointerSegmenterModel
-)
+from sgnlp.models.rst_pointer import RstPointerSegmenterConfig, RstPointerSegmenterModel
 
 
 class TestRstPointerSegmenter(unittest.TestCase):
@@ -26,7 +23,11 @@ class TestRstPointerSegmenter(unittest.TestCase):
         config = RstPointerSegmenterConfig()
         model = RstPointerSegmenterModel(config)
 
-        output = model(self.test_tokenized_sentence_ids, self.test_sentence_lengths, self.test_labels)
+        output = model(
+            self.test_tokenized_sentence_ids,
+            self.test_sentence_lengths,
+            self.test_labels,
+        )
 
         self.assertEqual(len(output.start_boundaries), 2)
         self.assertEqual(len(output.end_boundaries), 2)
@@ -35,12 +36,18 @@ class TestRstPointerSegmenter(unittest.TestCase):
     @pytest.mark.slow
     def test_from_pretrained(self):
         segmenter_config = RstPointerSegmenterConfig.from_pretrained(
-            'https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/config.json')
+            "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/config.json"
+        )
         segmenter = RstPointerSegmenterModel.from_pretrained(
-            'https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/pytorch_model.bin',
-            config=segmenter_config)
+            "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/pytorch_model.bin",
+            config=segmenter_config,
+        )
 
-        segmenter_output = segmenter(self.test_tokenized_sentence_ids, self.test_sentence_lengths, self.test_labels)
+        segmenter_output = segmenter(
+            self.test_tokenized_sentence_ids,
+            self.test_sentence_lengths,
+            self.test_labels,
+        )
 
         self.assertEqual(len(segmenter_output.start_boundaries), 2)
         self.assertEqual(len(segmenter_output.end_boundaries), 2)

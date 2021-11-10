@@ -5,17 +5,14 @@ import unittest
 import pytest
 import torch
 
-from sgnlp.models.lsr import (
-    LsrConfig,
-    LsrModel
-)
+from sgnlp.models.lsr import LsrConfig, LsrModel
 
 DIR = pathlib.Path(__file__).parent
 
 
 class TestLsr(unittest.TestCase):
     def setUp(self):
-        with open(DIR / 'test_data/sample_preprocessed_input.pickle', 'rb') as f:
+        with open(DIR / "test_data/sample_preprocessed_input.pickle", "rb") as f:
             self.test_input_with_labels = pickle.load(f)
 
         self.test_input_without_labels = self.test_input_with_labels.copy()
@@ -46,9 +43,13 @@ class TestLsr(unittest.TestCase):
 
     @pytest.mark.slow
     def test_from_pretrained(self):
-        config = LsrConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/lsr/config.json")
-        model = LsrModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin",
-                                         config=config)
+        config = LsrConfig.from_pretrained(
+            "https://storage.googleapis.com/sgnlp/models/lsr/config.json"
+        )
+        model = LsrModel.from_pretrained(
+            "https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin",
+            config=config,
+        )
 
         output = model(**self.test_input_with_labels)
         self.assertEqual(output.prediction.shape, torch.Size([1, 156, 97]))
