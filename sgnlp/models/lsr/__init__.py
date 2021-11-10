@@ -1,6 +1,6 @@
 from ...utils.requirements import check_requirements
 
-requirements = ["networkx"]
+requirements = ["networkx==2.4"]
 check_requirements(requirements)
 
 from .modeling import LsrModel
