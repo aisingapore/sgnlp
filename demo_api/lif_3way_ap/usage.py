@@ -6,7 +6,7 @@ from sgnlp.models.lif_3way_ap.modules.allennlp.dataset_reader import (
 )
 
 model = Lif3WayApModel.from_pretrained(
-    "/Users/jonheng/aisg/sgnlp/data/lif_3way_ap/model.tar.gz",
+    "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/model.tar.gz",
     predictor_name="lif_3way_ap_predictor",
 )
 
@@ -20,4 +20,8 @@ instance = {
     "candidate": "When did he leave New York?",
 }
 
+# batch predict example
 output = model.predict_batch_json([instance])
+
+# single instance predict example
+output = model.predict_json(instance)

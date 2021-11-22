@@ -14,7 +14,7 @@ class Lif3WayApPredictor(Predictor):
 
     def predict_instance(self, instance: Instance) -> JsonDict:
         output = self._model.forward_on_instance(instance)
-        label_probs = output["label_probs"].squeeze().detach().numpy()
+        label_probs = output["label_probs"]
 
         output_json = {
             "label_probs": label_probs,
