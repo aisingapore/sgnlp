@@ -7,7 +7,9 @@ from sgnlp.models.csgec import (
     download_tokenizer_files,
 )
 
-config = CsgConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/csgec/config.json")
+config = CsgConfig.from_pretrained(
+    "https://storage.googleapis.com/sgnlp/models/csgec/config.json"
+)
 model = CsgModel.from_pretrained(
     "https://storage.googleapis.com/sgnlp/models/csgec/pytorch_model.bin",
     config=config,
@@ -28,7 +30,9 @@ src_tokenizer = CsgTokenizer.from_pretrained("csgec_src_tokenizer")
 ctx_tokenizer = CsgTokenizer.from_pretrained("csgec_ctx_tokenizer")
 tgt_tokenizer = CsgTokenizer.from_pretrained("csgec_tgt_tokenizer")
 
-preprocessor = CsgecPreprocessor(src_tokenizer=src_tokenizer, ctx_tokenizer=ctx_tokenizer)
+preprocessor = CsgecPreprocessor(
+    src_tokenizer=src_tokenizer, ctx_tokenizer=ctx_tokenizer
+)
 postprocessor = CsgecPostprocessor(tgt_tokenizer=tgt_tokenizer)
 
 texts = [
@@ -40,7 +44,7 @@ texts = [
     "Machines have replaced a bunch of coolies and heavy labor. Cars and trucks diminish the redundancy of long time "
     "shipment. As a result, people have more time to enjoy advantage of modern life. One can easily travel to the "
     "other half of the globe to see beautiful scenery that one dreams for his lifetime. One can also easily see his "
-    "deeply loved one through internet from miles away."
+    "deeply loved one through internet from miles away.",
 ]
 
 batch_source_ids, batch_context_ids = preprocessor(texts)

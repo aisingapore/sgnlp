@@ -7,7 +7,7 @@ from sgnlp.models.rst_pointer import (
     RstPointerSegmenterConfig,
     RstPointerSegmenterModel,
     RstPreprocessor,
-    RstPostprocessor
+    RstPostprocessor,
 )
 
 app = create_api(app_name=__name__, model_card_path="model_card/rst_pointer.json")
@@ -17,26 +17,30 @@ preprocessor = RstPreprocessor()
 postprocessor = RstPostprocessor()
 
 segmenter_config = RstPointerSegmenterConfig.from_pretrained(
-    'https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/config.json')
+    "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/config.json"
+)
 segmenter = RstPointerSegmenterModel.from_pretrained(
-    'https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/pytorch_model.bin',
-    config=segmenter_config)
+    "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/pytorch_model.bin",
+    config=segmenter_config,
+)
 segmenter.eval()
 
 parser_config = RstPointerParserConfig.from_pretrained(
-    'https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json')
+    "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json"
+)
 parser = RstPointerParserModel.from_pretrained(
-    'https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin',
-    config=parser_config)
+    "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin",
+    config=parser_config,
+)
 parser.eval()
 
-app.logger.info('Model initialization complete')
+app.logger.info("Model initialization complete")
 
 
-@app.route('/predict', methods=['POST'])
+@app.route("/predict", methods=["POST"])
 def predict():
     req_body = request.get_json()
-    sentence = req_body['sentence']
+    sentence = req_body["sentence"]
 
     sentence = [sentence]  # Treat it as a batch size of 1
     tokenized_sentence_ids, tokenized_sentence, length = preprocessor(sentence)
@@ -46,12 +50,15 @@ def predict():
 
     parser_output = parser(tokenized_sentence_ids, end_boundaries, length)
 
-    hierplane_tree = postprocessor(sentences=sentence, tokenized_sentences=tokenized_sentence,
-                                   end_boundaries=end_boundaries,
-                                   discourse_tree_splits=parser_output.splits)
+    hierplane_tree = postprocessor(
+        sentences=sentence,
+        tokenized_sentences=tokenized_sentence,
+        end_boundaries=end_boundaries,
+        discourse_tree_splits=parser_output.splits,
+    )
 
-    return {'tree': hierplane_tree[0]}
+    return {"tree": hierplane_tree[0]}
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()
