@@ -4,5 +4,6 @@ from allennlp.predictors import Predictor
 class BaseAllenNlpModel:
     PREDICTOR_CLASS: Predictor = None
 
-    def from_pretrained(self, model_path) -> Predictor:
-        return self.PREDICTOR_CLASS.from_path(model_path)
+    @classmethod
+    def from_pretrained(cls, model_path, **kwargs) -> Predictor:
+        return cls.PREDICTOR_CLASS.from_path(model_path, **kwargs)

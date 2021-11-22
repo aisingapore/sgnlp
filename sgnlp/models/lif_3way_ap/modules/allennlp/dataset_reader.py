@@ -1,9 +1,9 @@
 import json
 import logging
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
-from allennlp.data.fields import Field, TextField, LabelField, MetadataField
+from allennlp.data.fields import Field, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import Token, Tokenizer, WordTokenizer
@@ -11,22 +11,19 @@ from overrides import overrides
 
 from .util import process_para_json
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
 
 
 @DatasetReader.register("lif_3way_ap_dataset_reader")
 class Lif3WayApDatasetReader(DatasetReader):
-    """
-    Dataset Reader for 3-way Attentive Pooling Network
-
-    """
+    """Dataset Reader for 3-way Attentive Pooling Network"""
 
     def __init__(
-        self,
-        tokenizer: Tokenizer = None,
-        token_indexers: Dict[str, TokenIndexer] = None,
-        lazy: bool = False,
-        num_context_answers: int = 3,
+            self,
+            tokenizer: Tokenizer = None,
+            token_indexers: Dict[str, TokenIndexer] = None,
+            lazy: bool = False,
+            num_context_answers: int = 3,
     ) -> None:
         super().__init__(lazy)
         self._tokenizer = tokenizer or WordTokenizer()
@@ -89,30 +86,13 @@ class Lif3WayApDatasetReader(DatasetReader):
 
     @overrides
     def text_to_instance(
-        self,  # type: ignore
-        prev_q_text_list: List[str],
-        prev_ans_text_list: List[str],
-        passage_text: str,
-        candidate: str,
-        prev_start_span_list: List[List[int]] = None,
-        prev_end_span_list: List[List[int]] = None,
-        passage_tokens: List[Token] = None,
-        answer: int = None,
-        additional_metadata: Dict[str, Any] = None,
+            self,
+            prev_q_text_list: List[str],
+            prev_ans_text_list: List[str],
+            passage_text: str,
+            candidate: str,
+            passage_tokens: List[Token] = None,
     ) -> Instance:
-        """
-
-        :param prev_q_text_list:
-        :param prev_ans_text_list:
-        :param passage_text:
-        :param candidate:
-        :param prev_start_span_list:
-        :param prev_end_span_list:
-        :param passage_tokens:
-        :param answer:
-        :param additional_metadata:
-        :return:
-        """
         fields: Dict[str, Field] = dict()
         fields["passage"] = TextField(passage_tokens, self._token_indexers)
         candidate_tokens = self._tokenizer.tokenize(candidate)
@@ -127,25 +107,12 @@ class Lif3WayApDatasetReader(DatasetReader):
         fields["all_qa"] = TextField(all_qa_tokens, self._token_indexers)
 
         source_tokens = (
-            passage_tokens
-            + [Token(">")]
-            + all_qa_tokens
-            + [Token(">")]
-            + candidate_tokens
+                passage_tokens
+                + [Token(">")]
+                + all_qa_tokens
+                + [Token(">")]
+                + candidate_tokens
         )
         fields["combined_source"] = TextField(source_tokens, self._token_indexers)
-
-        if answer is not None:
-            fields["label"] = LabelField(answer, skip_indexing=True)
-
-        metadata = additional_metadata or {}
-        metadata.update(
-            {
-                "passage_tokens": passage_tokens,
-                "candidate_tokens": candidate_tokens,
-                "all_qa_tokens": all_qa_tokens,
-            }
-        )
-        fields["metadata"] = MetadataField(metadata)
 
         return Instance(fields)

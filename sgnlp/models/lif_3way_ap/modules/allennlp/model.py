@@ -87,7 +87,6 @@ class Lif3WayApAllenNlpModel(Model):
         metadata: List[Dict[str, Any]] = None,
     ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
-        """"""
         if self._with_knowledge:
             embedded_passage = self._text_field_embedder(passage)  # B * T * d
             passage_len = embedded_passage.size(1)
@@ -221,8 +220,9 @@ class Lif3WayApAllenNlpModel(Model):
         output_dict = {
             "label_logits": choice_score.squeeze(-1),
             "label_probs": output,
-            "metadata": metadata,
         }
+        if metadata:
+            output_dict["metadata"] = metadata
 
         if label is not None:
             label = label.long().view(-1)
