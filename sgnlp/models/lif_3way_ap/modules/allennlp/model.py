@@ -84,7 +84,6 @@ class Lif3WayApAllenNlpModel(Model):
         candidate: Dict[str, torch.LongTensor],
         combined_source: Dict[str, torch.LongTensor],
         label: torch.IntTensor = None,
-        metadata: List[Dict[str, Any]] = None,
     ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         if self._with_knowledge:
@@ -221,8 +220,6 @@ class Lif3WayApAllenNlpModel(Model):
             "label_logits": choice_score.squeeze(-1),
             "label_probs": output,
         }
-        if metadata:
-            output_dict["metadata"] = metadata
 
         if label is not None:
             label = label.long().view(-1)

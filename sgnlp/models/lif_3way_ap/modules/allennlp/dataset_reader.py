@@ -3,7 +3,7 @@ import logging
 from typing import Dict, List
 
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
-from allennlp.data.fields import Field, TextField
+from allennlp.data.fields import Field, TextField, LabelField
 from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import Token, Tokenizer, WordTokenizer
@@ -19,11 +19,11 @@ class Lif3WayApDatasetReader(DatasetReader):
     """Dataset Reader for 3-way Attentive Pooling Network"""
 
     def __init__(
-            self,
-            tokenizer: Tokenizer = None,
-            token_indexers: Dict[str, TokenIndexer] = None,
-            lazy: bool = False,
-            num_context_answers: int = 3,
+        self,
+        tokenizer: Tokenizer = None,
+        token_indexers: Dict[str, TokenIndexer] = None,
+        lazy: bool = False,
+        num_context_answers: int = 3,
     ) -> None:
         super().__init__(lazy)
         self._tokenizer = tokenizer or WordTokenizer()
@@ -44,7 +44,6 @@ class Lif3WayApDatasetReader(DatasetReader):
                 tokenized_paragraph = self._tokenizer.tokenize(paragraph)
                 qas = paragraph_json["qas"]
                 for qa in qas:
-                    metadata = {}
                     prev_q_text_list = [
                         q.strip().replace("\n", "") for q in qa["prev_qs"]
                     ]
@@ -54,44 +53,30 @@ class Lif3WayApDatasetReader(DatasetReader):
                     prev_q_text_list = prev_q_text_list[start_idx:]
                     prev_ans_text_list = [a["text"] for a in qa["prev_ans"]]
                     prev_ans_text_list = prev_ans_text_list[start_idx:]
-                    metadata["prev_qs"] = prev_q_text_list
-                    metadata["prev_ans"] = prev_ans_text_list
-                    prev_span_starts_list = [
-                        [a["answer_start"]] for a in qa["prev_ans"][start_idx:]
-                    ]
-                    prev_span_ends_list = [
-                        [start[0] + len(answer)]
-                        for start, answer in zip(
-                            prev_span_starts_list, prev_ans_text_list
-                        )
-                    ]
+                    assert len(prev_q_text_list) == len(prev_ans_text_list)
 
-                    assert len(prev_span_starts_list) == len(prev_span_ends_list)
                     candidate = qa["candidate"].strip()
-                    answer = qa["label"]
-                    metadata["candidate"] = candidate
-                    metadata["label"] = answer
+                    label = qa["label"]
+
                     instance = self.text_to_instance(
                         prev_q_text_list,
                         prev_ans_text_list,
                         paragraph,
                         candidate,
-                        prev_span_starts_list,
-                        prev_span_ends_list,
                         tokenized_paragraph,
-                        answer,
-                        metadata,
+                        label,
                     )
                     yield instance
 
     @overrides
     def text_to_instance(
-            self,
-            prev_q_text_list: List[str],
-            prev_ans_text_list: List[str],
-            passage_text: str,
-            candidate: str,
-            passage_tokens: List[Token] = None,
+        self,
+        prev_q_text_list: List[str],
+        prev_ans_text_list: List[str],
+        passage_text: str,
+        candidate: str,
+        passage_tokens: List[Token] = None,
+        label: int = None,
     ) -> Instance:
         fields: Dict[str, Field] = dict()
         fields["passage"] = TextField(passage_tokens, self._token_indexers)
@@ -107,12 +92,14 @@ class Lif3WayApDatasetReader(DatasetReader):
         fields["all_qa"] = TextField(all_qa_tokens, self._token_indexers)
 
         source_tokens = (
-                passage_tokens
-                + [Token(">")]
-                + all_qa_tokens
-                + [Token(">")]
-                + candidate_tokens
+            passage_tokens
+            + [Token(">")]
+            + all_qa_tokens
+            + [Token(">")]
+            + candidate_tokens
         )
         fields["combined_source"] = TextField(source_tokens, self._token_indexers)
+        if label is not None:
+            fields["label"] = LabelField(label, skip_indexing=True)
 
         return Instance(fields)
