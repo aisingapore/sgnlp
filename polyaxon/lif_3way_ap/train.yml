@@ -22,5 +22,5 @@ logging:
 run:
   cmd: allennlp train \
     /polyaxon-data/workspace/jonheng/lif-3way-ap/lif_3way_ap_polyaxon.json \
-    -s /polyaxon-data/workspace/jonheng/lif-3way-ap/exp-2
+    -s /polyaxon-data/workspace/jonheng/lif-3way-ap/exp-3
     --include-package sgnlp.models.lif_3way_ap
