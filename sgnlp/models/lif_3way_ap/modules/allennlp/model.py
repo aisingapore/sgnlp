@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Dict
 
 import torch
 from allennlp.data import Vocabulary
@@ -8,7 +8,7 @@ from allennlp.modules import Seq2SeqEncoder, TextFieldEmbedder
 from allennlp.modules.input_variational_dropout import InputVariationalDropout
 from allennlp.nn import InitializerApplicator, util
 from allennlp.nn.util import masked_max, masked_softmax
-from allennlp.training.metrics import Auc
+from allennlp.training.metrics import Auc, F1Measure
 
 from .layers import SeqAttnMat, GatedEncoding, GatedMultifactorSelfAttnEnc
 from .util import sequential_weighted_avg
@@ -74,6 +74,7 @@ class Lif3WayApAllenNlpModel(Model):
 
         self._num_labels = vocab.get_vocab_size(namespace="labels")
         self._auc = Auc()
+        self._f1 = F1Measure(positive_label=1)
         self._loss = torch.nn.BCELoss()
         initializer(self)
 
@@ -225,11 +226,16 @@ class Lif3WayApAllenNlpModel(Model):
             label = label.long().view(-1)
             loss = self._loss(output, label.float())
             self._auc(output, label)
+            self._f1(torch.stack([1 - output, output]).T, label)
             output_dict["loss"] = loss
 
         return output_dict
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
+        precision, recall, f1 = self._f1.get_metric(reset)
         return {
             "auc": self._auc.get_metric(reset),
+            "f1": f1,
+            "precision": precision,
+            "recall": recall,
         }
