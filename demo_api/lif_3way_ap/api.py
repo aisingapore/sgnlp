@@ -27,8 +27,16 @@ app.logger.info("Initialization complete.")
 @app.route("/predict", methods=["POST"])
 def predict():
     req_body = request.get_json()
-    output = model.predict_batch_json([req_body])
-    return {"probability": output["label_probs"].item()}
+
+    json_input = {
+        "candidate": req_body["candidate"],
+        "context": req_body["context"],
+        "prev_qs": [qa["question"] for qa in req_body["questions_and_answers"]],
+        "prev_ans": [qa["answer"] for qa in req_body["questions_and_answers"]],
+    }
+
+    output = model.predict_json(json_input)
+    return {"probability": output["label_probs"]}
 
 
 if __name__ == "__main__":
