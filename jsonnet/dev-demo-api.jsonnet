@@ -36,6 +36,11 @@ local api_names = {
     module_name: "csgec",
     image_name: "csgec",
     deployment_name: "csgec"
+  },
+  "lif_3way_ap": {
+    module_name: "lif_3way_ap",
+    image_name: "lif-3way-ap",
+    deployment_name: "lif-3way-ap"
   }
 };
 
