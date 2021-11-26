@@ -13,7 +13,9 @@ from sgnlp.models.emotion_entailment.utils import (
     get_all_evidence_utterance_from_conversation,
 )
 
-app = create_api(app_name=__name__, model_card_path="model_card/emotion_entailment.json")
+app = create_api(
+    app_name=__name__, model_card_path="model_card/emotion_entailment.json"
+)
 
 config = RecconEmotionEntailmentConfig.from_pretrained(
     "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json"

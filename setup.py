@@ -5,6 +5,11 @@ dir = path.abspath(path.dirname(__file__))
 with open(path.join(dir, 'README.md')) as f:
     long_description = f.read()
 
+extras_require = {
+    "lsr": ["networkx==2.4"],
+    "lif_3way_ap": ["allennlp==0.8.4", "scikit-learn==0.22", "overrides==3.1.0"]
+}
+
 setup(
     name="sgnlp",
     packages=find_packages(),
@@ -22,13 +27,14 @@ setup(
         "pandas",
         "scikit-learn",
         "sentencepiece",
-        "spacy>=3",
+        "spacy",
         "tokenizers",
         "torch>=1.6,<2",
         "torchtext",
         "transformers",
     ],
-    python_requires=">=3.8",
+    extras_require=extras_require,
+    python_requires=">=3.7",
     classifiers=[
         "Programming Language :: Python :: 3",
     ],

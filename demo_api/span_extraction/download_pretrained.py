@@ -8,6 +8,9 @@ config = RecconSpanExtractionConfig.from_pretrained(
     "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json"
 )
 model = RecconSpanExtractionModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin", config=config
+    "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin",
+    config=config,
 )
-tokenizer = RecconSpanExtractionTokenizer.from_pretrained("mrm8488/spanbert-finetuned-squadv2")
+tokenizer = RecconSpanExtractionTokenizer.from_pretrained(
+    "mrm8488/spanbert-finetuned-squadv2"
+)

@@ -15,9 +15,9 @@ class RecconEmotionEntailmentPreprocessor:
     """
 
     def __init__(
-            self,
-            tokenizer: Optional[PreTrainedTokenizer] = None,
-            max_length: int = 512,
+        self,
+        tokenizer: Optional[PreTrainedTokenizer] = None,
+        max_length: int = 512,
     ):
         self.max_length = max_length
         if tokenizer is None:
@@ -76,10 +76,10 @@ class RecconEmotionEntailmentPreprocessor:
         conversation_history_batch = data_batch["conversation_history"]
 
         for emotion, target_utterance, evidence_utterance, conversation_history in zip(
-                emotion_batch,
-                target_utterance_batch,
-                evidence_utterance_batch,
-                conversation_history_batch,
+            emotion_batch,
+            target_utterance_batch,
+            evidence_utterance_batch,
+            conversation_history_batch,
         ):
             concatenated_instance = self._concatenate_instance(
                 emotion, target_utterance, evidence_utterance, conversation_history
@@ -88,11 +88,11 @@ class RecconEmotionEntailmentPreprocessor:
         return concatenated_batch
 
     def _concatenate_instance(
-            self,
-            emotion: str,
-            target_utterance: str,
-            evidence_utterance: str,
-            conversation_history: str,
+        self,
+        emotion: str,
+        target_utterance: str,
+        evidence_utterance: str,
+        conversation_history: str,
     ) -> str:
         """Concatenate a single instance into a single string
 
@@ -106,14 +106,14 @@ class RecconEmotionEntailmentPreprocessor:
             str: concated string of a single instance
         """
         concatenated_text = (
-                " "
-                + emotion
-                + " <SEP> "
-                + target_utterance
-                + " <SEP> "
-                + evidence_utterance
-                + " <SEP> "
-                + conversation_history
+            " "
+            + emotion
+            + " <SEP> "
+            + target_utterance
+            + " <SEP> "
+            + evidence_utterance
+            + " <SEP> "
+            + conversation_history
         )
 
         return concatenated_text

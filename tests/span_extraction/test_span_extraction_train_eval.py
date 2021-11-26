@@ -36,6 +36,8 @@ class SpanExtractionTrainTest(unittest.TestCase):
                 "max_grad_norm": 1,
                 "num_train_epochs": 1,
                 "warmup_ratio": 0.06,
+                "save_strategy": "steps",
+                "save_steps": 1,
                 "no_cuda": False,
                 "seed": 0,
                 "fp16": False,

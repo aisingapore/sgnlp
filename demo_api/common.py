@@ -7,7 +7,7 @@ def create_api(app_name, model_card_path, model_usage_path="usage.py"):
     app = Flask(app_name)
 
     # setup gunicorn logging
-    gunicorn_logger = logging.getLogger('gunicorn.error')
+    gunicorn_logger = logging.getLogger("gunicorn.error")
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
 

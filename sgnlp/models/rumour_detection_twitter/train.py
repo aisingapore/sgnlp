@@ -84,7 +84,7 @@ def train_model(args):
 
     # Set up the optimizer
     assert (
-            train_args["optim"] == "sgd" or train_args["optim"] == "adam"
+        train_args["optim"] == "sgd" or train_args["optim"] == "adam"
     ), "Only sgd and adam optimizers are supported"
     if train_args["optim"] == "sgd":
         optimizer = torch.optim.SGD(
@@ -118,9 +118,9 @@ def train_model(args):
             )
             token_attention_mask = (
                 torch.stack(batch["token_attention_mask"])
-                    .transpose(0, 1)
-                    .type(torch.Tensor)
-                    .to(device)
+                .transpose(0, 1)
+                .type(torch.Tensor)
+                .to(device)
             )
             post_attention_mask = (
                 batch["post_attention_mask"].type(torch.Tensor).to(device)

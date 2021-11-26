@@ -3,10 +3,7 @@ import unittest
 import pytest
 import torch
 
-from sgnlp.models.rst_pointer import (
-    RstPointerParserConfig,
-    RstPointerParserModel
-)
+from sgnlp.models.rst_pointer import RstPointerParserConfig, RstPointerParserModel
 
 
 class TestRstPointerParser(unittest.TestCase):
@@ -28,8 +25,13 @@ class TestRstPointerParser(unittest.TestCase):
         config = RstPointerParserConfig()
         model = RstPointerParserModel(config)
 
-        output = model(self.test_tokenized_sentence_ids, self.test_end_boundaries, self.test_sentence_lengths,
-                       self.test_relation_label, self.test_parsing_breaks)
+        output = model(
+            self.test_tokenized_sentence_ids,
+            self.test_end_boundaries,
+            self.test_sentence_lengths,
+            self.test_relation_label,
+            self.test_parsing_breaks,
+        )
 
         self.assertEqual(len(output.splits), 2)
         self.assertIsNotNone(output.loss_tree)
@@ -38,13 +40,20 @@ class TestRstPointerParser(unittest.TestCase):
     @pytest.mark.slow
     def test_from_pretrained(self):
         parser_config = RstPointerParserConfig.from_pretrained(
-            'https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json')
+            "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json"
+        )
         parser = RstPointerParserModel.from_pretrained(
-            'https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin',
-            config=parser_config)
+            "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin",
+            config=parser_config,
+        )
 
-        parser_output = parser(self.test_tokenized_sentence_ids, self.test_end_boundaries, self.test_sentence_lengths,
-                               self.test_relation_label, self.test_parsing_breaks)
+        parser_output = parser(
+            self.test_tokenized_sentence_ids,
+            self.test_end_boundaries,
+            self.test_sentence_lengths,
+            self.test_relation_label,
+            self.test_parsing_breaks,
+        )
 
         self.assertEqual(len(parser_output.splits), 2)
         self.assertIsNotNone(parser_output.loss_tree)

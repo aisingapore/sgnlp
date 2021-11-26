@@ -7,4 +7,4 @@ from .utils import download_tokenizer_files
 
 import nltk
 
-nltk.download('punkt')
+nltk.download("punkt")
