@@ -1,5 +1,5 @@
 {
-  "name": "LIF3WayAP",
+  "name": "Lif3WayAp",
   "languages": "English",
   "description": "This is a neural network that applies attention mechanism and pooling to 3 sets of inputs: context, candidate question, previous questions and answers. It then classifies whether a candidate question is a follow-up question.",
   "paper": {
@@ -14,18 +14,14 @@
     "text": "Custom dataset derived from QuAC. Can be downloaded from the author's github repository.",
     "url": "https://github.com/nusnlp/LIF"
   },
-  "evaluationScores": "0.81 F1 on development set. 0.82 F1 reported by authors in paper on development set.",
+  "evaluationScores": "0.745 F1 on test_i dataset. 0.75 F1 reported by authors in paper on test_i dataset.",
   "trainingConfig": {
-    "text": "Not available."
+    "text": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/config.json"
   },
-  "trainingTime": "~13 hours for 25 epochs on a single V100 GPU.",
+  "trainingTime": "~12 hours for 13 epochs on a single V100 GPU.",
   "modelWeights": {
-    "text": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/pytorch_model.bin",
-    "url": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/pytorch_model.bin"
-  },
-  "modelConfig": {
-    "text": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/config.json",
-    "url": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/config.json"
+    "text": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/model.tar.gz",
+    "url": "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/model.tar.gz"
   },
   "modelInput": "Context, historical questions and answers pairs, and candidate question.",
   "modelOutput": "Probability score of whether candidate question is a valid follow-up question.",
@@ -40,5 +36,6 @@
     "text": "For non-commercial use: GNU GPLv3. For commercial use, please contact us.",
     "url": "https://choosealicense.com/licenses/gpl-3.0"
   },
-  "contact": "sg-nlp@aisingapore.org"
+  "contact": "sg-nlp@aisingapore.org",
+  "additionalInfo": "This model is implemented using the AllenNLP framework. The interface will be different from the other models."
 }
