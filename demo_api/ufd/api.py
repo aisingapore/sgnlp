@@ -41,6 +41,8 @@ xlmr_tokenizer = UFDTokenizer.from_pretrained(embedding_model_name)
 
 preprocessor = UFDPreprocessor(tokenizer=xlmr_tokenizer)
 
+app.logger.info("Initialization complete.")
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
