@@ -16,13 +16,15 @@ class UFDPreprocessor:
     or pass in the tokenizer name and/or embedding model name via the 'tokenizer_name' and 'embedding_model_name'
     input args to create from_pretrained.
     """
+
     def __init__(
-            self,
-            tokenizer: PreTrainedTokenizer = None,
-            embedding_model: PreTrainedModel = None,
-            tokenizer_name: str = "xlm-roberta-large",
-            embedding_model_name: str = "xlm-roberta-large",
-            device: torch.device = torch.device('cpu')):
+        self,
+        tokenizer: PreTrainedTokenizer = None,
+        embedding_model: PreTrainedModel = None,
+        tokenizer_name: str = "xlm-roberta-large",
+        embedding_model_name: str = "xlm-roberta-large",
+        device: torch.device = torch.device("cpu"),
+    ):
         self.device = device
 
         if tokenizer is not None:
@@ -35,7 +37,8 @@ class UFDPreprocessor:
         else:
             embedding_config = UFDEmbeddingConfig.from_pretrained(embedding_model_name)
             self.embedding_model = UFDEmbeddingModel.from_pretrained(
-                embedding_model_name, config=embedding_config).to(device)
+                embedding_model_name, config=embedding_config
+            ).to(device)
 
     def __call__(self, data_batch: List[str]) -> BatchEncoding:
         """
@@ -48,8 +51,10 @@ class UFDPreprocessor:
             BatchEncoding: return a BatchEncoding instance with key 'input_ids' and embedded values of data batch.
         """
         text_embeddings = self._get_embedding(data_batch)
-        mean_features = torch.mean(text_embeddings[0], dim=1)  # calculate the mean of output layer of embedding model
-        return BatchEncoding({'data_batch': mean_features})
+        mean_features = torch.mean(
+            text_embeddings[0], dim=1
+        )  # calculate the mean of output layer of embedding model
+        return BatchEncoding({"data_batch": mean_features})
 
     def _get_embedding(self, data_batch: List[str]) -> Dict[str, BatchEncoding]:
         """

@@ -14,7 +14,7 @@ from .modeling import (
     UFDMinDiscriminatorModel,
     UFDDeepInfoMaxLossModel,
     UFDEmbeddingModel,
-    UFDModel
+    UFDModel,
 )
 from .tokenization import UFDTokenizer
 from .train import train

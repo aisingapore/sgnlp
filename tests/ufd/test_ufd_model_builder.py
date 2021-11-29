@@ -7,17 +7,17 @@ from sgnlp.models.ufd import (
     UFDCombineFeaturesMapModel,
     UFDClassifierModel,
     UFDModelBuilder,
-    UFDModel
+    UFDModel,
 )
 
 
 class TestUFDModelBuilderTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.model_map = {
-            'adaptor_domain': UFDAdaptorDomainModel,
-            'adaptor_global': UFDAdaptorGlobalModel,
-            'maper': UFDCombineFeaturesMapModel,
-            'classifier': UFDClassifierModel
+            "adaptor_domain": UFDAdaptorDomainModel,
+            "adaptor_global": UFDAdaptorGlobalModel,
+            "maper": UFDCombineFeaturesMapModel,
+            "classifier": UFDClassifierModel,
         }
 
     @pytest.mark.slow

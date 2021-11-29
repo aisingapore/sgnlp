@@ -8,7 +8,7 @@ from transformers import (
     PreTrainedTokenizer,
     XLMRobertaConfig,
     XLMRobertaModel,
-    XLMRobertaTokenizer
+    XLMRobertaTokenizer,
 )
 
 from sgnlp.models.ufd import (
@@ -26,11 +26,11 @@ from sgnlp.models.ufd import (
     UFDEmbeddingConfig,
     UFDEmbeddingModel,
     UFDTokenizer,
-    UFDModel
+    UFDModel,
 )
 
 
-DEVICE = torch.device('cpu')
+DEVICE = torch.device("cpu")
 
 # Config Test Cases
 
@@ -112,7 +112,7 @@ class TestUFDAdaptorGlobalTestCase(unittest.TestCase):
         self.assertEqual(self.model.config_class, UFDAdaptorGlobalConfig)
 
     def test_base_model_prefix(self):
-        self.assertEqual(self.model.base_model_prefix, 'UFDAdaptorGlobal')
+        self.assertEqual(self.model.base_model_prefix, "UFDAdaptorGlobal")
 
     def test_forward_pass(self):
         input_tensor = torch.ones([1, 1024], dtype=torch.float32, device=DEVICE)
@@ -140,7 +140,7 @@ class TestUFDAdaptorDomainModelTestCase(unittest.TestCase):
         self.assertEqual(self.model.config_class, UFDAdaptorDomainConfig)
 
     def test_base_model_prefix(self):
-        self.assertEqual(self.model.base_model_prefix, 'UFDAdaptorDomain')
+        self.assertEqual(self.model.base_model_prefix, "UFDAdaptorDomain")
 
     def test_forward_pass(self):
         input_tensor = torch.ones([1, 1024], dtype=torch.float32, device=DEVICE)
@@ -168,7 +168,7 @@ class TestUFDCombineFeaturesMapModelTestCase(unittest.TestCase):
         self.assertEqual(self.model.config_class, UFDCombineFeaturesMapConfig)
 
     def test_base_model_prefix(self):
-        self.assertEqual(self.model.base_model_prefix, 'UFDCombineFeaturesMap')
+        self.assertEqual(self.model.base_model_prefix, "UFDCombineFeaturesMap")
 
     def test_forward_pass(self):
         input_tensor = torch.ones([1, 2 * 1024], dtype=torch.float32, device=DEVICE)
@@ -194,7 +194,7 @@ class TestUFDClassifierModelTestCase(unittest.TestCase):
         self.assertEqual(self.model.config_class, UFDClassifierConfig)
 
     def test_base_model_prefix(self):
-        self.assertEqual(self.model.base_model_prefix, 'UFDClassifier')
+        self.assertEqual(self.model.base_model_prefix, "UFDClassifier")
 
     def test_forward_pass(self):
         input_tensor = torch.ones([1, 1024], dtype=torch.float32, device=DEVICE)
@@ -260,10 +260,15 @@ class TestUFDDeepInfoMaxLossModelTestCase(unittest.TestCase):
         self.model.to(DEVICE)
         self.model.eval()
         result = self.model(
-            x_input, x_n_input,
-            f_g_input, fg_n_input,
-            f_d_input, fd_n_input,
-            y_g_input, y_d_input, yd_n_input
+            x_input,
+            x_n_input,
+            f_g_input,
+            fg_n_input,
+            f_d_input,
+            fd_n_input,
+            y_g_input,
+            y_d_input,
+            yd_n_input,
         )
 
         self.assertEqual(result.ndim, 0)
@@ -294,7 +299,8 @@ class TestUFDModelTestCase(unittest.TestCase):
             adaptor_domain=ad_model,
             adaptor_global=ag_model,
             feature_maper=feat_maper_model,
-            classifier=classifier_model)
+            classifier=classifier_model,
+        )
 
     def test_forward_pass(self):
         input_tensor = torch.ones([1, 1024], dtype=torch.float32, device=DEVICE)
@@ -309,6 +315,7 @@ class TestUFDModelTestCase(unittest.TestCase):
 
 
 # Tokenizer
+
 
 @pytest.mark.slow
 class TestUFDTokenizerTestCase(unittest.TestCase):

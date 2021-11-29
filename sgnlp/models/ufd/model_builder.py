@@ -10,14 +10,14 @@ from .config import (
     UFDAdaptorDomainConfig,
     UFDAdaptorGlobalConfig,
     UFDCombineFeaturesMapConfig,
-    UFDClassifierConfig
+    UFDClassifierConfig,
 )
 from .modeling import (
     UFDAdaptorDomainModel,
     UFDAdaptorGlobalModel,
     UFDCombineFeaturesMapModel,
     UFDClassifierModel,
-    UFDModel
+    UFDModel,
 )
 
 
@@ -33,16 +33,20 @@ class UFDModelBuilder:
     |--------config_filename
     |--------model_filename
     """
+
     def __init__(
-            self,
-            models_root_path: str = "https://sgnlp.blob.core.windows.net/models/ufd/",
-            source_domains: List[str] = ["books", "music", "dvd"],
-            target_languages: List[str] = ["de", "jp", "fr"],
-            target_domains: List[str] = ["books", "music", "dvd"],
-            config_filename: str = "config.json",
-            model_filename: str = "pytorch_model.bin",
-            device: torch.device = torch.device("cpu")):
-        self.from_remote_url = models_root_path.startswith('https://') or models_root_path.startswith('http://')
+        self,
+        models_root_path: str = "https://storage.googleapis.com/sgnlp/models/ufd/",
+        source_domains: List[str] = ["books", "music", "dvd"],
+        target_languages: List[str] = ["de", "jp", "fr"],
+        target_domains: List[str] = ["books", "music", "dvd"],
+        config_filename: str = "config.json",
+        model_filename: str = "pytorch_model.bin",
+        device: torch.device = torch.device("cpu"),
+    ):
+        self.from_remote_url = models_root_path.startswith(
+            "https://"
+        ) or models_root_path.startswith("http://")
         self.models_root_path = models_root_path
         self.source_domains = source_domains
         self.target_languages = target_languages
@@ -53,14 +57,14 @@ class UFDModelBuilder:
 
         self.models_group = ["adaptor_domain", "adaptor_global", "maper", "classifier"]
 
-        model_sets = list(product(*[
-            self.source_domains,
-            self.target_languages,
-            self.target_domains
-        ]))
+        model_sets = list(
+            product(*[self.source_domains, self.target_languages, self.target_domains])
+        )
         self.trimmed_model_sets = [lst for lst in model_sets if lst[0] != lst[2]]
 
-    def _create_adaptor_domain(self, config_full_path: str, model_full_path: str) -> UFDAdaptorDomainModel:
+    def _create_adaptor_domain(
+        self, config_full_path: str, model_full_path: str
+    ) -> UFDAdaptorDomainModel:
         """
         Method to create UFDAdaptorDomainConfig and UFDAdaptorDomainModel from pretrained weights.
 
@@ -72,13 +76,18 @@ class UFDModelBuilder:
             UFDAdaptorDomainModel: return the created model instance
         """
         adaptor_domain_config = UFDAdaptorDomainConfig.from_pretrained(config_full_path)
-        adaptor_domain_model = UFDAdaptorDomainModel.from_pretrained(
-            model_full_path, config=adaptor_domain_config) \
-            .to(self.device) \
+        adaptor_domain_model = (
+            UFDAdaptorDomainModel.from_pretrained(
+                model_full_path, config=adaptor_domain_config
+            )
+            .to(self.device)
             .eval()
+        )
         return adaptor_domain_model
 
-    def _create_adaptor_global(self, config_full_path: str, model_full_path: str) -> UFDAdaptorGlobalModel:
+    def _create_adaptor_global(
+        self, config_full_path: str, model_full_path: str
+    ) -> UFDAdaptorGlobalModel:
         """
         Method to create UFDAdaptorGlobalConfig and UFDAdaptorGlobalModel from pretrained weights.
 
@@ -90,13 +99,18 @@ class UFDModelBuilder:
             UFDAdaptorGlobalModel: return the created model instance
         """
         adaptor_global_config = UFDAdaptorGlobalConfig.from_pretrained(config_full_path)
-        adaptor_global_model = UFDAdaptorGlobalModel.from_pretrained(
-            model_full_path, config=adaptor_global_config) \
-            .to(self.device) \
+        adaptor_global_model = (
+            UFDAdaptorGlobalModel.from_pretrained(
+                model_full_path, config=adaptor_global_config
+            )
+            .to(self.device)
             .eval()
+        )
         return adaptor_global_model
 
-    def _create_maper(self, config_full_path: str, model_full_path: str) -> UFDCombineFeaturesMapModel:
+    def _create_maper(
+        self, config_full_path: str, model_full_path: str
+    ) -> UFDCombineFeaturesMapModel:
         """
         Method to create UFDCombineFeaturesMapConfig and UFDCombineFeaturesMapModel from pretrained weights.
 
@@ -108,13 +122,18 @@ class UFDModelBuilder:
             UFDCombineFeaturesMapModel: return the created model instance
         """
         maper_config = UFDCombineFeaturesMapConfig.from_pretrained(config_full_path)
-        maper_model = UFDCombineFeaturesMapModel.from_pretrained(
-            model_full_path, config=maper_config) \
-            .to(self.device) \
+        maper_model = (
+            UFDCombineFeaturesMapModel.from_pretrained(
+                model_full_path, config=maper_config
+            )
+            .to(self.device)
             .eval()
+        )
         return maper_model
 
-    def _create_classifier(self, config_full_path: str, model_full_path: str) -> UFDClassifierModel:
+    def _create_classifier(
+        self, config_full_path: str, model_full_path: str
+    ) -> UFDClassifierModel:
         """
         Method to create UFDClassifierConfig and UFDClassifierModel from pretrained weights.
 
@@ -126,10 +145,13 @@ class UFDModelBuilder:
             UFDClassifierModel: return the created model instance
         """
         classifier_config = UFDClassifierConfig.from_pretrained(config_full_path)
-        classifier_model = UFDClassifierModel.from_pretrained(
-            model_full_path, config=classifier_config) \
-            .to(self.device) \
+        classifier_model = (
+            UFDClassifierModel.from_pretrained(
+                model_full_path, config=classifier_config
+            )
+            .to(self.device)
             .eval()
+        )
         return classifier_model
 
     def _build_file_path(self, model_name: str) -> Tuple[str, str]:
@@ -145,7 +167,9 @@ class UFDModelBuilder:
         if self.from_remote_url:
             remote_config_path = posixpath.join(model_name, self.config_filename)
             remote_model_path = posixpath.join(model_name, self.model_filename)
-            config_path = urllib.parse.urljoin(self.models_root_path, remote_config_path)
+            config_path = urllib.parse.urljoin(
+                self.models_root_path, remote_config_path
+            )
             model_path = urllib.parse.urljoin(self.models_root_path, remote_model_path)
         else:
             model_root_path = pathlib.Path(self.models_root_path).joinpath(model_name)
@@ -180,14 +204,30 @@ class UFDModelBuilder:
         models_group = {}
         for grp in self.trimmed_model_sets:
             model_name = "_".join(grp)
-            ad_cfg_path, ad_model_path = self._build_file_path(model_name + "_adaptor_domain")
-            ag_cfg_path, ag_model_path = self._build_file_path(model_name + "_adaptor_global")
-            feat_maper_cfg_path, feat_maper_model_path = self._build_file_path(model_name + "_maper")
-            classifier_cfg_path, classifier_model_path = self._build_file_path(model_name + "_classifier")
+            ad_cfg_path, ad_model_path = self._build_file_path(
+                model_name + "_adaptor_domain"
+            )
+            ag_cfg_path, ag_model_path = self._build_file_path(
+                model_name + "_adaptor_global"
+            )
+            feat_maper_cfg_path, feat_maper_model_path = self._build_file_path(
+                model_name + "_maper"
+            )
+            classifier_cfg_path, classifier_model_path = self._build_file_path(
+                model_name + "_classifier"
+            )
             models_group[model_name] = UFDModel(
-                adaptor_domain=self.model_map[self.models_group[0]](ad_cfg_path, ad_model_path),
-                adaptor_global=self.model_map[self.models_group[1]](ag_cfg_path, ag_model_path),
-                feature_maper=self.model_map[self.models_group[2]](feat_maper_cfg_path, feat_maper_model_path),
-                classifier=self.model_map[self.models_group[3]](classifier_cfg_path, classifier_model_path)
+                adaptor_domain=self.model_map[self.models_group[0]](
+                    ad_cfg_path, ad_model_path
+                ),
+                adaptor_global=self.model_map[self.models_group[1]](
+                    ag_cfg_path, ag_model_path
+                ),
+                feature_maper=self.model_map[self.models_group[2]](
+                    feat_maper_cfg_path, feat_maper_model_path
+                ),
+                classifier=self.model_map[self.models_group[3]](
+                    classifier_cfg_path, classifier_model_path
+                ),
             )
         return models_group

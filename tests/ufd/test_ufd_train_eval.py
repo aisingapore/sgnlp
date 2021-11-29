@@ -120,7 +120,7 @@ class TestTrainTestCase(unittest.TestCase):
 
     @pytest.mark.slow
     def test_eval(self):
-        self.cfg.model_folder = "https://sgnlp.blob.core.windows.net/models/ufd"
+        self.cfg.model_folder = "https://storage.googleapis.com/sgnlp/models/ufd"
         self.cfg.eval_args["source_language"] = "en"
         self.cfg.eval_args["source_domains"] = ["books"]
         self.cfg.eval_args["target_languages"] = ["de"]
