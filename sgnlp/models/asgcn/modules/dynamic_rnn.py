@@ -30,36 +30,24 @@ class DynamicLSTM(nn.Module):
         self.__init_rnn()
 
     def __init_rnn(self) -> None:
+        """
+        Helper method to initalized RNN type
+        """
+        input_args = {
+            "input_size": self.input_size,
+            "hidden_size": self.hidden_size,
+            "num_layers": self.num_layers,
+            "bias": self.bias,
+            "batch_first": self.batch_first,
+            "dropout": self.dropout,
+            "bidirectional": self.bidirectional
+        }
         if self.rnn_type == 'LSTM':
-            self.rnn = nn.LSTM(
-                input_size=self.input_size,
-                hidden_size=self.hidden_size,
-                num_layers=self.num_layers,
-                bias=self.bias,
-                batch_first=self.batch_first,
-                dropout=self.dropout,
-                bidirectional=self.bidirectional
-            )
+            self.rnn = nn.LSTM(**input_args)
         elif self.rnn_type == 'GRU':
-            self.rnn = nn.GRU(
-                input_size=self.input_size,
-                hidden_size=self.hidden_size,
-                num_layers=self.num_layers,
-                bias=self.bias,
-                batch_first=self.batch_first,
-                dropout=self.dropout,
-                bidirectional=self.bidirectional
-            )
+            self.rnn = nn.GRU(**input_args)
         elif self.rnn_type == 'RNN':
-            self.rnn = nn.RNN(
-                input_size=self.input_size,
-                hidden_size=self.hidden_size,
-                num_layers=self.num_layers,
-                bias=self.bias,
-                batch_first=self.batch_first,
-                dropout=self.dropout,
-                bidirectional=self.bidirectional
-            )
+            self.rnn = nn.RNN(**input_args)
 
     def forward(self, x, x_len, h0=None):
         # Sort
