@@ -9,6 +9,7 @@
     "embed_dim": 300,
     "hidden_dim": 300,
     "polarities_dim": 3,
+    "dropout": 0.3,
     "save": true,
     "seed": 776,
     "device": "cuda"

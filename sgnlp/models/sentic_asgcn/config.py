@@ -11,6 +11,7 @@ class SenticASGCNConfig(PreTrainedConfig):
     Args:
         embed_dim (:obj:`int`, defaults to 300): Embedding dimension size.
         hidden_dim (:obj:`int`, defaults to 300): Size of hidden dimension.
+        dropout (:obj:`float`, defaults to 0.3): Droput percentage.
         polarities_dim (:obj:`int`, defaults to 3): Size of output dimension represeting available polarities (e.g. Positive, Negative, Neutral).
         device (:obj:`torch.device`, defaults to torch.device('cuda`)): Type of torch device.
 
@@ -27,11 +28,13 @@ class SenticASGCNConfig(PreTrainedConfig):
         embed_dim=300,
         hidden_dim=300,
         polarities_dim=3,
+        dropout=0.3,
         device=torch.device("cuda"),
         **kwargs
     ):
         super().__init__(**kwargs)
         self.embed_dim = embed_dim
         self.hidden_dim = hidden_dim
+        self.dropout = dropout
         self.polarities_dim = polarities_dim
         self.device = device

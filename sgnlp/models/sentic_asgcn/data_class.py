@@ -22,6 +22,9 @@ class SenticASGCNTrainArgs:
     hidden_dim: int = field(
         default=300, metadata={"help": "Number of neurons for hidden layer."}
     )
+    dropout: float = field(
+        default=0.3, metadata={"help": "Default value for dropout percentages."}
+    )
     polarities_dim: int = field(
         default=3, metadata={"help": "Default dimension for polarities."}
     )
