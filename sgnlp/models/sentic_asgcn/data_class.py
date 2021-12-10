@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class SenticGCNTrainArgs:
+class SenticASGCNTrainArgs:
     initializer: str = field(
         default="xavier_uniform", metadata={"help": "Type of initalizer to use."}
     )
@@ -26,7 +26,7 @@ class SenticGCNTrainArgs:
         default=3, metadata={"help": "Default dimension for polarities."}
     )
     save: bool = field(
-        default=False, metadata={"help": "Flag to indicate if results should be saved."}
+        default=True, metadata={"help": "Flag to indicate if results should be saved."}
     )
     seed: int = field(
         default=776, metadata={"help": "Default random seed for training."}
