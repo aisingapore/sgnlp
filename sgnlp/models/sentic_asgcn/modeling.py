@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
+from transformers import PreTrainedModel
 from transformers.file_utils import ModelOutput
-from transformers.utils.dummy_pt_objects import PreTrainedModel
 
 
 @dataclass
