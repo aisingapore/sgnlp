@@ -7,6 +7,10 @@ from utils import parse_args_and_load_config
 
 
 class WhiteSpaceTokenizer(object):
+    """
+    Simple white space tokenizer
+    """
+
     def __init__(self, vocab):
         self.vocab = vocab
 
@@ -17,6 +21,10 @@ class WhiteSpaceTokenizer(object):
 
 
 class DependencyGraphPreprocessor(object):
+    """
+    Preprocessor wrapper class for processing dependency graph.
+    """
+
     def __init__(self):
         self.nlp = spacy.load("en_core_web_sm")
         self.nlp.tokenizer = WhiteSpaceTokenizer(self.nlp.vocab)
@@ -34,6 +42,12 @@ class DependencyGraphPreprocessor(object):
         return matrix
 
     def process(self, filename: str):
+        """
+        Main processing method, takes in raw data file and convert to adj matrix.
+
+        Args:
+            filename (str): filename of raw dataset to process
+        """
         with open(
             filename, "r", encoding="utf-8", newline="\n", errors="ignore"
         ) as fin:
