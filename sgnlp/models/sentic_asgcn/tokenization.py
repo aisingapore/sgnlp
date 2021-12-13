@@ -83,12 +83,11 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
         return vocab
 
     def _tokenize(self, text, **kwargs):
-        text = text.lower()
+        if self.do_lower_case:
+            text = text.lower()
         words = text.split()
         unknownidx = 1
-        sequence = [
-            self.word2idx[w] if w in self.word2idx else unknownidx for w in words
-        ]
+        sequence = [self.vocab[w] if w in self.vocab else unknownidx for w in words]
         if len(sequence) == 0:
             sequence = [0]
         return sequence
