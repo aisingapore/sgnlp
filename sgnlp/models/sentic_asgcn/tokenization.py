@@ -41,6 +41,12 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
     def get_vocab(self):
         return dict(self.vocab)
 
+    def _convert_token_to_id(self, token: str) -> int:
+        return self.vocab.get(token, self.vocab.get(self.unk_token))
+
+    def _convert_id_to_token(self, index: int) -> str:
+        return self.ids_to_tokens(index, self.unk_token)
+
     @staticmethod
     def __read_text_file(file_names: List[str]) -> str:
         """
@@ -91,6 +97,3 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
         if len(sequence) == 0:
             sequence = [0]
         return sequence
-
-    def _convert_id_to_token(self, index: int) -> str:
-        return super()._convert_id_to_token(index)
