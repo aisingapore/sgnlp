@@ -1,8 +1,12 @@
 from dataclasses import dataclass, field
+from typing import List
 
 
 @dataclass
 class SenticASGCNTrainArgs:
+    dependency_graph_preprocess: List[str] = field(
+        default=list, metadata={"help": "List of raw dataset to process."}
+    )
     initializer: str = field(
         default="xavier_uniform", metadata={"help": "Type of initalizer to use."}
     )

@@ -7,7 +7,7 @@ import pathlib
 import numpy as np
 import torch
 
-from .data_class import SenticASGCNTrainArgs
+from data_class import SenticASGCNTrainArgs
 
 
 def parse_args_and_load_config(

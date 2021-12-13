@@ -3,6 +3,8 @@ import spacy
 import pickle
 from spacy.tokens import Doc
 
+from utils import parse_args_and_load_config
+
 
 class WhiteSpaceTokenizer(object):
     def __init__(self, vocab):
@@ -47,3 +49,10 @@ class DependencyGraphPreprocessor(object):
                     f"{text_left} {aspect} {text_right}"
                 )
             pickle.dump(idx2graph, fout)
+
+
+if __name__ == "__main__":
+    dgp = DependencyGraphPreprocessor()
+    cfg = parse_args_and_load_config()
+    for data_path in cfg.dependency_graph_preprocess:
+        dgp.process(data_path)

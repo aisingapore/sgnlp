@@ -1,4 +1,16 @@
 {
+    "dependency_graph_preprocess": [
+        "./datasets/acl-14-short-data/train.raw",
+        "./datasets/acl-14-short-data/test.raw",
+        "./datasets/semeval14/restaurant_train.raw",
+        "./datasets/semeval14/restaurant_test.raw",
+        "./datasets/semeval14/laptop_train.raw",
+        "./datasets/semeval14/laptop_test.raw",
+        "./datasets/semeval15/restaurant_train.raw",
+        "./datasets/semeval15/restaurant_test.raw",
+        "./datasets/semeval16/restaurant_train.raw",
+        "./datasets/semeval16/restaurant_test.raw"
+    ],
     "initializer": "xavier_uniform",
     "optimizer": "adam",
     "learning_rate": 0.001,
