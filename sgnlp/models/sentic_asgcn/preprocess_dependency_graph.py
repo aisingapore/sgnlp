@@ -16,13 +16,13 @@ class WhiteSpaceTokenizer(object):
 
 class DependencyGraphPreprocessor(object):
     def __init__(self):
-        self.nlp = spacy.load('en_core_web_sm')
+        self.nlp = spacy.load("en_core_web_sm")
         self.nlp.tokenizer = WhiteSpaceTokenizer(self.nlp.vocab)
 
     def __dependency_adj_matrix(self, text: str) -> np.ndarray:
         tokens = self.nlp(text)
         words = text.split()
-        matrix = np.zeros((len(words), len(words))).astype('float32')
+        matrix = np.zeros((len(words), len(words))).astype("float32")
 
         for token in tokens:
             matrix[token.i][token.i] = 1
@@ -32,12 +32,18 @@ class DependencyGraphPreprocessor(object):
         return matrix
 
     def process(self, filename: str):
-        with open(filename, 'r', encoding='utf-8', newline='\n', errors='ignore') as fin:
+        with open(
+            filename, "r", encoding="utf-8", newline="\n", errors="ignore"
+        ) as fin:
             lines = fin.readlines()
         idx2graph = {}
-        with open(f'{filename}.graph', 'wb') as fout:
+        with open(f"{filename}.graph", "wb") as fout:
             for i in range(0, len(lines), 3):
-                text_left, _, text_right = [s.lower().strip() for s in lines[i].partition("$T$")]
+                text_left, _, text_right = [
+                    s.lower().strip() for s in lines[i].partition("$T$")
+                ]
                 aspect = lines[i + 1].lower().strip()
-                idx2graph[i] = self.__dependency_adj_matrix(f'{text_left} {aspect} {text_right}'})
+                idx2graph[i] = self.__dependency_adj_matrix(
+                    f"{text_left} {aspect} {text_right}"
+                )
             pickle.dump(idx2graph, fout)
