@@ -5,4 +5,4 @@ from .postprocess import RstPostprocessor
 
 import nltk
 
-nltk.download('punkt')
+nltk.download("punkt")

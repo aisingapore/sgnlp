@@ -1,0 +1,3 @@
+flask
+gunicorn
+-e .[lif_3way_ap]

@@ -16,7 +16,6 @@ def prepare_output_sentence(sent):
 
 
 class CsgecPostprocessor:
-
     def __init__(self, tgt_tokenizer):
         self.tgt_tokenizer = tgt_tokenizer
 
@@ -26,7 +25,10 @@ class CsgecPostprocessor:
             text_predicted_sentences = []
             for sentence_predicted_ids in text_predicted_ids:
                 text_predicted_sentences.append(
-                    prepare_output_sentence(self.tgt_tokenizer.decode(sentence_predicted_ids)))
-            batch_predicted_sentences.append(' '.join(text_predicted_sentences))
+                    prepare_output_sentence(
+                        self.tgt_tokenizer.decode(sentence_predicted_ids)
+                    )
+                )
+            batch_predicted_sentences.append(" ".join(text_predicted_sentences))
 
         return batch_predicted_sentences

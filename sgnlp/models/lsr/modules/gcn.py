@@ -6,7 +6,7 @@ from ..utils import get_default_device
 
 
 class GraphConvLayer(nn.Module):
-    """ A GCN module operated on dependency graphs. """
+    """A GCN module operated on dependency graphs."""
 
     def __init__(self, mem_dim, layers, dropout, device=None, self_loop=False):
         super(GraphConvLayer, self).__init__()
@@ -24,7 +24,9 @@ class GraphConvLayer(nn.Module):
         # dcgcn block
         self.weight_list = nn.ModuleList()
         for i in range(self.layers):
-            self.weight_list.append(nn.Linear((self.mem_dim + self.head_dim * i), self.head_dim))
+            self.weight_list.append(
+                nn.Linear((self.mem_dim + self.head_dim * i), self.head_dim)
+            )
 
         self.weight_list = self.weight_list.to(device=self.device)
         self.linear_output = self.linear_output.to(device=self.device)

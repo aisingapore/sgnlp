@@ -1,8 +1,21 @@
 channels:
   - defaults
 dependencies:
-  - python=3.8
+  - python=3.7
   - pip=21.0.1
   - cudatoolkit=10.2 # comment out for local install
   - pip:
-      - -r file:requirements.txt
+    - datasets
+    - nltk
+    - numpy
+    - pandas
+    - scikit-learn
+    - sentencepiece
+    - spacy
+    - tokenizers
+    - torch>=1.6,<2
+    - torchtext
+    - transformers
+    - allennlp==0.8.4
+    - scikit-learn==0.22
+    - overrides==3.1.0

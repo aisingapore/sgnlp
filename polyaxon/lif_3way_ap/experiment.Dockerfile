@@ -10,7 +10,7 @@ WORKDIR $WORK_DIR
 USER $USER
 
 COPY build/polyaxon/lif_3way_ap/conda.yml .
-COPY build/sgnlp_models/models/lif_3way_ap/requirements.txt .
+
 RUN conda env update -f conda.yml -n base
 RUN python -m spacy download en_core_web_sm
 

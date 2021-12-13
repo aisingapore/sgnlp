@@ -25,6 +25,7 @@ class LsrModelOutput:
         loss (:obj:`torch.FloatTensor` of shape :obj:`(1,)`, `optional`, returned when `labels` is provided ):
             Loss on relation prediction task.
     """
+
     prediction: torch.FloatTensor
     loss: Optional[torch.FloatTensor] = None
 
@@ -39,7 +40,7 @@ class LsrPreTrainedModel(PreTrainedModel):
     base_model_prefix = "lsr"
 
     def _init_weights(self, module):
-        """ Initialize the weights """
+        """Initialize the weights"""
         if isinstance(module, nn.Linear):
             # Slightly different from the TF version which uses truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
@@ -97,31 +98,52 @@ class LsrModel(LsrPreTrainedModel):
             bert_hidden_size = 768
             self.linear_re = nn.Linear(bert_hidden_size, config.hidden_dim)
         else:
-            self.word_emb = nn.Embedding(config.word_embedding_shape[0], config.word_embedding_shape[1])
+            self.word_emb = nn.Embedding(
+                config.word_embedding_shape[0], config.word_embedding_shape[1]
+            )
             if not config.finetune_emb:
                 self.word_emb.weight.requires_grad = False
             self.ner_emb = nn.Embedding(13, config.ner_dim, padding_idx=0)
-            self.coref_embed = nn.Embedding(config.max_length, config.coref_dim, padding_idx=0)
+            self.coref_embed = nn.Embedding(
+                config.max_length, config.coref_dim, padding_idx=0
+            )
             self.linear_re = nn.Linear(config.hidden_dim * 2, config.hidden_dim)
-            input_size = config.word_embedding_shape[1] + config.coref_dim + config.ner_dim
-            self.rnn_sent = Encoder(input_size, config.hidden_dim, config.dropout_emb, config.dropout_rate)
+            input_size = (
+                config.word_embedding_shape[1] + config.coref_dim + config.ner_dim
+            )
+            self.rnn_sent = Encoder(
+                input_size, config.hidden_dim, config.dropout_emb, config.dropout_rate
+            )
 
         # Induce latent structure layers
         self.use_struct_att = config.use_struct_att
         if self.use_struct_att:
-            self.struct_induction = StructInduction(config.hidden_dim // 2, config.hidden_dim, True)
+            self.struct_induction = StructInduction(
+                config.hidden_dim // 2, config.hidden_dim, True
+            )
         self.dropout_gcn = nn.Dropout(config.dropout_gcn)
         self.use_reasoning_block = config.use_reasoning_block
         if self.use_reasoning_block:
             self.reasoner = nn.ModuleList()
-            self.reasoner.append(DynamicReasoner(config.hidden_dim, config.reasoner_layer_sizes[0], self.dropout_gcn))
-            self.reasoner.append(DynamicReasoner(config.hidden_dim, config.reasoner_layer_sizes[1], self.dropout_gcn))
+            self.reasoner.append(
+                DynamicReasoner(
+                    config.hidden_dim, config.reasoner_layer_sizes[0], self.dropout_gcn
+                )
+            )
+            self.reasoner.append(
+                DynamicReasoner(
+                    config.hidden_dim, config.reasoner_layer_sizes[1], self.dropout_gcn
+                )
+            )
 
         # Output layers
         self.dis_embed = nn.Embedding(20, config.distance_size, padding_idx=10)
         self.self_att = SelfAttention(config.hidden_dim)
-        self.bili = torch.nn.Bilinear(config.hidden_dim + config.distance_size,
-                                      config.hidden_dim + config.distance_size, config.hidden_dim)
+        self.bili = torch.nn.Bilinear(
+            config.hidden_dim + config.distance_size,
+            config.hidden_dim + config.distance_size,
+            config.hidden_dim,
+        )
         self.linear_output = nn.Linear(2 * config.hidden_dim, config.num_relations)
 
         self.init_weights()
@@ -138,23 +160,28 @@ class LsrModel(LsrPreTrainedModel):
         for batch_no in range(batch_size):
             sent_list = []
             sent_lens = []
-            sent_index = ((context_seg[batch_no] == 1).nonzero()).squeeze(
-                -1).tolist()  # array of start point for sentences in a document
+            sent_index = (
+                ((context_seg[batch_no] == 1).nonzero()).squeeze(-1).tolist()
+            )  # array of start point for sentences in a document
             pre_index = 0
             for i, index in enumerate(sent_index):
                 if i != 0:
                     if i == 1:
-                        sent_list.append(input_sent[batch_no][pre_index:index + 1])
+                        sent_list.append(input_sent[batch_no][pre_index : index + 1])
                         sent_lens.append(index - pre_index + 1)
                     else:
-                        sent_list.append(input_sent[batch_no][pre_index + 1:index + 1])
+                        sent_list.append(
+                            input_sent[batch_no][pre_index + 1 : index + 1]
+                        )
                         sent_lens.append(index - pre_index)
                 pre_index = index
 
             sents = pad_sequence(sent_list).permute(1, 0, 2)
             sent_lens_t = torch.LongTensor(sent_lens).to(device=self.device)
             docs_len.append(sent_lens)
-            sents_output, sent_emb = self.rnn_sent(sents, sent_lens_t)  # sentence embeddings for a document.
+            sents_output, sent_emb = self.rnn_sent(
+                sents, sent_lens_t
+            )  # sentence embeddings for a document.
 
             doc_emb = None
             for i, (sen_len, emb) in enumerate(zip(sent_lens, sents_output)):
@@ -171,10 +198,29 @@ class LsrModel(LsrPreTrainedModel):
 
         return docs_emb, sents_emb
 
-    def forward(self, context_idxs, context_pos, context_ner, h_mapping, t_mapping,
-                relation_mask, dis_h_2_t, dis_t_2_h, context_seg, node_position, entity_position,
-                node_sent_num, all_node_num, entity_num_list, sdp_position, sdp_num_list, context_masks=None,
-                context_starts=None, relation_multi_label=None, **kwargs):
+    def forward(
+        self,
+        context_idxs,
+        context_pos,
+        context_ner,
+        h_mapping,
+        t_mapping,
+        relation_mask,
+        dis_h_2_t,
+        dis_t_2_h,
+        context_seg,
+        node_position,
+        entity_position,
+        node_sent_num,
+        all_node_num,
+        entity_num_list,
+        sdp_position,
+        sdp_num_list,
+        context_masks=None,
+        context_starts=None,
+        relation_multi_label=None,
+        **kwargs
+    ):
         # TODO: current kwargs are ignored, to allow preprocessing to pass in unnecessary arguments
         # TODO: Fix upstream preprocessing such that it is filtered out before passing in.
         """
@@ -225,17 +271,28 @@ class LsrModel(LsrPreTrainedModel):
         # Step 1: Encode the document
         if self.config.use_bert:
             context_output = self.bert(context_idxs, attention_mask=context_masks)[0]
-            context_output = [layer[starts.nonzero().squeeze(1)]
-                              for layer, starts in zip(context_output, context_starts)]
-            context_output = pad_sequence(context_output, batch_first=True, padding_value=-1)
-            context_output = torch.nn.functional.pad(context_output,
-                                                     (0, 0, 0, context_idxs.size(-1) - context_output.size(-2)))
+            context_output = [
+                layer[starts.nonzero().squeeze(1)]
+                for layer, starts in zip(context_output, context_starts)
+            ]
+            context_output = pad_sequence(
+                context_output, batch_first=True, padding_value=-1
+            )
+            context_output = torch.nn.functional.pad(
+                context_output,
+                (0, 0, 0, context_idxs.size(-1) - context_output.size(-2)),
+            )
             context_output = self.dropout(torch.relu(self.linear_re(context_output)))
             max_doc_len = 512
         else:
             sent_emb = torch.cat(
-                [self.word_emb(context_idxs), self.coref_embed(context_pos), self.ner_emb(context_ner)],
-                dim=-1)
+                [
+                    self.word_emb(context_idxs),
+                    self.coref_embed(context_pos),
+                    self.ner_emb(context_ner),
+                ],
+                dim=-1,
+            )
             docs_rep, sents_rep = self.doc_encoder(sent_emb, context_seg)
 
             max_doc_len = docs_rep.shape[1]
@@ -245,8 +302,9 @@ class LsrModel(LsrPreTrainedModel):
         # extract mention node representations
         mention_num_list = torch.sum(node_sent_num, dim=1).tolist()
         max_mention_num = max(mention_num_list)
-        mentions_rep = torch.bmm(node_position[:, :max_mention_num, :max_doc_len],
-                                 context_output)  # mentions rep
+        mentions_rep = torch.bmm(
+            node_position[:, :max_mention_num, :max_doc_len], context_output
+        )  # mentions rep
         # extract meta dependency paths (MDP) node representations
         max_sdp_num = max(sdp_num_list)
         sdp_rep = torch.bmm(sdp_position[:, :max_sdp_num, :max_doc_len], context_output)
@@ -255,7 +313,9 @@ class LsrModel(LsrPreTrainedModel):
         # concatenate all nodes of an instance
         gcn_inputs = []
         all_node_num_batch = []
-        for batch_no, (m_n, e_n, s_n) in enumerate(zip(mention_num_list, entity_num_list, sdp_num_list)):
+        for batch_no, (m_n, e_n, s_n) in enumerate(
+            zip(mention_num_list, entity_num_list, sdp_num_list)
+        ):
             m_rep = mentions_rep[batch_no][:m_n]
             e_rep = entity_rep[batch_no][:e_n]
             s_rep = sdp_rep[batch_no][:s_n]
@@ -274,14 +334,21 @@ class LsrModel(LsrPreTrainedModel):
         elif self.use_struct_att:
             gcn_inputs, _ = self.struct_induction(gcn_inputs)
             max_all_node_num = torch.max(all_node_num).item()
-            assert (gcn_inputs.shape[1] == max_all_node_num)
+            assert gcn_inputs.shape[1] == max_all_node_num
 
         node_position = node_position.permute(0, 2, 1)
-        output = torch.bmm(node_position[:, :max_doc_len, :max_mention_num], output[:, :max_mention_num])
+        output = torch.bmm(
+            node_position[:, :max_doc_len, :max_mention_num],
+            output[:, :max_mention_num],
+        )
         context_output = torch.add(context_output, output)
 
-        start_re_output = torch.matmul(h_mapping[:, :, :max_doc_len], context_output)  # aggregation
-        end_re_output = torch.matmul(t_mapping[:, :, :max_doc_len], context_output)  # aggregation
+        start_re_output = torch.matmul(
+            h_mapping[:, :, :max_doc_len], context_output
+        )  # aggregation
+        end_re_output = torch.matmul(
+            t_mapping[:, :, :max_doc_len], context_output
+        )  # aggregation
 
         s_rep = torch.cat([start_re_output, self.dis_embed(dis_h_2_t)], dim=-1)
         t_rep = torch.cat([end_re_output, self.dis_embed(dis_t_2_h)], dim=-1)
@@ -292,8 +359,9 @@ class LsrModel(LsrPreTrainedModel):
         loss = None
 
         if relation_multi_label is not None:
-            loss_fn = nn.BCEWithLogitsLoss(reduction='none')
-            loss = torch.sum(loss_fn(prediction, relation_multi_label) * relation_mask.unsqueeze(2)) \
-                   / torch.sum(relation_mask)
+            loss_fn = nn.BCEWithLogitsLoss(reduction="none")
+            loss = torch.sum(
+                loss_fn(prediction, relation_multi_label) * relation_mask.unsqueeze(2)
+            ) / torch.sum(relation_mask)
 
         return LsrModelOutput(prediction=prediction, loss=loss)

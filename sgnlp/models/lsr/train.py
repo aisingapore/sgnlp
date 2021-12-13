@@ -40,10 +40,12 @@ class LsrMetrics:
         predict_re = torch.sigmoid(model_output.prediction)
         predict_re = predict_re.data.cpu().numpy()
 
-        for i, label in enumerate(batch_data['labels']):
+        for i, label in enumerate(batch_data["labels"]):
             self.total_recall += len(label)
 
-            vertex_set_length = batch_data['entity_num_list'][i]  # the number of entities in each instance.
+            vertex_set_length = batch_data["entity_num_list"][
+                i
+            ]  # the number of entities in each instance.
             for j, (h_idx, t_idx) in enumerate(h_t_idx_generator(vertex_set_length)):
                 for r in range(1, self.num_relations):
                     result_tuple = (
@@ -78,9 +80,9 @@ class LsrMetrics:
             if input_theta is not None and item[1] > input_theta:
                 w = i
 
-        precision = np.asarray(precision, dtype='float32')
-        recall = np.asarray(recall, dtype='float32')
-        f1_arr = (2 * precision * recall / (precision + recall + 1e-20))
+        precision = np.asarray(precision, dtype="float32")
+        recall = np.asarray(recall, dtype="float32")
+        f1_arr = 2 * precision * recall / (precision + recall + 1e-20)
         auc = metrics.auc(x=precision, y=recall)
 
         if input_theta is None:
@@ -137,23 +139,30 @@ class MyAdagrad(torch.optim.Optimizer):
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
     """
 
-    def __init__(self, params, lr=1e-2, lr_decay=0, init_accu_value=0.1, weight_decay=0):
-        defaults = dict(lr=lr, lr_decay=lr_decay, init_accu_value=init_accu_value, \
-                        weight_decay=weight_decay)
+    def __init__(
+        self, params, lr=1e-2, lr_decay=0, init_accu_value=0.1, weight_decay=0
+    ):
+        defaults = dict(
+            lr=lr,
+            lr_decay=lr_decay,
+            init_accu_value=init_accu_value,
+            weight_decay=weight_decay,
+        )
         super(MyAdagrad, self).__init__(params, defaults)
 
         for group in self.param_groups:
-            for p in group['params']:
+            for p in group["params"]:
                 state = self.state[p]
-                state['step'] = 0
-                state['sum'] = torch.ones(p.data.size()).type_as(p.data) * \
-                               init_accu_value
+                state["step"] = 0
+                state["sum"] = (
+                    torch.ones(p.data.size()).type_as(p.data) * init_accu_value
+                )
 
     def share_memory(self):
         for group in self.param_groups:
-            for p in group['params']:
+            for p in group["params"]:
                 state = self.state[p]
-                state['sum'].share_memory_()
+                state["sum"].share_memory_()
 
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -167,24 +176,28 @@ class MyAdagrad(torch.optim.Optimizer):
             loss = closure()
 
         for group in self.param_groups:
-            for p in group['params']:
+            for p in group["params"]:
                 if p.grad is None:
                     continue
 
                 grad = p.grad.data
                 state = self.state[p]
 
-                state['step'] += 1
+                state["step"] += 1
 
-                if group['weight_decay'] != 0:
+                if group["weight_decay"] != 0:
                     if p.grad.data.is_sparse:
-                        raise RuntimeError("weight_decay option is not compatible with sparse gradients ")
-                    grad = grad.add(group['weight_decay'], p.data)
+                        raise RuntimeError(
+                            "weight_decay option is not compatible with sparse gradients "
+                        )
+                    grad = grad.add(group["weight_decay"], p.data)
 
-                clr = group['lr'] / (1 + (state['step'] - 1) * group['lr_decay'])
+                clr = group["lr"] / (1 + (state["step"] - 1) * group["lr_decay"])
 
                 if p.grad.data.is_sparse:
-                    grad = grad.coalesce()  # the update is non-linear so indices must be unique
+                    grad = (
+                        grad.coalesce()
+                    )  # the update is non-linear so indices must be unique
                     grad_indices = grad._indices()
                     grad_values = grad._values()
                     size = torch.Size([x for x in grad.size()])
@@ -195,31 +208,31 @@ class MyAdagrad(torch.optim.Optimizer):
                             return constructor()
                         return constructor(grad_indices, values, size)
 
-                    state['sum'].add_(make_sparse(grad_values.pow(2)))
-                    std = state['sum']._sparse_mask(grad)
+                    state["sum"].add_(make_sparse(grad_values.pow(2)))
+                    std = state["sum"]._sparse_mask(grad)
                     std_values = std._values().sqrt_().add_(1e-10)
                     p.data.add_(-clr, make_sparse(grad_values / std_values))
                 else:
-                    state['sum'].addcmul_(1, grad, grad)
-                    std = state['sum'].sqrt().add_(1e-10)
+                    state["sum"].addcmul_(1, grad, grad)
+                    std = state["sum"].sqrt().add_(1e-10)
                     p.data.addcdiv_(-clr, grad, std)
 
         return loss
 
 
 def get_optimizer(name, parameters, lr, l2=0):
-    if name == 'sgd':
+    if name == "sgd":
         return torch.optim.SGD(parameters, lr=lr, weight_decay=l2)
-    elif name in ['adagrad', 'myadagrad']:
+    elif name in ["adagrad", "myadagrad"]:
         # use custom adagrad to allow for init accumulator value
         return MyAdagrad(parameters, lr=lr, init_accu_value=0.1, weight_decay=l2)
-    elif name == 'adam':
+    elif name == "adam":
         return torch.optim.Adam(parameters, lr, weight_decay=l2)
-    elif name == 'adamw':
+    elif name == "adamw":
         return torch.optim.AdamW(parameters, lr=lr, weight_decay=l2)
-    elif name == 'adamax':
+    elif name == "adamax":
         return torch.optim.Adamax(parameters, weight_decay=l2)
-    elif name == 'adadelta':
+    elif name == "adadelta":
         return torch.optim.Adadelta(parameters, lr=lr, weight_decay=l2)
     else:
         raise Exception("Unsupported optimizer: {}".format(name))
@@ -227,39 +240,106 @@ def get_optimizer(name, parameters, lr, l2=0):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Train a relation extraction model based on latent structure refinement.")
+        description="Train a relation extraction model based on latent structure refinement."
+    )
 
-    parser.add_argument("--train_file", type=str, required=True, help="A json file containing the training data.")
-    parser.add_argument("--validation_file", type=str, default=None, help="A json file containing the validation data.")
-    parser.add_argument("--output_dir", type=str, default=None, help="Output directory path.")
-    parser.add_argument("--metadata_dir", type=str, required=True, help="Path to docred metadata directory.")
+    parser.add_argument(
+        "--train_file",
+        type=str,
+        required=True,
+        help="A json file containing the training data.",
+    )
+    parser.add_argument(
+        "--validation_file",
+        type=str,
+        default=None,
+        help="A json file containing the validation data.",
+    )
+    parser.add_argument(
+        "--output_dir", type=str, default=None, help="Output directory path."
+    )
+    parser.add_argument(
+        "--metadata_dir",
+        type=str,
+        required=True,
+        help="Path to docred metadata directory.",
+    )
 
     # Model arguments
-    parser.add_argument("--model_weights_path", type=str, default=None,
-                        help="Provide a path to model weights if you want to finetune from a checkpoint.")
-    parser.add_argument("--model_config_path", type=str, default=None,
-                        help="Provide a config if you want to override the defaults. "
-                             "To use bert encoder layer, specify in config file.")
-    parser.add_argument("--pretrained_embeddings_path", type=str, default=None,
-                        help="Provide a path to pretrained embeddings if you want to want to use them.")
+    parser.add_argument(
+        "--model_weights_path",
+        type=str,
+        default=None,
+        help="Provide a path to model weights if you want to finetune from a checkpoint.",
+    )
+    parser.add_argument(
+        "--model_config_path",
+        type=str,
+        default=None,
+        help="Provide a config if you want to override the defaults. "
+        "To use bert encoder layer, specify in config file.",
+    )
+    parser.add_argument(
+        "--pretrained_embeddings_path",
+        type=str,
+        default=None,
+        help="Provide a path to pretrained embeddings if you want to want to use them.",
+    )
 
     # Training arguments
-    parser.add_argument('--lr', type=float, default=1e-3, help='Applies to sgd and adagrad.')
-    parser.add_argument('--lr_decay', type=float, default=0.98, help='Learning rate decay rate.')
-    parser.add_argument('--decay_epoch', type=int, default=20, help='Decay learning rate after this epoch.')
-    parser.add_argument('--evaluate_epoch', type=int, default=30, help='Evaluate after this epoch.')
-    parser.add_argument('--optim', choices=['sgd', 'adagrad', 'adam', 'adamw', 'adamax'], default='adam',
-                        help='Choice of optimizer.')
-    parser.add_argument('--weight_decay', type=float, default=0, help='L2 weight decay.')
-    parser.add_argument('--num_epoch', type=int, default=200, help='Number of total training epochs.')
-    parser.add_argument('--batch_size', type=int, default=20, help='Training batch size.')
-    parser.add_argument('--max_grad_norm', type=float, default=5.0, help='Gradient clipping.')
+    parser.add_argument(
+        "--lr", type=float, default=1e-3, help="Applies to sgd and adagrad."
+    )
+    parser.add_argument(
+        "--lr_decay", type=float, default=0.98, help="Learning rate decay rate."
+    )
+    parser.add_argument(
+        "--decay_epoch",
+        type=int,
+        default=20,
+        help="Decay learning rate after this epoch.",
+    )
+    parser.add_argument(
+        "--evaluate_epoch", type=int, default=30, help="Evaluate after this epoch."
+    )
+    parser.add_argument(
+        "--optim",
+        choices=["sgd", "adagrad", "adam", "adamw", "adamax"],
+        default="adam",
+        help="Choice of optimizer.",
+    )
+    parser.add_argument(
+        "--weight_decay", type=float, default=0, help="L2 weight decay."
+    )
+    parser.add_argument(
+        "--num_epoch", type=int, default=200, help="Number of total training epochs."
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=20, help="Training batch size."
+    )
+    parser.add_argument(
+        "--max_grad_norm", type=float, default=5.0, help="Gradient clipping."
+    )
 
-    parser.add_argument('--seed', type=int, default=0, help="A seed for reproducible training.")
-    parser.add_argument('--use_gpu', type=bool, default=True, help="Whether you want to use GPU for training.")
+    parser.add_argument(
+        "--seed", type=int, default=0, help="A seed for reproducible training."
+    )
+    parser.add_argument(
+        "--use_gpu",
+        type=bool,
+        default=True,
+        help="Whether you want to use GPU for training.",
+    )
 
-    parser.add_argument('--use_wandb', type=bool, default=False, help="Whether to use wandb to monitor training.")
-    parser.add_argument('--wandb_run_name', type=str, default=None, help="Wandb run name.")
+    parser.add_argument(
+        "--use_wandb",
+        type=bool,
+        default=False,
+        help="Whether to use wandb to monitor training.",
+    )
+    parser.add_argument(
+        "--wandb_run_name", type=str, default=None, help="Wandb run name."
+    )
 
     args = parser.parse_args()
 
@@ -270,28 +350,32 @@ def train_model(args):
     logger.info(f"Training arguments: {vars(args)}")
 
     # Defaults to cpu if gpu is unavailable
-    device = torch.device("cuda") if args.use_gpu and torch.cuda.is_available() else torch.device("cpu")
+    device = (
+        torch.device("cuda")
+        if args.use_gpu and torch.cuda.is_available()
+        else torch.device("cpu")
+    )
     logger.info(f"Using device: {device}")
 
     # Make output dir, save training args, create metrics files
     if args.output_dir is not None:
         os.makedirs(args.output_dir, exist_ok=True)
-        os.makedirs(os.path.join(args.output_dir, 'best_f1'), exist_ok=True)
-        os.makedirs(os.path.join(args.output_dir, 'final'), exist_ok=True)
+        os.makedirs(os.path.join(args.output_dir, "best_f1"), exist_ok=True)
+        os.makedirs(os.path.join(args.output_dir, "final"), exist_ok=True)
 
-        with open(os.path.join(args.output_dir, 'training_args.json'), "w") as fp:
+        with open(os.path.join(args.output_dir, "training_args.json"), "w") as fp:
             json.dump(vars(args), fp, sort_keys=True, indent=4)
 
         # create metric output files
-        train_metrics_file = os.path.join(args.output_dir, 'train_metrics.csv')
-        val_metrics_file = os.path.join(args.output_dir, 'val_metrics.csv')
-        fieldnames = ['epoch', 'loss', 'best_theta', 'f1', 'precision', 'recall', 'auc']
+        train_metrics_file = os.path.join(args.output_dir, "train_metrics.csv")
+        val_metrics_file = os.path.join(args.output_dir, "val_metrics.csv")
+        fieldnames = ["epoch", "loss", "best_theta", "f1", "precision", "recall", "auc"]
 
-        with open(train_metrics_file, 'w') as f:
+        with open(train_metrics_file, "w") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
 
-        with open(val_metrics_file, 'w') as f:
+        with open(val_metrics_file, "w") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
 
@@ -312,13 +396,16 @@ def train_model(args):
 
     if args.use_wandb:
         import wandb
+
         wandb.init(project="lsr", name=args.wandb_run_name)
         wandb.watch(model, log="all")
 
     # Note: this will override the provided model weights
     if args.pretrained_embeddings_path is not None and not config.use_bert:
         pretrained_embeddings = np.load(args.pretrained_embeddings_path)
-        model.load_pretrained_word_embedding(pretrained_word_embedding=pretrained_embeddings)
+        model.load_pretrained_word_embedding(
+            pretrained_word_embedding=pretrained_embeddings
+        )
 
     # Set to training device
     model.to(device=device)
@@ -329,24 +416,52 @@ def train_model(args):
     rel2id_path = os.path.join(args.metadata_dir, "rel2id.json")
     word2id_path = os.path.join(args.metadata_dir, "word2id.json")
     ner2id_path = os.path.join(args.metadata_dir, "ner2id.json")
-    train_preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path,
-                                         is_train=True, device=torch.device("cpu"), config=config)
-    val_preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path,
-                                       device=torch.device("cpu"), config=config)
-    train_dataset = DocredDataset(json_file=args.train_file, preprocessor=train_preprocessor)
-    val_dataset = DocredDataset(json_file=args.validation_file, preprocessor=val_preprocessor)
+    train_preprocessor = LsrPreprocessor(
+        rel2id_path=rel2id_path,
+        word2id_path=word2id_path,
+        ner2id_path=ner2id_path,
+        is_train=True,
+        device=torch.device("cpu"),
+        config=config,
+    )
+    val_preprocessor = LsrPreprocessor(
+        rel2id_path=rel2id_path,
+        word2id_path=word2id_path,
+        ner2id_path=ner2id_path,
+        device=torch.device("cpu"),
+        config=config,
+    )
+    train_dataset = DocredDataset(
+        json_file=args.train_file, preprocessor=train_preprocessor
+    )
+    val_dataset = DocredDataset(
+        json_file=args.validation_file, preprocessor=val_preprocessor
+    )
 
-    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size, collate_fn=lsr_collate_fn)
-    val_dataloader = DataLoader(val_dataset, shuffle=True, batch_size=args.batch_size, collate_fn=lsr_collate_fn)
+    train_dataloader = DataLoader(
+        train_dataset,
+        shuffle=True,
+        batch_size=args.batch_size,
+        collate_fn=lsr_collate_fn,
+    )
+    val_dataloader = DataLoader(
+        val_dataset, shuffle=True, batch_size=args.batch_size, collate_fn=lsr_collate_fn
+    )
 
     # Optimizer and parameters
     if config.use_bert:
-        other_params = [p for name, p in model.named_parameters() if
-                        p.requires_grad and not name.startswith("bert")]
-        optimizer = torch.optim.Adam([
-            {"params": other_params, "lr": args.lr},
-            {"params": model.bert.parameters(), "lr": 1e-5},
-        ], lr=args.lr)
+        other_params = [
+            p
+            for name, p in model.named_parameters()
+            if p.requires_grad and not name.startswith("bert")
+        ]
+        optimizer = torch.optim.Adam(
+            [
+                {"params": other_params, "lr": args.lr},
+                {"params": model.bert.parameters(), "lr": 1e-5},
+            ],
+            lr=args.lr,
+        )
     else:
         parameters = [p for p in model.parameters() if p.requires_grad]
         optimizer = get_optimizer(args.optim, parameters, args.lr)
@@ -356,7 +471,9 @@ def train_model(args):
     best_f1 = 0
 
     for epoch in range(args.num_epoch):
-        logger.info(f"Epoch: {epoch + 1}/{args.num_epoch}, lr: {optimizer.param_groups[0]['lr']}")
+        logger.info(
+            f"Epoch: {epoch + 1}/{args.num_epoch}, lr: {optimizer.param_groups[0]['lr']}"
+        )
 
         train_metrics = LsrMetrics(num_relations=config.num_relations)
         total_epoch_train_loss = 0
@@ -387,25 +504,39 @@ def train_model(args):
         # Compute metrics and log at end of epoch
         best_theta, f1, precision, recall, auc = train_metrics.compute()
         avg_epoch_train_loss = total_epoch_train_loss / (step + 1)
-        logger.info(f"Train loss: {avg_epoch_train_loss:.3f}, best theta: {best_theta:.3f}, "
-                    f"f1: {f1:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, auc: {auc:.5f}")
+        logger.info(
+            f"Train loss: {avg_epoch_train_loss:.3f}, best theta: {best_theta:.3f}, "
+            f"f1: {f1:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, auc: {auc:.5f}"
+        )
 
         if args.use_wandb:
-            wandb.log({
-                "train_loss": avg_epoch_train_loss,
-                "train_best_theta": best_theta,
-                "train_f1": f1,
-                "train_precision": precision,
-                "train_recall": recall,
-                "train_auc": auc
-            }, step=epoch)
+            wandb.log(
+                {
+                    "train_loss": avg_epoch_train_loss,
+                    "train_best_theta": best_theta,
+                    "train_f1": f1,
+                    "train_precision": precision,
+                    "train_recall": recall,
+                    "train_auc": auc,
+                },
+                step=epoch,
+            )
 
         # Write train metrics
         if args.output_dir is not None:
-            with open(train_metrics_file, 'a') as f:
+            with open(train_metrics_file, "a") as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
-                writer.writerow({'epoch': epoch + 1, 'loss': avg_epoch_train_loss, 'best_theta': best_theta, 'f1': f1,
-                                 'precision': precision, 'recall': recall, 'auc': auc})
+                writer.writerow(
+                    {
+                        "epoch": epoch + 1,
+                        "loss": avg_epoch_train_loss,
+                        "best_theta": best_theta,
+                        "f1": f1,
+                        "precision": precision,
+                        "recall": recall,
+                        "auc": auc,
+                    }
+                )
 
         if epoch + 1 >= args.evaluate_epoch:
             val_metrics = LsrMetrics(num_relations=config.num_relations)
@@ -425,41 +556,54 @@ def train_model(args):
             # Compute metrics and log at end of epoch
             best_theta, f1, precision, recall, auc = val_metrics.compute()
             avg_epoch_val_loss = total_epoch_val_loss / (step + 1)
-            logger.info(f"Val loss: {avg_epoch_val_loss:.3f}, best theta: {best_theta:.3f}, "
-                        f"f1: {f1:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, auc: {auc:.5f}")
+            logger.info(
+                f"Val loss: {avg_epoch_val_loss:.3f}, best theta: {best_theta:.3f}, "
+                f"f1: {f1:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, auc: {auc:.5f}"
+            )
 
             if args.use_wandb:
-                wandb.log({
-                    "val_loss": avg_epoch_val_loss,
-                    "val_best_theta": best_theta,
-                    "val_f1": f1,
-                    "val_precision": precision,
-                    "val_recall": recall,
-                    "val_auc": auc
-                }, step=epoch)
+                wandb.log(
+                    {
+                        "val_loss": avg_epoch_val_loss,
+                        "val_best_theta": best_theta,
+                        "val_f1": f1,
+                        "val_precision": precision,
+                        "val_recall": recall,
+                        "val_auc": auc,
+                    },
+                    step=epoch,
+                )
 
             # Write val metrics
             if args.output_dir is not None:
-                with open(val_metrics_file, 'a') as f:
+                with open(val_metrics_file, "a") as f:
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writerow(
-                        {'epoch': epoch + 1, 'loss': avg_epoch_val_loss, 'best_theta': best_theta, 'f1': f1,
-                         'precision': precision, 'recall': recall, 'auc': auc})
+                        {
+                            "epoch": epoch + 1,
+                            "loss": avg_epoch_val_loss,
+                            "best_theta": best_theta,
+                            "f1": f1,
+                            "precision": precision,
+                            "recall": recall,
+                            "auc": auc,
+                        }
+                    )
 
             # Save best model so far
             if args.output_dir is not None and f1 > best_f1:
                 logger.info("Best f1 so far, saving model.")
                 best_f1 = f1
-                model.save_pretrained(os.path.join(args.output_dir, 'best_f1'))
+                model.save_pretrained(os.path.join(args.output_dir, "best_f1"))
 
         if epoch + 1 >= args.decay_epoch:
-            if args.optim == 'adam' and optimizer.param_groups[0]['lr'] > 1e-4:
+            if args.optim == "adam" and optimizer.param_groups[0]["lr"] > 1e-4:
                 scheduler.step()
 
     # Save final model
     if args.output_dir is not None:
         logger.info("Saving final model.")
-        model.save_pretrained(os.path.join(args.output_dir, 'final'))
+        model.save_pretrained(os.path.join(args.output_dir, "final"))
 
 
 if __name__ == "__main__":

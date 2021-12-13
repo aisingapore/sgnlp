@@ -56,9 +56,9 @@ def train_model(cfg: RecconSpanExtractionArguments):
     val_dataset = load_examples(**load_valid_exp_args)
 
     t_total = (
-            len(train_dataset)
-            // cfg.train_args["gradient_accumulation_steps"]
-            * cfg.train_args["num_train_epochs"]
+        len(train_dataset)
+        // cfg.train_args["gradient_accumulation_steps"]
+        * cfg.train_args["num_train_epochs"]
     )
     cfg.train_args["eval_steps"] = int(
         len(train_dataset) / cfg.train_args["per_device_train_batch_size"]

@@ -30,13 +30,13 @@ class Transformer(nn.Module):
         )
 
     def forward(
-            self,
-            query,
-            key,
-            val,
-            key_structure=None,
-            val_structure=None,
-            attention_mask=None,
+        self,
+        query,
+        key,
+        val,
+        key_structure=None,
+        val_structure=None,
+        attention_mask=None,
     ):
 
         """

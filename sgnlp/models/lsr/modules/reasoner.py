@@ -33,7 +33,9 @@ class StructInduction(nn.Module):
         self.exparam = nn.Parameter(torch.Tensor(1, 1, self.sem_dim_size))
         torch.nn.init.xavier_uniform_(self.exparam)
 
-        self.fzlinear = nn.Linear(3 * self.sem_dim_size, 2 * self.sem_dim_size, bias=True)
+        self.fzlinear = nn.Linear(
+            3 * self.sem_dim_size, 2 * self.sem_dim_size, bias=True
+        )
         torch.nn.init.xavier_uniform_(self.fzlinear.weight)
         nn.init.constant_(self.fzlinear.bias, 0)
 
@@ -44,23 +46,47 @@ class StructInduction(nn.Module):
         if self.bidirectional:
             input_tensor = input_tensor.view(batch_size, token_size, 2, dim_size // 2)
             sem_v = torch.cat(
-                (input_tensor[:, :, 0, :self.sem_dim_size // 2], input_tensor[:, :, 1, :self.sem_dim_size // 2]), 2)
+                (
+                    input_tensor[:, :, 0, : self.sem_dim_size // 2],
+                    input_tensor[:, :, 1, : self.sem_dim_size // 2],
+                ),
+                2,
+            )
             str_v = torch.cat(
-                (input_tensor[:, :, 0, self.sem_dim_size // 2:], input_tensor[:, :, 1, self.sem_dim_size // 2:]), 2)
+                (
+                    input_tensor[:, :, 0, self.sem_dim_size // 2 :],
+                    input_tensor[:, :, 1, self.sem_dim_size // 2 :],
+                ),
+                2,
+            )
         else:
-            sem_v = input_tensor[:, :, :self.sem_dim_size]
-            str_v = input_tensor[:, :, self.sem_dim_size:]
+            sem_v = input_tensor[:, :, : self.sem_dim_size]
+            str_v = input_tensor[:, :, self.sem_dim_size :]
 
         tp = torch.tanh(self.tp_linear(str_v))  # b*s, token, h1
         tc = torch.tanh(self.tc_linear(str_v))  # b*s, token, h1
-        tp = tp.unsqueeze(2).expand(tp.size(0), tp.size(1), tp.size(1), tp.size(2)).contiguous()
-        tc = tc.unsqueeze(2).expand(tc.size(0), tc.size(1), tc.size(1), tc.size(2)).contiguous()
+        tp = (
+            tp.unsqueeze(2)
+            .expand(tp.size(0), tp.size(1), tp.size(1), tp.size(2))
+            .contiguous()
+        )
+        tc = (
+            tc.unsqueeze(2)
+            .expand(tc.size(0), tc.size(1), tc.size(1), tc.size(2))
+            .contiguous()
+        )
 
         f_ij = self.bilinear(tp, tc).squeeze(dim=-1)  # b*s, token , token
         f_i = torch.exp(self.fi_linear(str_v)).squeeze(dim=-1)  # b*s, token
 
-        mask = torch.ones(f_ij.size(1), f_ij.size(1)) - torch.eye(f_ij.size(1), f_ij.size(1))
-        mask = mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).to(device=self.device)
+        mask = torch.ones(f_ij.size(1), f_ij.size(1)) - torch.eye(
+            f_ij.size(1), f_ij.size(1)
+        )
+        mask = (
+            mask.unsqueeze(0)
+            .expand(f_ij.size(0), mask.size(0), mask.size(1))
+            .to(device=self.device)
+        )
         A_ij = torch.exp(f_ij) * mask
 
         # STEP: Include Latent Structure
@@ -114,7 +140,9 @@ class DynamicReasoner(nn.Module):
         self.gcn_layer = gcn_layer
         self.dropout_gcn = dropout_gcn
         self.struc_att = StructInduction(hidden_size // 2, hidden_size, True)
-        self.gcn = GraphConvLayer(hidden_size, self.gcn_layer, self.dropout_gcn, self_loop=True)
+        self.gcn = GraphConvLayer(
+            hidden_size, self.gcn_layer, self.dropout_gcn, self_loop=True
+        )
 
     def forward(self, input_tensor):
         # Structure Induction

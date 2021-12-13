@@ -1,0 +1,41 @@
+{
+  "name": "Unsupervised Domain Adaptation of a Pretrained Cross-Lingual Language Model",
+  "languages": "English, German, French, Japanese.",
+  "description": "This demo is an implementation of Unsupervised Domain Adaptation of a Pretrained Cross-Lingual Language Model paper.",
+  "paper": {
+    "text": "Li, J., He, R., Ye, H., Ng, H. T., Bing, L., & Yan, R. (2020). Unsupervised domain adaptation of a pretrained cross-lingual language model. Proceedings of the Twenty-Ninth International Joint Conference on Artificial Intelligence, Nov, 2020 (pp. 3672-3678).",
+    "url": "https://www.ijcai.org/Proceedings/2020/508"
+  },
+  "trainingDataset": {
+    "text": "Dataset can be downloaded from author's github repository.",
+    "url": "https://github.com/lijuntaopku/UFD/tree/main/data"
+  },
+  "evaluationDataset": {
+    "text": "Dataset can be downloaded from author's github repository.",
+    "url": "https://github.com/lijuntaopku/UFD/tree/main/data"
+  },
+  "evaluationScores": "87.85% Avg Acc (German), 87.45% Avg Acc (French), 83.725% Avg Acc (Japanese) on development set, 84.00% Avg Acc (German), 88.40% Avg Acc (French), 85.00% Avg Acc (Japanese) reported by authors in paper on development set.",
+  "trainingTime": "~3 hours for 30 epochs for unsupervised training and 60 epochs for supervised training on a single V100 GPU.",
+  "modelWeights": {
+    "text": "Refer to documentation for details.",
+    "url": "../docs/model/ufd.html"
+  },
+  "modelConfig": {
+    "text": "Refer to documentation for details.",
+    "url": "../docs/model/ufd.html"
+  },
+  "modelInput": "Raw text.",
+  "modelOutput": "Array of logits with the size of number of classes.",
+  "modelSize": "XLM-Roberta: ~2.2GB, Adaptor Domain: ~8.0MB, Adaptor Global: ~8.0MB, Feature Mapper: ~8.0MB, Classifier: ~9.1KB.",
+  "inferenceInfo": "~2 sec on Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz.",
+  "usageScenarios": "Sentiment analysis for eCommerce with operations across multiple countries.",
+  "originalCode": {
+    "text": "https://github.com/lijuntaopku/UFD",
+    "url": "https://github.com/lijuntaopku/UFD"
+  },
+  "license": {
+    "text": "For non-commercial use: GNU GPLv3. For commercial use, please contact us.",
+    "url": "https://choosealicense.com/licenses/gpl-3.0"
+  },
+  "contact": "sg-nlp@aisingapore.org"
+}
