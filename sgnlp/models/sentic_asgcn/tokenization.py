@@ -1,6 +1,6 @@
 import pathlib
 import pickle
-from typing import List
+from typing import Dict, List, Optional, Tuple
 
 from transformers import PreTrainedTokenizer
 
@@ -29,10 +29,6 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
             with open(vocab_file, "rb") as fin:
                 self.vocab = pickle.load(fin)
         self.ids_to_tokens = {v: k for k, v in self.vocab.items()}
-
-    @property
-    def do_lower_case(self):
-        return self.do_lower_case
 
     @property
     def vocab_size(self):
@@ -72,8 +68,8 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
                 text += f"{text_left} {aspect} {text_right} "  # Left a space at the end
         return text
 
-    def create_vocab(self, save_directory: str):
-        text = self.__read_text_file()
+    def create_vocab(self, train_files: List[str]) -> Dict[str, int]:
+        text = self.__read_text_file(train_files)
         if self.do_lower_case:
             text = text.lower()
         vocab = {}
@@ -97,3 +93,13 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
         if len(sequence) == 0:
             sequence = [0]
         return sequence
+
+    def save_vocabulary(
+        self, save_directory: str, filename_prefix: Optional[str] = None
+    ) -> Tuple[str]:
+        save_dir = pathlib.Path(save_directory)
+        save_dir.mkdir(exist_ok=True)
+        vocab_file_path = save_dir.joinpath("vocab.pkl")
+        with open(vocab_file_path, "wb") as fout:
+            pickle.dump(self.vocab, fout)
+        return (str(vocab_file_path),)
