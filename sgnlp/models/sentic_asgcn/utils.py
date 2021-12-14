@@ -1,8 +1,12 @@
 import argparse
 import json
+from logging import error
 import math
+from pickle import load
+import pickle
 import random
 import pathlib
+from typing import Dict
 
 import numpy as np
 import torch
@@ -42,6 +46,72 @@ def set_random_seed(seed: int = 776) -> None:
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def load_word_vec(
+    word_vec_file_path: str, vocab: Dict[str, int], embed_dim: int = 300
+) -> Dict[str, np.asarray]:
+    """
+    Helper method to load word vectors from file (e.g. GloVe) for each word in vocab.
+
+    Args:
+        word_vec_file_path (str): full file path to word vectors.
+        vocab (Dict[str, int]): dictionary of vocab word as key and word index as values.
+        embed_dim (int, optional): embedding dimension. Defaults to 300.
+
+    Returns:
+        Dict[str, np.asarray]: dictionary with words as key and word vectors as values.
+    """
+    with open(
+        word_vec_file_path, "r", encoding="utf-8", newline="\n", errors="ignore"
+    ) as fin:
+        word_vec = {}
+        for line in fin:
+            tokens = line.rstrip().split()
+            word, vec = " ".join(tokens[:-embed_dim]), tokens[-embed_dim:]
+            if word in vocab.keys():
+                word_vec[word] = np.asarray(vec, dtype="float32")
+    return word_vec
+
+
+def build_embedding_matrix(
+    word_vec_file_path: str,
+    vocab: Dict[str, int],
+    embed_dim: int = 300,
+    save_embed_matrix: bool = False,
+    save_embed_directory: str = None,
+) -> np.ndarray:
+    """
+    Helper method to generate an embedding matrix.
+
+    Args:
+        word_vec_file_path (str): full file path to word vectors.
+        vocab (Dict[str, int]): dictionary of vocab word as key and word index as values.
+        embed_dim (int, optional): embedding dimensiion. Defaults to 300.
+        save_embed_matrix (bool, optional): flag to indicate if . Defaults to False.
+        save_embed_directory (str, optional): [description]. Defaults to None.
+
+    Returns:
+        np.array: numpy array of embedding matrix
+    """
+    embedding_matrix = np.zeros(len(vocab), embed_dim)
+    embedding_matrix[1, :] = np.random.uniform(
+        -1 / np.sqrt(embed_dim), 1 / np.sqrt(embed_dim), (1, embed_dim)
+    )
+    word_vec = load_word_vec(word_vec_file_path, vocab, embed_dim)
+    for word, idx in vocab.items():
+        vec = word_vec.get(word)
+        if vec is not None:
+            embedding_matrix[idx] = vec
+
+    if save_embed_matrix:
+        if save_embed_directory is not None:
+            save_dir = pathlib.Path(save_embed_directory)
+            save_dir.mkdir(exist_ok=True)
+        with open("embedding_matrix.pkl", "wb") as fout:
+            pickle.dump(embedding_matrix, fout)
+
+    return embedding_matrix
 
 
 class BucketIterator(object):
