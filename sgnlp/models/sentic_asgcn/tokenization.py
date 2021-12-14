@@ -5,7 +5,12 @@ from typing import Dict, List, Optional, Tuple
 from transformers import PreTrainedTokenizer
 
 
+VOCAB_FILES_NAMES = {"vocab_file": "vocab.pkl"}
+
+
 class SenticASGCNTokenizer(PreTrainedTokenizer):
+    vocab_files_names = VOCAB_FILES_NAMES
+
     def __init__(
         self,
         vocab_file: str = None,
@@ -38,11 +43,9 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
         return dict(self.vocab)
 
     def _convert_token_to_id(self, token: str) -> int:
-        print("_convert_token_to_id")
         return self.vocab.get(token, self.vocab.get(self.unk_token))
 
     def _convert_id_to_token(self, index: int) -> str:
-        print("_convert_id_to_token")
         return self.ids_to_tokens(index, self.unk_token)
 
     @staticmethod
