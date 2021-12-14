@@ -38,9 +38,11 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
         return dict(self.vocab)
 
     def _convert_token_to_id(self, token: str) -> int:
+        print("_convert_token_to_id")
         return self.vocab.get(token, self.vocab.get(self.unk_token))
 
     def _convert_id_to_token(self, index: int) -> str:
+        print("_convert_id_to_token")
         return self.ids_to_tokens(index, self.unk_token)
 
     @staticmethod
@@ -88,11 +90,7 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
         if self.do_lower_case:
             text = text.lower()
         words = text.split()
-        unknownidx = 1
-        sequence = [self.vocab[w] if w in self.vocab else unknownidx for w in words]
-        if len(sequence) == 0:
-            sequence = [0]
-        return sequence
+        return words
 
     def save_vocabulary(
         self, save_directory: str, filename_prefix: Optional[str] = None
