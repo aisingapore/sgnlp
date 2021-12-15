@@ -241,7 +241,8 @@ class ABSADatasetReader:
             config.save_embedding_matrix,
             config.saved_embedding_matrix_file_path,
         )
-        self.train_data = ABSADataset(ABSADatasetReader.__read_data__(self.cfg.dataset_train))
+        self.train_data = ABSADataset(ABSADatasetReader.__read_data__(self.cfg.dataset_train, tokenizer))
+        self.test_data = ABSADataset(ABSADatasetReader.__read_data__(self.cfg.dataset_test, tokenizer))
 
     @staticmethod
     def __read_data__(datasets: Dict[str, str], tokenizer: PreTrainedTokenizer):
