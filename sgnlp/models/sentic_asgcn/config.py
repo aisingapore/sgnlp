@@ -24,13 +24,7 @@ class SenticASGCNConfig(PreTrainedConfig):
     """
 
     def __init__(
-        self,
-        embed_dim=300,
-        hidden_dim=300,
-        polarities_dim=3,
-        dropout=0.3,
-        device=torch.device("cuda"),
-        **kwargs
+        self, embed_dim=300, hidden_dim=300, polarities_dim=3, dropout=0.3, device=torch.device("cuda"), **kwargs
     ):
         super().__init__(**kwargs)
         self.embed_dim = embed_dim

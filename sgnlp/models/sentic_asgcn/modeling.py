@@ -83,9 +83,7 @@ class SenticASGCNModel(SenticASGCNPreTrainedModel):
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
         left_len = torch.sum(left_indices != 0, dim=-1)
-        aspect_double_idx = torch.cat(
-            [left_len.unsqueeze(1), (left_len + aspect_len - 1).unsqueeze(1)], dim=1
-        )
+        aspect_double_idx = torch.cat([left_len.unsqueeze(1), (left_len + aspect_len - 1).unsqueeze(1)], dim=1)
         text = self.text_embed_dropout(self.embed(text_indices))
         text_out, (_, _) = self.text_lstm(text, text_len)
         x = F.relu(
@@ -94,11 +92,7 @@ class SenticASGCNModel(SenticASGCNPreTrainedModel):
                 adj,
             )
         )
-        x = F.relu(
-            self.gc2(
-                self.position_weight(x, aspect_double_idx, text_len, aspect_len), adj
-            )
-        )
+        x = F.relu(self.gc2(self.position_weight(x, aspect_double_idx, text_len, aspect_len), adj))
         alpha_mat = torch.matmul(x, text_out.transpose(1, 2))
         alpha = F.softmax(alpha_mat.sum(1, keepdim=True), dim=2)
         x = torch.matmul(alpha, text_out).squeeze(1)  # batch_size x 2 * hidden_dim

@@ -61,14 +61,10 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
         """
         text = ""
         for fname in file_names:
-            with open(
-                fname, "r", encoding="utf-8", newline="\n", errors="ignore"
-            ) as fin:
+            with open(fname, "r", encoding="utf-8", newline="\n", errors="ignore") as fin:
                 lines = fin.readlines()
             for i in range(0, len(lines), 3):
-                text_left, _, text_right = [
-                    s.lower().strip() for s in lines[i].partition("$T$")
-                ]
+                text_left, _, text_right = [s.lower().strip() for s in lines[i].partition("$T$")]
                 aspect = lines[i + 1].lower().strip()
                 text += f"{text_left} {aspect} {text_right} "  # Left a space at the end
         return text
@@ -95,9 +91,7 @@ class SenticASGCNTokenizer(PreTrainedTokenizer):
         words = text.split()
         return words
 
-    def save_vocabulary(
-        self, save_directory: str, filename_prefix: Optional[str] = None
-    ) -> Tuple[str]:
+    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = None) -> Tuple[str]:
         save_dir = pathlib.Path(save_directory)
         save_dir.mkdir(exist_ok=True)
         vocab_file_path = save_dir.joinpath("vocab.pkl")

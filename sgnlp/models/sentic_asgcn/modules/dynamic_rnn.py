@@ -6,17 +6,19 @@ class DynamicLSTM(nn.Module):
     """
     A dynamic LSTM class which can hold variable length sequence
     """
+
     def __init__(
-            self,
-            input_size,
-            hidden_size,
-            num_layers=1,
-            bias=True,
-            batch_first=True,
-            dropout=0,
-            bidirectional=False,
-            only_use_last_hidden_state=False,
-            rnn_type='LSTM') -> None:
+        self,
+        input_size,
+        hidden_size,
+        num_layers=1,
+        bias=True,
+        batch_first=True,
+        dropout=0,
+        bidirectional=False,
+        only_use_last_hidden_state=False,
+        rnn_type="LSTM",
+    ) -> None:
         super(DynamicLSTM, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -40,13 +42,13 @@ class DynamicLSTM(nn.Module):
             "bias": self.bias,
             "batch_first": self.batch_first,
             "dropout": self.dropout,
-            "bidirectional": self.bidirectional
+            "bidirectional": self.bidirectional,
         }
-        if self.rnn_type == 'LSTM':
+        if self.rnn_type == "LSTM":
             self.rnn = nn.LSTM(**input_args)
-        elif self.rnn_type == 'GRU':
+        elif self.rnn_type == "GRU":
             self.rnn = nn.GRU(**input_args)
-        elif self.rnn_type == 'RNN':
+        elif self.rnn_type == "RNN":
             self.rnn = nn.RNN(**input_args)
 
     def forward(self, x, x_len, h0=None):
@@ -79,7 +81,7 @@ class DynamicLSTM(nn.Module):
             out = out[x_unsort_idx]
 
             # Unsort: out c
-            if self.rnn_type == 'LSTM':
+            if self.rnn_type == "LSTM":
                 # (num_layers * num_directions, batch, hidden_size) -> (batch, ...)
                 ct = torch.transpose(ct, 0, 1)[x_unsort_idx]
                 ct = torch.transpose(ct, 0, 1)

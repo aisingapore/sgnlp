@@ -21,6 +21,9 @@
         "graph": "./datasets/semeval14/restaurant_test.raw.graph",
         "tree": "./datasets/semeval14/restaurant_test.raw.tree"
     },
+    "word_vec_file_path": "./glove/glove.840B.300d.txt",
+    "save_embedding_matrix": true,
+    "saved_embedding_matrix_file_path": "./embedding/embeddings.pickle",
     "initializer": "xavier_uniform",
     "optimizer": "adam",
     "learning_rate": 0.001,

@@ -48,9 +48,7 @@ def set_random_seed(seed: int = 776) -> None:
     torch.backends.cudnn.benchmark = False
 
 
-def load_word_vec(
-    word_vec_file_path: str, vocab: Dict[str, int], embed_dim: int = 300
-) -> Dict[str, np.asarray]:
+def load_word_vec(word_vec_file_path: str, vocab: Dict[str, int], embed_dim: int = 300) -> Dict[str, np.asarray]:
     """
     Helper method to load word vectors from file (e.g. GloVe) for each word in vocab.
 
@@ -62,9 +60,7 @@ def load_word_vec(
     Returns:
         Dict[str, np.asarray]: dictionary with words as key and word vectors as values.
     """
-    with open(
-        word_vec_file_path, "r", encoding="utf-8", newline="\n", errors="ignore"
-    ) as fin:
+    with open(word_vec_file_path, "r", encoding="utf-8", newline="\n", errors="ignore") as fin:
         word_vec = {}
         for line in fin:
             tokens = line.rstrip().split()
@@ -79,7 +75,7 @@ def build_embedding_matrix(
     vocab: Dict[str, int],
     embed_dim: int = 300,
     save_embed_matrix: bool = False,
-    save_embed_directory: str = None,
+    save_embed_file_path: str = None,
 ) -> np.ndarray:
     """
     Helper method to generate an embedding matrix.
@@ -95,9 +91,7 @@ def build_embedding_matrix(
         np.array: numpy array of embedding matrix
     """
     embedding_matrix = np.zeros(len(vocab), embed_dim)
-    embedding_matrix[1, :] = np.random.uniform(
-        -1 / np.sqrt(embed_dim), 1 / np.sqrt(embed_dim), (1, embed_dim)
-    )
+    embedding_matrix[1, :] = np.random.uniform(-1 / np.sqrt(embed_dim), 1 / np.sqrt(embed_dim), (1, embed_dim))
     word_vec = load_word_vec(word_vec_file_path, vocab, embed_dim)
     for word, idx in vocab.items():
         vec = word_vec.get(word)
@@ -105,10 +99,10 @@ def build_embedding_matrix(
             embedding_matrix[idx] = vec
 
     if save_embed_matrix:
-        if save_embed_directory is not None:
-            save_dir = pathlib.Path(save_embed_directory)
-            save_dir.mkdir(exist_ok=True)
-        with open("embedding_matrix.pkl", "wb") as fout:
+        save_file_path = pathlib.Path(save_embed_file_path)
+        if not save_file_path.exists():
+            save_file_path.parent.mkdir(exist_ok=True)
+        with open(save_file_path, "wb") as fout:
             pickle.dump(embedding_matrix, fout)
 
     return embedding_matrix
@@ -119,9 +113,7 @@ class BucketIterator(object):
     Bucket iterator class which provides sorting and padding for input dataset, iterate thru dataset batches
     """
 
-    def __init__(
-        self, data, batch_size, sort_key="text_indices", shuffle=True, sort=True
-    ):
+    def __init__(self, data, batch_size, sort_key="text_indices", shuffle=True, sort=True):
         self.shuffle = shuffle
         self.sort = sort
         self.sort_key = sort_key
@@ -140,13 +132,8 @@ class BucketIterator(object):
             List[Dict[str, torch.tensor]]: return a list of dictionaries of tensors
         """
         num_batch = int(math.ceil(len(data) / batch_size))
-        sorted_data = (
-            sorted(data, key=lambda x: len(x[self.sort_key])) if self.sort else data
-        )
-        batches = [
-            self.pad_data(sorted_data[i * batch_size : (i + 1) * batch_size])
-            for i in range(num_batch)
-        ]
+        sorted_data = sorted(data, key=lambda x: len(x[self.sort_key])) if self.sort else data
+        batches = [self.pad_data(sorted_data[i * batch_size : (i + 1) * batch_size]) for i in range(num_batch)]
         return batches
 
     def pad_data(self, batch_data: Iterable) -> Dict[str, torch.tensor]:
@@ -242,33 +229,34 @@ class ABSADataset(object):
 class ABSADatasetReader:
     def __init__(
         self,
-        dataset_file_names: List[str],
+        config: SenticASGCNTrainArgs,
         tokenizer: PreTrainedTokenizer,
-        embed_dim: int = 300,
     ):
-        self.embed_dim = embed_dim
+        self.cfg = config
         self.tokenizer = tokenizer
-        # TODO: Figure out how to include the embedding matrix here
-        # self.embedding_matrix = build_embedding_matrix()
+        self.embedding_matrix = build_embedding_matrix(
+            config.word_vec_file_path,
+            tokenizer.vocab,
+            config.embed_dim,
+            config.save_embedding_matrix,
+            config.saved_embedding_matrix_file_path,
+        )
+        self.train_data = ABSADataset(ABSADatasetReader.__read_data__(self.cfg.dataset_train))
 
     @staticmethod
-    def __read_data__(file_name: str, tokenizer: PreTrainedTokenizer):
+    def __read_data__(datasets: Dict[str, str], tokenizer: PreTrainedTokenizer):
         # Read raw data, graph data and tree data
-        with open(
-            file_name, "r", encoding="utf-8", newline="\n", errors="ignore"
-        ) as fin:
+        with open(datasets["raw"], "r", encoding="utf-8", newline="\n", errors="ignore") as fin:
             lines = fin.readlines()
-        with open(f"{file_name}.graph", "rb") as fin_graph:
+        with open(datasets["graph"], "rb") as fin_graph:
             idx2graph = pickle.load(fin_graph)
-        with open(f"{file_name}.tree", "rb") as fin_tree:
+        with open(datasets["tree"], "rb") as fin_tree:
             idx2tree = pickle.load(fin_tree)
 
         # Prep all data
         all_data = []
         for i in range(0, len(lines), 3):
-            text_left, _, text_right = [
-                s.lower().strip() for s in lines[i].partition("$T$")
-            ]
+            text_left, _, text_right = [s.lower().strip() for s in lines[i].partition("$T$")]
             aspect = lines[i + 1].lower().strip()
             polarity = lines[i + 2].lower().strip()
             text_indices = tokenizer(f"{text_left} {aspect} {text_right}")

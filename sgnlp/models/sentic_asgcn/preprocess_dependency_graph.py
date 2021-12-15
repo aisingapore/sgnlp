@@ -48,20 +48,14 @@ class DependencyGraphPreprocessor(object):
         Args:
             filename (str): filename of raw dataset to process
         """
-        with open(
-            filename, "r", encoding="utf-8", newline="\n", errors="ignore"
-        ) as fin:
+        with open(filename, "r", encoding="utf-8", newline="\n", errors="ignore") as fin:
             lines = fin.readlines()
         idx2graph = {}
         with open(f"{filename}.graph", "wb") as fout:
             for i in range(0, len(lines), 3):
-                text_left, _, text_right = [
-                    s.lower().strip() for s in lines[i].partition("$T$")
-                ]
+                text_left, _, text_right = [s.lower().strip() for s in lines[i].partition("$T$")]
                 aspect = lines[i + 1].lower().strip()
-                idx2graph[i] = self.__dependency_adj_matrix(
-                    f"{text_left} {aspect} {text_right}"
-                )
+                idx2graph[i] = self.__dependency_adj_matrix(f"{text_left} {aspect} {text_right}")
             pickle.dump(idx2graph, fout)
 
 
