@@ -83,14 +83,14 @@ def build_embedding_matrix(
     Args:
         word_vec_file_path (str): full file path to word vectors.
         vocab (Dict[str, int]): dictionary of vocab word as key and word index as values.
-        embed_dim (int, optional): embedding dimensiion. Defaults to 300.
+        embed_dim (int, optional): embedding dimension. Defaults to 300.
         save_embed_matrix (bool, optional): flag to indicate if . Defaults to False.
         save_embed_directory (str, optional): [description]. Defaults to None.
 
     Returns:
         np.array: numpy array of embedding matrix
     """
-    embedding_matrix = np.zeros(len(vocab), embed_dim)
+    embedding_matrix = np.zeros((len(vocab), embed_dim))
     embedding_matrix[1, :] = np.random.uniform(-1 / np.sqrt(embed_dim), 1 / np.sqrt(embed_dim), (1, embed_dim))
     word_vec = load_word_vec(word_vec_file_path, vocab, embed_dim)
     for word, idx in vocab.items():
