@@ -1,11 +1,23 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import Dict, List
 
 
 @dataclass
 class SenticASGCNTrainArgs:
     dependency_graph_preprocess: List[str] = field(
         default=list, metadata={"help": "List of raw dataset to process."}
+    )
+    dataset_train: Dict[str, str] = field(
+        default=dict,
+        metadata={
+            "help": "Dictionary containing 3 file paths to the raw, graph and tree train datasets."
+        },
+    )
+    dataset_test: Dict[str, str] = field(
+        default=dict,
+        metadata={
+            "help": "Dictionary containing 3 file paths to the raw, graph and tree test datasets."
+        },
     )
     initializer: str = field(
         default="xavier_uniform", metadata={"help": "Type of initalizer to use."}

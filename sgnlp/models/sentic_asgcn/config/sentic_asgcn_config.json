@@ -11,6 +11,16 @@
         "./datasets/semeval16/restaurant_train.raw",
         "./datasets/semeval16/restaurant_test.raw"
     ],
+    "dataset_train": {
+        "raw": "./datasets/semeval14/restaurant_train.raw",
+        "graph": "./datasets/semeval14/restaurant_train.raw.graph",
+        "tree": "./datasets/semeval14/restaurant_train.raw.tree"
+    },
+    "dataset_test": {
+        "raw": "./datasets/semeval14/restaurant_test.raw",
+        "graph": "./datasets/semeval14/restaurant_test.raw.graph",
+        "tree": "./datasets/semeval14/restaurant_test.raw.tree"
+    },
     "initializer": "xavier_uniform",
     "optimizer": "adam",
     "learning_rate": 0.001,
