@@ -1,9 +1,16 @@
-from .data_class import SenticASGCNTrainArgs
-from .utils import parse_args_and_load_config, set_random_seed
+from data_class import SenticASGCNTrainArgs
+from utils import parse_args_and_load_config, set_random_seed, ABSADatasetReader, BucketIterator
+
+from tokenization import SenticASGCNTokenizer
 
 
 def train_model(cfg: SenticASGCNTrainArgs):
-    pass
+    tokenizer = SenticASGCNTokenizer.from_pretrained(
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/tokenizer/"
+    )
+    absa_dataset = ABSADatasetReader(cfg, tokenizer)
+    train_dataloader = BucketIterator(data=absa_dataset.train_data, batch_size=cfg.batch_size, shuffle=True)
+    test_dataloader = BucketIterator(data=absa_dataset.test_data, batch_size=cfg.batch_size, shuffle=False)
 
 
 if __name__ == "__main__":

@@ -1,29 +1,29 @@
 {
     "dependency_graph_preprocess": [
-        "./datasets/acl-14-short-data/train.raw",
-        "./datasets/acl-14-short-data/test.raw",
-        "./datasets/semeval14/restaurant_train.raw",
-        "./datasets/semeval14/restaurant_test.raw",
-        "./datasets/semeval14/laptop_train.raw",
-        "./datasets/semeval14/laptop_test.raw",
-        "./datasets/semeval15/restaurant_train.raw",
-        "./datasets/semeval15/restaurant_test.raw",
-        "./datasets/semeval16/restaurant_train.raw",
-        "./datasets/semeval16/restaurant_test.raw"
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/acl-14-short-data/train.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/acl-14-short-data/test.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_train.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_test.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/laptop_train.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/laptop_test.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval15/restaurant_train.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval15/restaurant_test.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval16/restaurant_train.raw",
+        "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval16/restaurant_test.raw"
     ],
     "dataset_train": {
-        "raw": "./datasets/semeval14/restaurant_train.raw",
-        "graph": "./datasets/semeval14/restaurant_train.raw.graph",
-        "tree": "./datasets/semeval14/restaurant_train.raw.tree"
+        "raw": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_train.raw",
+        "graph": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_train.raw.graph",
+        "tree": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_train.raw.tree"
     },
     "dataset_test": {
-        "raw": "./datasets/semeval14/restaurant_test.raw",
-        "graph": "./datasets/semeval14/restaurant_test.raw.graph",
-        "tree": "./datasets/semeval14/restaurant_test.raw.tree"
+        "raw": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_test.raw",
+        "graph": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_test.raw.graph",
+        "tree": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_test.raw.tree"
     },
-    "word_vec_file_path": "./glove/glove.840B.300d.txt",
+    "word_vec_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/glove/glove.840B.300d.txt",
     "save_embedding_matrix": true,
-    "saved_embedding_matrix_file_path": "./embedding/embeddings.pickle",
+    "saved_embedding_matrix_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/embedding/embeddings.pickle",
     "initializer": "xavier_uniform",
     "optimizer": "adam",
     "learning_rate": 0.001,
