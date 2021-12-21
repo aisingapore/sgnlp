@@ -3,12 +3,12 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import PreTrainedModel
+from transformers import PreTrainedModel, BertModel
 from transformers.file_utils import ModelOutput
 
 from .modules.dynamic_rnn import DynamicLSTM
 from .modules.gcn import GraphConvolution
-from .config import SenticNetGCNConfig
+from .config import SenticNetGCNConfig, SenticNetBertGCNConfig
 
 
 @dataclass
@@ -98,3 +98,32 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         x = torch.matmul(alpha, text_out).squeeze(1)  # batch_size x 2 * hidden_dim
         output = self.fc(x)
         return output
+
+
+class SenticNetBertGCNPreTrainedModel(PreTrainedModel):
+    config_class = SenticNetBertGCNConfig
+    base_model_prefix = "senticnetbert_gcn"
+
+    def _init_weights(self, module):
+        pass
+
+
+class SenticNetBertGCPModel(SenticNetBertGCNPreTrainedModel):
+    def __init__(self, config: SenticNetBertGCNConfig) -> None:
+        super().__init__()
+        self.bert = BertModel.from_pretrained(config.bert_model)
+        self.gc1 = GraphConvolution(config.hidden_dim, config.hidden_dim)
+        self.gc2 = GraphConvolution(config.hidden_dim, config.hidden_dim)
+        self.gc3 = GraphConvolution(config.hidden_dim, config.hidden_dim)
+        self.fc = nn.Linear(config.hidden_dim, config.polarities_dim)
+        self.text_embed_dropout = nn.Dropout(config.dropout)
+        self.device = config.device
+
+    def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
+        pass
+
+    def mask(self, x, aspect_double_idx):
+        pass
+
+    def forward(self, inputs):
+        pass
