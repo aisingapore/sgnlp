@@ -2,11 +2,11 @@ import torch
 from transformers import PreTrainedConfig
 
 
-class SenticASGCNConfig(PreTrainedConfig):
+class SenticNetGCNConfig(PreTrainedConfig):
     """
     This is the configuration class to store the configuration of a
-    :class:`~sgnlp.models.sentic_asgcn.modeling.SenticASGCNModel`.
-    It is used to instantiate a SenticASGCN network according to the specific arguments, defining the mdoel architecture.
+    :class:`~sgnlp.models.senticnet_gcn.modeling.SenticNetGCNConfig`.
+    It is used to instantiate a SenticNetGCNConfig network according to the specific arguments, defining the mdoel architecture.
 
     Args:
         embed_dim (:obj:`int`, defaults to 300): Embedding dimension size.
@@ -17,10 +17,10 @@ class SenticASGCNConfig(PreTrainedConfig):
 
     Example:
 
-        from sgnlp.models.sentic_asgcn import SenticASGCNConfig
+        from sgnlp.models.senticnet_gcn import SenticNetGCNConfig
 
         # Initialize with default values
-        config = SenticASGCNConfig()
+        config = SenticNetGCNConfig()
     """
 
     def __init__(

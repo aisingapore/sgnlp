@@ -3,7 +3,7 @@ from typing import Dict, List
 
 
 @dataclass
-class SenticASGCNTrainArgs:
+class SenticNetGCNTrainArgs:
     dependency_graph_preprocess: List[str] = field(default=list, metadata={"help": "List of raw dataset to process."})
     dataset_train: Dict[str, str] = field(
         default=dict,

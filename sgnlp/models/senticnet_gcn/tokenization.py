@@ -8,7 +8,7 @@ from transformers import PreTrainedTokenizer
 VOCAB_FILES_NAMES = {"vocab_file": "vocab.pkl"}
 
 
-class SenticASGCNTokenizer(PreTrainedTokenizer):
+class SenticNetGCNTokenizer(PreTrainedTokenizer):
     vocab_files_names = VOCAB_FILES_NAMES
 
     def __init__(

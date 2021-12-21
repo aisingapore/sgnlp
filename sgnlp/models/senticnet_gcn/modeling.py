@@ -8,28 +8,28 @@ from transformers.file_utils import ModelOutput
 
 from .modules.dynamic_rnn import DynamicLSTM
 from .modules.gcn import GraphConvolution
-from .config import SenticASGCNConfig
+from .config import SenticNetGCNConfig
 
 
 @dataclass
-class SenticASGCNModelOutput(ModelOutput):
+class SenticNetGCNModelOutput(ModelOutput):
     pass
 
 
-class SenticASGCNPreTrainedModel(PreTrainedModel):
+class SenticNetGCNPreTrainedModel(PreTrainedModel):
     """
     An abstract class to handle weights initialization and a simple interface for download and loading pretrained models.
     """
 
-    config_class = SenticASGCNConfig
-    base_model_prefix = "sentic_asgcn"
+    config_class = SenticNetGCNConfig
+    base_model_prefix = "senticnet_gcn"
 
     def _init_weights(self, module):
         pass
 
 
-class SenticASGCNModel(SenticASGCNPreTrainedModel):
-    def __init__(self, config: SenticASGCNConfig) -> None:
+class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
+    def __init__(self, config: SenticNetGCNConfig) -> None:
         super().__init__(config)
         self.text_lstm = DynamicLSTM(
             config.embed_dim,

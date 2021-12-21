@@ -4,6 +4,18 @@ from utils import parse_args_and_load_config, set_random_seed, ABSADatasetReader
 from tokenization import SenticASGCNTokenizer
 
 
+class Trainer:
+    def __init__(self, cfg: SenticASGCNTrainArgs):
+        self.cfg = cfg
+        tokenizer = SenticASGCNTokenizer.from_pretrained(
+            "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/tokenizer/"
+        )
+        dataset = ABSADatasetReader(self.cfg, tokenizer=tokenizer)
+
+    def _train(self):
+        pass
+
+
 def train_model(cfg: SenticASGCNTrainArgs):
     tokenizer = SenticASGCNTokenizer.from_pretrained(
         "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/tokenizer/"

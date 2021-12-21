@@ -5,23 +5,23 @@ import math
 import pickle
 import random
 import pathlib
-from typing import Dict, Iterable, List, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import torch
 from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 
-from data_class import SenticASGCNTrainArgs
+from data_class import SenticNetGCNTrainArgs
 
 
 def parse_args_and_load_config(
-    config_path: str = "config/sentic_asgcn_config.json",
-) -> SenticASGCNTrainArgs:
+    config_path: str = "config/senticnet_gcn_config.json",
+) -> SenticNetGCNTrainArgs:
     """Get config from config file using argparser
 
     Returns:
-        SenticASGCNTrainArgs: SenticASGCNTrainArgs instance populated from config
+        SenticNetGCNTrainArgs: SenticNetGCNTrainArgs instance populated from config
     """
     parser = argparse.ArgumentParser(description="SenticASGCN Training")
     parser.add_argument("--config", type=str, default=config_path)
@@ -31,7 +31,7 @@ def parse_args_and_load_config(
     with open(cfg_path, "r") as cfg_file:
         cfg = json.load(cfg_file)
 
-    sentic_asgcn_args = SenticASGCNTrainArgs(**cfg)
+    sentic_asgcn_args = SenticNetGCNTrainArgs(**cfg)
     return sentic_asgcn_args
 
 
@@ -234,7 +234,7 @@ class ABSADataset(object):
 class ABSADatasetReader:
     def __init__(
         self,
-        config: SenticASGCNTrainArgs,
+        config: SenticNetGCNTrainArgs,
         tokenizer: PreTrainedTokenizer,
     ):
         self.cfg = config
