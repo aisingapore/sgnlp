@@ -18,6 +18,7 @@ class GraphConvolution(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, text, adj):
+        text = text.to(torch.float32)
         hidden = torch.matmul(text, self.weight)
         denom = torch.sum(adj, dim=2, keepdim=True) + 1
         output = torch.matmul(adj, hidden) / denom
