@@ -58,3 +58,14 @@ class SenticNetGCNTrainArgs:
             "sgd",
         ], "Invalid optimizer"
         assert self.device in ["cuda", "cpu"], "Invalid device type."
+
+
+@dataclass
+class DependencyProcessorArgs:
+    dependency_graph_preprocess: List[str] = field(default=list, metadata={"help": "List of raw dataset to process."})
+    senticnet_word_file_path: str = field(
+        default="./senticNet/senticnet_word.txt", metadata={"help": "SenticNet word file path."}
+    )
+    spacy_pipeline: str = field(
+        default="en_core_web_sm", metadata={"help": "Type of spacy pipeline to load for processor."}
+    )
