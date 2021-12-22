@@ -12,6 +12,7 @@ class DependencyProcessor:
         self.config = config
         self.nlp = spacy.load(config.spacy_pipeline)
         self.senticnet = self._load_senticnet(config.senticnet_word_file_path)
+        self.dataset_keys = ["raw"]
 
     def _load_senticnet(self, senticnet_file_path: str):
         senticNet = {}
@@ -82,8 +83,37 @@ class DependencyProcessor:
             data = pickle.load(f)
         return data
 
+    def _process_file(self, raw_file_path: str, file_path: str, process_function: function):
+        try:
+            with open(raw_file_path, "r", encoding="utf-8", newline="\n", errors="ignore") as f:
+                lines = f.readlines()
+        except:
+            raise Exception("Error opening raw dataset file!")
+
+        graph = {}
+        for i in range(0, len(lines), 3):
+            text_left, _, text_right = [s.lower().strip() for s in lines[i].partition("$T$")]
+            aspect = lines[i + 1].lower().strip()
+            adj_matrix = process_function(text_left + " " + aspect + " " + text_right, aspect, self.senticnet)
+            graph[i] = adj_matrix
+        try:
+            if self.config.save_preprocessed_dependency:
+                with open(file_path, "wb") as f:
+                    pickle.dump(graph, f)
+        except:
+            raise Exception("Error writing graph to file")
+        # return graph
+
     def process(self):
-        pass
+        dependency_keys_map = {
+            "dependency_graph": self._generate_dependency_adj_matrix,
+            "sentic_graph": self._generate_sentic_graph,
+            "dependency_sencticnet_graph": self._generate_sentic_dependency_adj_matrix,
+        }
+        for dataset in [self.config.dataset_train, self.config.dataset_test]:
+            for key, func in dependency_keys_map.items():
+                if not dataset[key]:
+                    self._process_file(dataset["raw"], dataset[key], func)
 
 
 if __name__ == "__main__":

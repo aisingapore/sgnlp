@@ -4,7 +4,6 @@ from typing import Dict, List
 
 @dataclass
 class SenticNetGCNTrainArgs:
-    dataset_files: List[str] = field(default=list, metadata={"help": "List of raw dataset to process."})
     senticnet_word_file_path: str = field(
         default="./senticNet/senticnet_word.txt", metadata={"help": "SenticNet word file path."}
     )
@@ -17,6 +16,10 @@ class SenticNetGCNTrainArgs:
             "help": """Flag to indicate if dependency preprocess should run,
             if pickle files already present, it will be overwritten."""
         },
+    )
+    dataset_keys: List[str] = field(
+        default_factory=lambda: ["raw", "dependency_graph", "sentic_graph", "dependency_sencticnet_graph"],
+        metadata={"help": "Default dataset keys."},
     )
     dataset_train: Dict[str, str] = field(
         default=dict,
@@ -87,3 +90,10 @@ class SenticNetGCNTrainArgs:
         assert self.device in ["cuda", "cpu"], "Invalid device type."
         assert "raw" in self.dataset_train.keys(), "File path to raw dataset is required!"
         assert "raw" in self.dataset_test.keys(), "File path to raw dataset is required!"
+        # populate keys if not presents
+        train_diff_keys = set(self.dataset_keys).difference(set(self.dataset_train.keys()))
+        for key in train_diff_keys:
+            self.dataset_train[key] = ""
+        test_diff_keys = set(self.dataset_keys).difference(set(self.dataset_test.keys()))
+        for key in test_diff_keys:
+            self.dataset_test[key] = ""
