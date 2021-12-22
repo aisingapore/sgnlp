@@ -4,20 +4,37 @@ from typing import Dict, List
 
 @dataclass
 class SenticNetGCNTrainArgs:
-    raw_dataset_files: List[str] = field(default=list, metadata={"help": "List of raw dataset to process."})
+    dataset_files: List[str] = field(default=list, metadata={"help": "List of raw dataset to process."})
     senticnet_word_file_path: str = field(
         default="./senticNet/senticnet_word.txt", metadata={"help": "SenticNet word file path."}
     )
     spacy_pipeline: str = field(
         default="en_core_web_sm", metadata={"help": "Type of spacy pipeline to load for processor."}
     )
+    save_preprocessed_dependency: bool = field(
+        default=True,
+        metadata={
+            "help": """Flag to indicate if dependency preprocess should run,
+            if pickle files already present, it will be overwritten."""
+        },
+    )
     dataset_train: Dict[str, str] = field(
         default=dict,
-        metadata={"help": "Dictionary containing 3 file paths to the raw, graph and tree train datasets."},
+        metadata={
+            "help": """Dictionary containing 3 file paths to the raw dataset file,
+                    dependency_graph, sentic_graph and the dependency_senticnet_graph files for the train datasets.
+                    Raw file path is mandatory, the graph files are optional. If graph files are not present,
+                    it will be generated during preprocessing step."""
+        },
     )
     dataset_test: Dict[str, str] = field(
         default=dict,
-        metadata={"help": "Dictionary containing 3 file paths to the raw, graph and tree test datasets."},
+        metadata={
+            "help": """Dictionary containing 3 file paths to the raw dataset file,
+                    dependency_graph, sentic_graph and the dependency_senticnet_graph files for the test datasets.
+                    Raw file path is mandatory, the graph files are optional. If graph files are not present,
+                    it will be generated during preprocessing step."""
+        },
     )
     word_vec_file_path: str = field(
         default="glove/glove.840B.300d.txt",
@@ -25,12 +42,16 @@ class SenticNetGCNTrainArgs:
     )
     save_embedding_matrix: bool = field(
         default=True,
-        metadata="Flag to indicate if embedding matrix should be saved. Flag is ignored if 'saved_embedding_matrix_file_path' is populated and valid.",
+        metadata={
+            "help": """Flag to indicate if embedding matrix should be saved.
+                    Flag is ignored if 'saved_embedding_matrix_file_path' is populated and valid."""
+        },
     )
     saved_embedding_matrix_file_path: str = field(
         default="embedding/embeddings.pickle",
         metadata={
-            "help": "Full path of saved embedding matrix, if file exists, embeddings will be generated from file instead of generated from word vector and vocab."
+            "help": """Full path of saved embedding matrix, if file exists,
+                    embeddings will be generated from file instead of generated from word vector and vocab."""
         },
     )
     initializer: str = field(default="xavier_uniform", metadata={"help": "Type of initalizer to use."})
@@ -64,3 +85,5 @@ class SenticNetGCNTrainArgs:
             "sgd",
         ], "Invalid optimizer"
         assert self.device in ["cuda", "cpu"], "Invalid device type."
+        assert "raw" in self.dataset_train.keys(), "File path to raw dataset is required!"
+        assert "raw" in self.dataset_test.keys(), "File path to raw dataset is required!"

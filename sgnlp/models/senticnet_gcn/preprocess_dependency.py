@@ -1,5 +1,6 @@
 import numpy as np
 import spacy
+import pathlib
 import pickle
 
 from utils import parse_args_and_load_config
@@ -8,6 +9,7 @@ from data_class import SenticNetGCNTrainArgs
 
 class DependencyProcessor:
     def __init__(self, config: SenticNetGCNTrainArgs):
+        self.config = config
         self.nlp = spacy.load(config.spacy_pipeline)
         self.senticnet = self._load_senticnet(config.senticnet_word_file_path)
 
@@ -71,10 +73,21 @@ class DependencyProcessor:
                         matrix[child.i][token.i] = 1.0 * sentic
         return matrix
 
+    def _check_saved_file(self, file_path: str) -> bool:
+        pl_file_path = pathlib.Path(file_path)
+        return pl_file_path.exists()
+
+    def _load_save_file(self, file_path: str) -> dict[int, str]:
+        with open(file_path, "rb") as f:
+            data = pickle.load(f)
+        return data
+
     def process(self):
         pass
 
 
 if __name__ == "__main__":
     cfg = parse_args_and_load_config()
-    print(cfg)
+    import pprint
+
+    pprint.pprint(cfg.dataset_files)
