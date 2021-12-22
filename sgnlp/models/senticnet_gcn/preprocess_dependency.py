@@ -1,14 +1,13 @@
 import numpy as np
 import spacy
 import pickle
-from spacy.tokens import Doc
 
 from utils import parse_args_and_load_config
-from data_class import DependencyProcessorArgs
+from data_class import SenticNetGCNTrainArgs
 
 
 class DependencyProcessor:
-    def __init__(self, config: DependencyProcessorArgs):
+    def __init__(self, config: SenticNetGCNTrainArgs):
         self.nlp = spacy.load(config.spacy_pipeline)
         self.senticnet = self._load_senticnet(config.senticnet_word_file_path)
 
@@ -34,7 +33,7 @@ class DependencyProcessor:
                 matrix[i][j] += sentic
             for k in range(seq_len):
                 matrix[k][i] += sentic
-            matrix[i][i] = 1
+            matrix[i][i] = 1.0
         return matrix
 
     def _generate_sentic_graph(self, text: str, aspect: str) -> np.ndarray:
@@ -51,7 +50,7 @@ class DependencyProcessor:
                 matrix[j][i] += sentic
         for i in range(seq_len):
             if matrix[i][i] == 0:
-                matrix[i][i] = 1
+                matrix[i][i] = 1.0
         return matrix
 
     def _generate_sentic_dependency_adj_matrix(self, text: str, aspect: str) -> np.ndarray:
@@ -59,18 +58,23 @@ class DependencyProcessor:
         seq_len = len(text.split())
         matrix = np.zeros((seq_len, seq_len)).astype("float32")
         for token in doc:
-            sentic = float(self.senticnet[str(token)]) + 1 if str(token) in self.senticnet else 0
+            sentic = float(self.senticnet[str(token)]) + 1.0 if str(token) in self.senticnet else 0
             if str(token) in aspect:
-                sentic += 1
+                sentic += 1.0
             if token.i < seq_len:
-                matrix[token.i][token.i] = 1 * sentic
+                matrix[token.i][token.i] = 1.0 * sentic
                 for child in token.children:
                     if str(child) in aspect:
-                        sentic += 1
+                        sentic += 1.0
                     if child.i < seq_len:
-                        matrix[token.i][child.i] = 1 * sentic
-                        matrix[child.i][token.i] = 1 * sentic
+                        matrix[token.i][child.i] = 1.0 * sentic
+                        matrix[child.i][token.i] = 1.0 * sentic
         return matrix
 
     def process(self):
         pass
+
+
+if __name__ == "__main__":
+    cfg = parse_args_and_load_config()
+    print(cfg)

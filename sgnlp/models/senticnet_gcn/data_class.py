@@ -4,7 +4,13 @@ from typing import Dict, List
 
 @dataclass
 class SenticNetGCNTrainArgs:
-    dependency_graph_preprocess: List[str] = field(default=list, metadata={"help": "List of raw dataset to process."})
+    raw_dataset_files: List[str] = field(default=list, metadata={"help": "List of raw dataset to process."})
+    senticnet_word_file_path: str = field(
+        default="./senticNet/senticnet_word.txt", metadata={"help": "SenticNet word file path."}
+    )
+    spacy_pipeline: str = field(
+        default="en_core_web_sm", metadata={"help": "Type of spacy pipeline to load for processor."}
+    )
     dataset_train: Dict[str, str] = field(
         default=dict,
         metadata={"help": "Dictionary containing 3 file paths to the raw, graph and tree train datasets."},
@@ -58,14 +64,3 @@ class SenticNetGCNTrainArgs:
             "sgd",
         ], "Invalid optimizer"
         assert self.device in ["cuda", "cpu"], "Invalid device type."
-
-
-@dataclass
-class DependencyProcessorArgs:
-    dependency_graph_preprocess: List[str] = field(default=list, metadata={"help": "List of raw dataset to process."})
-    senticnet_word_file_path: str = field(
-        default="./senticNet/senticnet_word.txt", metadata={"help": "SenticNet word file path."}
-    )
-    spacy_pipeline: str = field(
-        default="en_core_web_sm", metadata={"help": "Type of spacy pipeline to load for processor."}
-    )
