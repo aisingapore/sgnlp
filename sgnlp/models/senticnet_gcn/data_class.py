@@ -18,7 +18,7 @@ class SenticNetGCNTrainArgs:
         },
     )
     dataset_keys: List[str] = field(
-        default_factory=lambda: ["raw", "dependency_graph", "sentic_graph", "dependency_sencticnet_graph"],
+        default_factory=lambda: ["raw", "dependency_sencticnet_graph"],
         metadata={"help": "Default dataset keys."},
     )
     dataset_train: Dict[str, str] = field(
