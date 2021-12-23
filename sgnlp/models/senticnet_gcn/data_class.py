@@ -4,6 +4,7 @@ from typing import Dict, List
 
 @dataclass
 class SenticNetGCNTrainArgs:
+    model: str = field(default="senticnet_gcn", metadata={"help": "Options to choose which model to train."})
     senticnet_word_file_path: str = field(
         default="./senticNet/senticnet_word.txt", metadata={"help": "SenticNet word file path."}
     )
@@ -71,8 +72,10 @@ class SenticNetGCNTrainArgs:
     save: bool = field(default=True, metadata={"help": "Flag to indicate if results should be saved."})
     seed: int = field(default=776, metadata={"help": "Default random seed for training."})
     device: str = field(default="cuda", metadata={"help": "Type of compute device to use for training."})
+    repeats: int = field(default=10, metadata={"help": "Number of times to repeat train loop."})
 
     def __post_init__(self):
+        assert self.model in ["senticgcn", "senticgcn_bert"]
         assert self.initializer in [
             "xavier_uniform",
             "xavier_uniform",
@@ -97,3 +100,4 @@ class SenticNetGCNTrainArgs:
         test_diff_keys = set(self.dataset_keys).difference(set(self.dataset_test.keys()))
         for key in test_diff_keys:
             self.dataset_test[key] = ""
+        assert self.repeats > 1, "Repeats num must be at least 1."
