@@ -58,6 +58,12 @@ class SenticNetGCNTrainArgs:
                     embeddings will be generated from file instead of generated from word vector and vocab."""
         },
     )
+    save_state_dict: bool = field(
+        default=True, metadata={"help": "Flag to indicate if best model state_dict should be saved."}
+    )
+    saved_state_dict_folder_path: str = field(
+        default="/state_dict", metadata={"help": "Folder to save model state_dict."}
+    )
     initializer: str = field(default="xavier_uniform", metadata={"help": "Type of initalizer to use."})
     optimizer: str = field(default="adam", metadata={"help": "Type of optimizer to use."})
     learning_rate: float = field(default=0.001, metadata={"help": "Default learning rate for training."})

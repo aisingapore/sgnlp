@@ -124,8 +124,8 @@ class SenticNetGCNTrainer(SenticNetGCNBaseTrainer):
 
 
 if __name__ == "__main__":
-    # cfg = parse_args_and_load_config()
-    # if cfg.seed is not None:
-    #     set_random_seed(cfg.seed)
-    # train_model(cfg)
-    pass
+    cfg = parse_args_and_load_config()
+    if cfg.seed is not None:
+        set_random_seed(cfg.seed)
+    trainer = SenticNetGCNTrainer(cfg) if cfg.model == "senticgcn" else SenticNetBertGCNTrainer(cfg)
+    trainer.train()
