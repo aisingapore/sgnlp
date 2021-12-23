@@ -2,7 +2,7 @@ import pathlib
 import pickle
 from typing import Dict, List, Optional, Tuple
 
-from transformers import PreTrainedTokenizer
+from transformers import PreTrainedTokenizer, BertTokenizer
 
 
 VOCAB_FILES_NAMES = {"vocab_file": "vocab.pkl"}
@@ -98,3 +98,15 @@ class SenticNetGCNTokenizer(PreTrainedTokenizer):
         with open(vocab_file_path, "wb") as fout:
             pickle.dump(self.vocab, fout)
         return (str(vocab_file_path),)
+
+
+class SenticNetBertGCNTokenizer(BertTokenizer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, text, reverse=False, **kwargs):
+        encoding = super().__call__(text, add_special_tokens=False, truncation=True, max_length=85, **kwargs)
+        if reverse:
+            for key in encoding.keys():
+                encoding[key] = encoding[key][::-1]
+        return encoding
