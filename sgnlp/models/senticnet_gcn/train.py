@@ -1,4 +1,5 @@
 import logging
+import math
 
 import numpy as np
 from sklearn.metrics import f1_score
@@ -7,6 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from data_class import SenticNetGCNTrainArgs
+from sgnlp.models.senticnet_gcn.modeling import SenticNetBertGCNPreTrainedModel
 from tokenization import SenticASGCNTokenizer, SenticNetBertGCNTokenizer
 from utils import parse_args_and_load_config, set_random_seed, ABSADatasetReader, BucketIterator
 
@@ -117,10 +119,30 @@ class SenticNetBertGCNTrainer(SenticNetGCNBaseTrainer):
     def __init__(self, config: SenticNetGCNTrainArgs):
         self.config = config
 
+    def _reset_params(self):
+        for child in self.model.children():
+            if type(child) != SenticNetBertGCNPreTrainedModel:
+                for param in child.parameters():
+                    if param.requires_grad:
+                        if len(param.shape) > 1:
+                            self._create_initializers(param)
+                        else:
+                            stdv = 1.0 / math.sqrt(param.shape[0])
+                            nn.init.uniform_(param, a=-stdv, b=stdv)
+
 
 class SenticNetGCNTrainer(SenticNetGCNBaseTrainer):
     def __init__(self, config: SenticNetGCNTrainArgs):
         self.config = config
+
+    def _reset_params(self):
+        for param in self.modelparameters():
+            if param.requires_grad:
+                if len(param.shape) > 1:
+                    self._create_initializers(param)
+                else:
+                    stdv = 1.0 / math.sqrt(param.shape[0])
+                    nn.init.uniform_(param, a=-stdv, b=stdv)
 
 
 if __name__ == "__main__":
