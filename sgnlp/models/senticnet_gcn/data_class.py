@@ -70,7 +70,7 @@ class SenticNetGCNTrainArgs:
     l2reg: float = field(default=0.00001, metadata={"help": "Default l2reg value."})
     epochs: int = field(default=100, metadata={"help": "Number of epochs to train."})
     batch_size: int = field(default=32, metadata={"help": "Training batch size."})
-    log_step: int = field(default=5, metadata={"help": "Default log step."})
+    log_step: int = field(default=5, metadata={"help": "Number of train steps to log results."})
     embed_dim: int = field(default=300, metadata={"help": "Size of embedding."})
     hidden_dim: int = field(default=300, metadata={"help": "Number of neurons for hidden layer."})
     dropout: float = field(default=0.3, metadata={"help": "Default value for dropout percentages."})

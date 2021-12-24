@@ -1,5 +1,7 @@
+import datetime
 import logging
 import math
+import pathlib
 
 import numpy as np
 from sklearn.metrics import f1_score
@@ -9,8 +11,7 @@ import torch.optim as optim
 
 from data_class import SenticNetGCNTrainArgs
 from sgnlp.models.senticnet_gcn.modeling import SenticNetBertGCNPreTrainedModel
-from tokenization import SenticASGCNTokenizer, SenticNetBertGCNTokenizer
-from utils import parse_args_and_load_config, set_random_seed, ABSADatasetReader, BucketIterator
+from utils import parse_args_and_load_config, set_random_seed
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -26,8 +27,11 @@ class SenticNetGCNBaseTrainer:
             if not self.config.device
             else torch.device(self.config.device)
         )
-        # self.dataset_train = # dataloader
-        # self.dataset_test = # dataloader
+        # self.dataloader_train = # dataloader
+        # self.dataloader_test = # dataloader
+        if config.save_state_dict:
+            self.save_state_dict_folder = pathlib.Path(self.config.saved_state_dict_folder_path)
+            self.save_state_dict_folder.mkdir(exist_ok=True)
 
     def _create_initializers(self):
         initializers = {
@@ -75,7 +79,17 @@ class SenticNetGCNBaseTrainer:
         f1 = f1_score(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2], average="macro")
         return test_acc, f1
 
-    def _train_epoch(self):
+    def _save_state_dict(self):
+        if self.config.save_state_dict:
+            curr_dt = datetime.datetime.now()
+            curr_dt_str = curr_dt.strftime("%Y-%m-%d_%H%M%S")
+            filename = f"{self.config.model}_{curr_dt_str}.pkl"
+            try:
+                torch.save(self.model.state_dict(), self.save_state_dict_folder.joinpath(filename))
+            except:
+                raise Exception("Error saving model state dict!")
+
+    def _train_epoch(self, criterion: function, optimizer: function):
         max_val_acc, max_val_f1 = 0, 0
         max_val_epoch = 0
         global_step = 0
@@ -83,7 +97,23 @@ class SenticNetGCNBaseTrainer:
 
         for epoch in range(self.config.epochs):
             n_correct, n_total = 0, 0
-            # TODO: How to produce dataset for both model types?
+            self.model.train()
+            for _, batch in enumerate(self.dataloader_train):
+                global_step += 1
+                optimizer.zero_grad()
+
+                inputs = [batch[col].to(self.device) for col in batch.keys()]
+                targets = batch["polarity"].to(self.device)
+                outputs = self.model(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
+
+                n_correct += (torch.argmax(outputs, -1) == targets).sum().item()
+                n_total += len(outputs)
+
+                if global_step % self.config.log_step == 0:
+                    pass  # TODO: how to merge both calculate for bert and non-bert
 
     def train(self):
         criterion = nn.CrossEntropyLoss()
@@ -95,7 +125,7 @@ class SenticNetGCNBaseTrainer:
             logging.info(f"Start overall train loop : {i + 1}")
 
             self._reset_params()
-            test_acc, test_f1 = self._train(criterion, optimizer)
+            test_acc, test_f1 = self._train_epoch(criterion, optimizer)
             test_accs.append(test_acc)
             test_f1s.append(test_f1)
 
