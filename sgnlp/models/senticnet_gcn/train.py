@@ -79,24 +79,25 @@ class SenticNetGCNBaseTrainer:
         f1 = f1_score(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2], average="macro")
         return test_acc, f1
 
-    def _save_state_dict(self):
-        if self.config.save_state_dict:
-            curr_dt = datetime.datetime.now()
-            curr_dt_str = curr_dt.strftime("%Y-%m-%d_%H%M%S")
-            filename = f"{self.config.model}_{curr_dt_str}.pkl"
-            try:
-                torch.save(self.model.state_dict(), self.save_state_dict_folder.joinpath(filename))
-            except:
-                raise Exception("Error saving model state dict!")
+    def _save_state_dict(self, epoch: int) -> pathlib.Path:
+        curr_dt = datetime.datetime.now()
+        curr_dt_str = curr_dt.strftime("%Y-%m-%d_%H%M%S")
+        filename = f"{self.config.model}_epoch_{epoch}_{curr_dt_str}.pkl"
+        full_path = self.save_state_dict_folder.joinpath(filename)
+        try:
+            torch.save(self.model.state_dict(), full_path)
+        except:
+            raise Exception("Error saving model state dict!")
+        return full_path
 
-    def _train_epoch(self, criterion: function, optimizer: function):
+    def _train_epoch(self, criterion: function, optimizer: function) -> pathlib.Path:
         max_val_acc, max_val_f1 = 0, 0
         max_val_epoch = 0
         global_step = 0
-        path = 0
+        path = None
 
         for epoch in range(self.config.epochs):
-            n_correct, n_total = 0, 0
+            n_correct, n_total, loss_total = 0, 0, 0
             self.model.train()
             for _, batch in enumerate(self.dataloader_train):
                 global_step += 1
@@ -111,9 +112,40 @@ class SenticNetGCNBaseTrainer:
 
                 n_correct += (torch.argmax(outputs, -1) == targets).sum().item()
                 n_total += len(outputs)
+                loss_total += loss.item() * len(outputs)
 
                 if global_step % self.config.log_step == 0:
-                    pass  # TODO: how to merge both calculate for bert and non-bert
+                    # pass  # TODO: how to merge both calculate for bert and non-bert
+                    train_acc = n_correct / n_total
+                    train_loss = loss_total / n_total
+                    logging.info(f"Train Acc: {train_acc:.4f}, Train Loss: {train_loss:.4f}")
+
+            val_acc, val_f1 = self._evaluate_acc_f1()
+            logging.info(
+                f"""
+                Epoch: {epoch}
+                Test Acc: {val_acc:.4f}
+                Test Loss: {val_f1:.4f}
+            """
+            )
+            if val_f1 > max_val_f1:
+                max_val_f1 = val_f1
+
+            if val_acc > max_val_acc:
+                max_val_acc = val_acc
+                max_val_epoch = epoch
+                if self.config.save_state_dict:
+                    path = self._save_state_dict(epoch)
+                logging.info(
+                    f"""
+                    Best model saved. Acc: {max_val_acc:.4f}, F1: {max_val_f1}, Epoch: {max_val_epoch}
+                """
+                )
+
+            if epoch - max_val_epoch >= self.config.patience:
+                logging.info(f"Early stopping")
+                break
+        return path
 
     def train(self):
         criterion = nn.CrossEntropyLoss()

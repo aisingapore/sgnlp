@@ -79,6 +79,9 @@ class SenticNetGCNTrainArgs:
     seed: int = field(default=776, metadata={"help": "Default random seed for training."})
     device: str = field(default="cuda", metadata={"help": "Type of compute device to use for training."})
     repeats: int = field(default=10, metadata={"help": "Number of times to repeat train loop."})
+    patience: int = field(
+        default=5, metadata={"help": "Number of train epoch without improvements prior to early stopping."}
+    )
 
     def __post_init__(self):
         assert self.model in ["senticgcn", "senticgcn_bert"]
@@ -106,4 +109,5 @@ class SenticNetGCNTrainArgs:
         test_diff_keys = set(self.dataset_keys).difference(set(self.dataset_test.keys()))
         for key in test_diff_keys:
             self.dataset_test[key] = ""
-        assert self.repeats > 1, "Repeats num must be at least 1."
+        assert self.repeats > 1, "Repeats value must be at least 1."
+        assert self.patience > 1, "Patience value must be at least 1."

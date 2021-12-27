@@ -27,5 +27,6 @@
     "save": true,
     "seed": 776,
     "device": "cuda",
-    "repeats": 10
+    "repeats": 10,
+    "patience": 5
 }
