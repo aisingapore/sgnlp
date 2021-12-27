@@ -4,9 +4,9 @@ from typing import Dict, List
 
 @dataclass
 class SenticNetGCNTrainArgs:
-    model: str = field(default="senticnet_gcn", metadata={"help": "Option to choose which model to train."})
+    model: str = field(default="senticnetgcn", metadata={"help": "Option to choose which model to train."})
     tokenizer: str = field(
-        default="senticnet_gcn",
+        default="senticnetgcn",
         metadata={"help": "Option to choose which tokenizer to use for training preprocessing."},
     )
     senticnet_word_file_path: str = field(
@@ -88,7 +88,7 @@ class SenticNetGCNTrainArgs:
     )
 
     def __post_init__(self):
-        assert self.model in ["senticgcn", "senticgcn_bert"]
+        assert self.model in ["senticnetgcn", "senticnetgcn_bert"]
         assert self.initializer in [
             "xavier_uniform",
             "xavier_uniform",
