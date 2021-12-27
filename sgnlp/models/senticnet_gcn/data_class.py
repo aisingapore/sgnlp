@@ -4,7 +4,11 @@ from typing import Dict, List
 
 @dataclass
 class SenticNetGCNTrainArgs:
-    model: str = field(default="senticnet_gcn", metadata={"help": "Options to choose which model to train."})
+    model: str = field(default="senticnet_gcn", metadata={"help": "Option to choose which model to train."})
+    tokenizer: str = field(
+        default="senticnet_gcn",
+        metadata={"help": "Option to choose which tokenizer to use for training preprocessing."},
+    )
     senticnet_word_file_path: str = field(
         default="./senticNet/senticnet_word.txt", metadata={"help": "SenticNet word file path."}
     )

@@ -1,4 +1,6 @@
 {
+    "model": "senticnet_gcn",
+    "tokenizer": "senticnet_gcn",
     "senticnet_word_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/senticNet/senticnet_word.txt",
     "spacy_pipeline": "en_core_web_sm",
     "save_preprocessed_dependency": true,
