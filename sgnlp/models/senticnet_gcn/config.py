@@ -8,6 +8,7 @@ class SenticNetGCNConfig(PreTrainedConfig):
     It is used to instantiate a SenticNetGCNModel network according to the specific arguments, defining the model architecture.
 
     Args:
+        vocab_size (:obj:`int`, defaults to 3597): Vocab size derived from combined SemeVal14/15/16 datasets.
         embed_dim (:obj:`int`, defaults to 300): Embedding dimension size.
         hidden_dim (:obj:`int`, defaults to 300): Size of hidden dimension.
         dropout (:obj:`float`, defaults to 0.3): Droput percentage.
@@ -24,6 +25,7 @@ class SenticNetGCNConfig(PreTrainedConfig):
 
     def __init__(
         self,
+        vocab_size: int = 3597,
         embed_dim: int = 300,
         hidden_dim: int = 300,
         polarities_dim: int = 3,
@@ -32,6 +34,7 @@ class SenticNetGCNConfig(PreTrainedConfig):
         **kwargs
     ):
         super().__init__(**kwargs)
+        self.vocab_size = vocab_size
         self.embed_dim = embed_dim
         self.hidden_dim = hidden_dim
         self.dropout = dropout

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import pickle
 
 import torch
 import torch.nn as nn
@@ -31,6 +32,7 @@ class SenticNetGCNPreTrainedModel(PreTrainedModel):
 class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
     def __init__(self, config: SenticNetGCNConfig) -> None:
         super().__init__(config)
+        self.embedding = nn.Embedding(config.vocab_size, config.embed_dim)
         self.text_lstm = DynamicLSTM(
             config.embed_dim,
             config.hidden_dim,
@@ -43,6 +45,12 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         self.fc = nn.Linear(2 * config.hidden_dim, config.polarities_dim)
         self.text_embed_dropout = nn.Dropout(config.dropout)
         self.device = config.device
+
+    def _load_pretrained_embeddings(self, pretrained_embedding_path: str) -> None:
+        with open(pretrained_embedding_path, "rb") as f:
+            embedding_matrix = pickle.load(f)
+        embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
+        self.embedding.weight.data.copy_(embedding_tensor)
 
     def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
         batch_size, seq_len = x.shape[0], x.shape[1]
@@ -83,7 +91,8 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
         left_len = torch.sum(left_indices != 0, dim=-1)
         aspect_double_idx = torch.cat([left_len.unsqueeze(1), (left_len + aspect_len - 1).unsqueeze(1)], dim=1)
-        text = self.text_embed_dropout(self.embed(text_indices))
+        text = self.embedding(text_indices)
+        text = self.text_embed_dropout(text_indices)
         text_out, (_, _) = self.text_lstm(text, text_len)
         x = F.relu(
             self.gc1(
