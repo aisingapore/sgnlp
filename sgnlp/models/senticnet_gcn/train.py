@@ -8,10 +8,13 @@ from sklearn.metrics import f1_score
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from transformers.tokenization_utils import PreTrainedTokenizer
 
 from data_class import SenticNetGCNTrainArgs
-from sgnlp.models.senticnet_gcn.modeling import SenticNetBertGCNPreTrainedModel
-from utils import parse_args_and_load_config, set_random_seed
+from modeling import SenticNetBertGCNPreTrainedModel
+from preprocess_dependency import DependencyProcessor
+from tokenization import SenticNetGCNTokenizer, SenticNetBertGCNTokenizer
+from utils import parse_args_and_load_config, set_random_seed, ABSADatasetReader
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -27,8 +30,8 @@ class SenticNetGCNBaseTrainer:
             if not self.config.device
             else torch.device(self.config.device)
         )
-        # self.dataloader_train = # dataloader
-        # self.dataloader_test = # dataloader
+        tokenizer = self._create_tokenizer()
+        # self.dataloader 
         if config.save_state_dict:
             self.save_state_dict_folder = pathlib.Path(self.config.saved_state_dict_folder_path)
             self.save_state_dict_folder.mkdir(exist_ok=True)
@@ -52,6 +55,11 @@ class SenticNetGCNBaseTrainer:
             "sgd": optim.SGD,
         }
         return optimizers[self.config.optimizer]
+
+    def _create_tokenizer(self):
+        self.tokenizer = SenticNetBertGCNTokenizer.from_pretrained(self.config.tokenizer) \
+            if self.config.model == 'senticnetgcn' \
+                else SenticNetBertGCNTokenizer.from_pretrained(self.config.tokenizer)
 
     def _reset_params(self):
         raise NotImplementedError("Please call from derived class only.")
@@ -115,7 +123,6 @@ class SenticNetGCNBaseTrainer:
                 loss_total += loss.item() * len(outputs)
 
                 if global_step % self.config.log_step == 0:
-                    # pass  # TODO: how to merge both calculate for bert and non-bert
                     train_acc = n_correct / n_total
                     train_loss = loss_total / n_total
                     logging.info(f"Train Acc: {train_acc:.4f}, Train Loss: {train_loss:.4f}")

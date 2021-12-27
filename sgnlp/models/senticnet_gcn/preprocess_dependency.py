@@ -82,6 +82,3 @@ class DependencyProcessor:
                 if not dataset[key]:
                     self._process_file(dataset["raw"], dataset[key], func)
 
-
-if __name__ == "__main__":
-    pass

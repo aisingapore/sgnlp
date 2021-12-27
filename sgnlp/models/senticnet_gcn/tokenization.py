@@ -104,6 +104,6 @@ class SenticNetBertGCNTokenizer(BertTokenizer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def __call__(self, text, **kwargs):
-        encoding = super().__call__(text, add_special_tokens=False, truncation=True, max_length=85, **kwargs)
+    def __call__(self, text, max_length: int = 85, **kwargs):
+        encoding = super().__call__(text, add_special_tokens=False, truncation=True, max_length=max_length, **kwargs)
         return encoding

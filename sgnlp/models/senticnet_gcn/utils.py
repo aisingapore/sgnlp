@@ -9,7 +9,7 @@ from typing import Dict, List, Union
 
 import numpy as np
 import torch
-from torch.utils.data import random_split
+from torch.utils.data import random_split, Dataset
 from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 
@@ -264,8 +264,6 @@ class ABSADatasetReader:
             lines = fin.readlines()
         with open(datasets["graph"], "rb") as fin_graph:
             idx2graph = pickle.load(fin_graph)
-        with open(datasets["tree"], "rb") as fin_tree:
-            idx2tree = pickle.load(fin_tree)
 
         # Prep all data
         all_data = []
@@ -279,7 +277,6 @@ class ABSADatasetReader:
             left_indices = tokenizer(text_left)
             polarity = int(polarity) + 1
             dependency_graph = idx2graph[i]
-            dependency_tree = idx2tree[i]
 
             data = {
                 "text_indices": text_indices,
