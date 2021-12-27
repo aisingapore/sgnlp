@@ -12,6 +12,7 @@
         "raw": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_test.raw",
         "dependency_sencticnet_graph": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_test.raw.dsenticgraph"
     },
+    "valset_ratio": 0,
     "word_vec_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/glove/glove.840B.300d.txt",
     "save_embedding_matrix": true,
     "saved_embedding_matrix_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/embedding/embeddings.pickle",

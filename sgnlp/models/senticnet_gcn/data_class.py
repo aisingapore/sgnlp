@@ -44,6 +44,14 @@ class SenticNetGCNTrainArgs:
                     it will be generated during preprocessing step."""
         },
     )
+    valset_ratio: float = field(
+        default=0.0,
+        metadata={
+            "help": """
+                Ratio of train dataset to be split for validation.
+                If value is set to 0, test dataset is set as validation dataset as well."""
+        },
+    )
     word_vec_file_path: str = field(
         default="glove/glove.840B.300d.txt",
         metadata={"help": "File path to word vector."},
@@ -115,3 +123,4 @@ class SenticNetGCNTrainArgs:
             self.dataset_test[key] = ""
         assert self.repeats > 1, "Repeats value must be at least 1."
         assert self.patience > 1, "Patience value must be at least 1."
+        assert 0 >= self.valset_ratio < 1, "Valset_ratio must be greater or equals to 0 and less than 1."

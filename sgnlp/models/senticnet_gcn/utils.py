@@ -9,6 +9,7 @@ from typing import Dict, List, Union
 
 import numpy as np
 import torch
+from torch.utils.data import random_split
 from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 
@@ -248,6 +249,13 @@ class ABSADatasetReader:
         )
         self.train_data = ABSADataset(ABSADatasetReader.__read_data__(self.cfg.dataset_train, tokenizer))
         self.test_data = ABSADataset(ABSADatasetReader.__read_data__(self.cfg.dataset_test, tokenizer))
+        if config.valset_ratio:
+            valset_len = int(len(self.train_data) * config.valset_ratio)
+            self.train_data, self.val_data = random_split(
+                self.train_data, (len(self.train_data) - valset_len, valset_len)
+            )
+        else:
+            self.val_data = self.test_data
 
     @staticmethod
     def __read_data__(datasets: Dict[str, str], tokenizer: PreTrainedTokenizer):
