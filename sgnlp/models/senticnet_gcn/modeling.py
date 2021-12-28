@@ -257,7 +257,7 @@ class SenticNetGCNEmbeddingPreTrainedModel(SenticNetGCNEmbeddingPreTrainedModel)
             word_vec_file_path=word_vec_file_path, vocab=vocab, embed_dim=embed_dim
         )
         embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
-        config = SenticNetGCNEmbeddingConfig()
+        config = SenticNetGCNEmbeddingConfig(vocab_size=vocab, embed_dim=embed_dim)
         senticnetgcn_embed = cls(config)
         senticnetgcn_embed.embed.weight.data.copy_(embedding_tensor)
         return senticnetgcn_embed
