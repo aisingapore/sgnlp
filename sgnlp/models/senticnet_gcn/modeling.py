@@ -11,7 +11,7 @@ from transformers.file_utils import ModelOutput
 
 from .modules.dynamic_rnn import DynamicLSTM
 from .modules.gcn import GraphConvolution
-from .config import SenticNetGCNConfig, SenticNetGCNBertConfig
+from .config import SenticNetGCNConfig, SenticNetGCNBertConfig, SenticNetGCNBertEmbeddingConfig
 
 
 @dataclass
@@ -159,7 +159,6 @@ class SenticNetGCNBertPreTrainedModel(PreTrainedModel):
 class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
     def __init__(self, config: SenticNetGCNBertConfig) -> None:
         super().__init__()
-        self._init_bert_model(config.bert_model)
         self.gc1 = GraphConvolution(config.hidden_dim, config.hidden_dim)
         self.gc2 = GraphConvolution(config.hidden_dim, config.hidden_dim)
         self.gc3 = GraphConvolution(config.hidden_dim, config.hidden_dim)
@@ -168,9 +167,6 @@ class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
         self.device = config.device
         self.max_seq_len = config.max_seq_len
         self.loss_function = config.loss_function
-
-    def _init_bert_model(self, bert_model: str):
-        self.bert = BertModel.from_pretrained(bert_model)
 
     def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
         batch_size, seq_len = x.shape[0], x.shape[1]
@@ -211,6 +207,7 @@ class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
         left_len = torch.sum(left_indices != 0, dim=-1)
         aspect_double_idx = torch.cat([left_len.unsqueeze(1), (left_len + aspect_len - 1).unsqueeze(1)], dim=1)
+        # TODO: How to embed in the preprocessor?
         encoder_layer, _ = self.bert(
             text_bert_indices, token_type_ids=bert_segments_ids, output_all_encoded_layers=False
         )
@@ -226,3 +223,22 @@ class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
 
         loss = self.loss_function(logits, labels) if labels is not None else None
         return SenticNetGCNBertModelOutput(loss=loss, logits=logits)
+
+
+class SenticNetGCNBertEmbeddingModel(BertModel):
+    """
+    The SenticNetGCN Bert Embedding Model used to generate embeddings for model inputs.
+
+    This class inherits from :obj:`BertModel` for weights initalization and utility functions
+    from transformers :obj:`PreTrainedModel` class.
+
+    Args:
+        config (:obj:`~SenticNetGCNBertEmbeddingConfig`):
+            Model configuration class with all parameters required for the model.
+            Initializing with a config file does not load
+            the weights associated with the model, only the configuration.
+            Use the :obj:`.from_pretrained` method to load the model weights.
+    """
+
+    def __init__(self, config: SenticNetGCNBertEmbeddingConfig):
+        super().__init__(config)

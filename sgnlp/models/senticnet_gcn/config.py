@@ -1,4 +1,4 @@
-from transformers import PreTrainedConfig
+from transformers import PreTrainedConfig, BertConfig
 
 
 class SenticNetGCNConfig(PreTrainedConfig):
@@ -85,3 +85,16 @@ class SenticNetGCNBertConfig(PreTrainedConfig):
         self.polarities_dim = polarities_dim
         self.device = device
         self.loss_function = loss_function
+
+
+class SenticNetGCNBertEmbeddingConfig(BertConfig):
+    """
+    This is the configuration class to store the configuration of a :class:`~SenticNetGCNBertEmbeddingModel`.
+    It is used to instantiate a UFD Embedding model according to the specified arguments, defining the model architecture.
+
+    Args:
+        BertConfig (:obj:`BertConfig`): transformer :obj:`BertConfig` base class
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
