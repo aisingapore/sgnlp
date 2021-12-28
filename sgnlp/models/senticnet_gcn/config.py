@@ -8,12 +8,13 @@ class SenticNetGCNConfig(PreTrainedConfig):
     It is used to instantiate a SenticNetGCNModel network according to the specific arguments, defining the model architecture.
 
     Args:
-        vocab_size (:obj:`int`, defaults to 3597): Vocab size derived from combined SemeVal14/15/16 datasets.
+        vocab_size (:obj:`int`, defaults to 17662): Vocab size derived from combined Twitter and SemeVal14/15/16 datasets.
         embed_dim (:obj:`int`, defaults to 300): Embedding dimension size.
         hidden_dim (:obj:`int`, defaults to 300): Size of hidden dimension.
         dropout (:obj:`float`, defaults to 0.3): Droput percentage.
         polarities_dim (:obj:`int`, defaults to 3): Size of output dimension representing available polarities (e.g. Positive, Negative, Neutral).
         device (:obj:`str`, defaults to 'cuda`): Type of torch device.
+        loss_function (:obj:`str`, defaults to 'cross_entropy'): Loss function for training/eval.
 
     Example:
 
@@ -25,12 +26,13 @@ class SenticNetGCNConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        vocab_size: int = 3597,
+        vocab_size: int = 17662,
         embed_dim: int = 300,
         hidden_dim: int = 300,
         polarities_dim: int = 3,
         dropout: float = 0.3,
         device: str = "cuda",
+        loss_function: str = "cross_entropy",
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -40,6 +42,7 @@ class SenticNetGCNConfig(PreTrainedConfig):
         self.dropout = dropout
         self.polarities_dim = polarities_dim
         self.device = device
+        self.loss_function = loss_function
 
 
 class SenticNetGCNBertConfig(PreTrainedConfig):
@@ -54,12 +57,13 @@ class SenticNetGCNBertConfig(PreTrainedConfig):
         dropout (:obj:`float`, defaults to 0.3): Dropout percentage.
         polarities_dim (:ob:`int`, defaults to 3): Size of output dimension representing available polarities (e.g. Positive, Negative, Neutral).
         device (:obj:`str`, defaults to 'cuda'): Type of torch device.
+        loss_function (:obj:`str`, defaults to 'cross_entropy'): Loss function for training/eval.
     Example:
 
-        from sgnlp.models.senticnet_gcn import SenticNetBertGCNConfig
+        from sgnlp.models.senticnet_gcn import SenticNetGCNBertConfig
 
         # Initialize with default values
-        config = SenticNetBertGCNConfig()
+        config = SenticNetGCNBertConfig()
     """
 
     def __init__(
@@ -70,6 +74,7 @@ class SenticNetGCNBertConfig(PreTrainedConfig):
         polarities_dim: int = 3,
         dropout: float = 0.3,
         device: str = "cuda",
+        loss_function: str = "cross_entropy",
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -79,3 +84,4 @@ class SenticNetGCNBertConfig(PreTrainedConfig):
         self.dropout = dropout
         self.polarities_dim = polarities_dim
         self.device = device
+        self.loss_function = loss_function

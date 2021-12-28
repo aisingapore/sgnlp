@@ -18,6 +18,7 @@
     "saved_embedding_matrix_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/embedding/embeddings.pickle",
     "initializer": "xavier_uniform",
     "optimizer": "adam",
+    "loss_function": "cross_entropy",
     "learning_rate": 0.001,
     "l2reg": 0.00001,
     "epochs": 100,

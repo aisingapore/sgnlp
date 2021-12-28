@@ -78,6 +78,7 @@ class SenticNetGCNTrainArgs:
     )
     initializer: str = field(default="xavier_uniform", metadata={"help": "Type of initalizer to use."})
     optimizer: str = field(default="adam", metadata={"help": "Type of optimizer to use."})
+    loss_function: str = field(default="cross_entropy", metadata={"help": "Loss function for training/eval."})
     learning_rate: float = field(default=0.001, metadata={"help": "Default learning rate for training."})
     l2reg: float = field(default=0.00001, metadata={"help": "Default l2reg value."})
     epochs: int = field(default=100, metadata={"help": "Number of epochs to train."})

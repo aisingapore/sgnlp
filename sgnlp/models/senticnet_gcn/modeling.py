@@ -1,5 +1,7 @@
-from dataclasses import dataclass
 import pickle
+from dataclasses import dataclass
+from typing import Optional
+
 
 import torch
 import torch.nn as nn
@@ -14,7 +16,18 @@ from .config import SenticNetGCNConfig, SenticNetGCNBertConfig
 
 @dataclass
 class SenticNetGCNModelOutput(ModelOutput):
-    pass
+    """
+    Base class for outputs of SenticNetGCNModel.
+
+    Args:
+        loss (:obj:`torch.Tensor` of shape `(1,)`, `optional`, return when :obj:`labels` is provided):
+            classification loss, typically cross entropy. Loss function used is dependent on what is specified in SenticNetGCNConfig.
+        logits (:obj:`torch.Tensor` of shape :obj:`(batch_size, num_classes)`):
+            raw logits for each class. num_classes = 3 by default.
+    """
+
+    loss: Optional[torch.Tensor] = None
+    logits: torch.Tensor = None
 
 
 class SenticNetGCNPreTrainedModel(PreTrainedModel):
@@ -25,7 +38,7 @@ class SenticNetGCNPreTrainedModel(PreTrainedModel):
     config_class = SenticNetGCNConfig
     base_model_prefix = "senticnetgcn"
 
-    def _init_weights(self, module):
+    def _init_weights(self, module: nn.Module) -> None:
         pass
 
 
@@ -45,6 +58,8 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         self.fc = nn.Linear(2 * config.hidden_dim, config.polarities_dim)
         self.text_embed_dropout = nn.Dropout(config.dropout)
         self.device = config.device
+        if config.loss_function == "cross_entropy":
+            self.loss_function = nn.CrossEntropyLoss()
 
     def _load_pretrained_embeddings(self, pretrained_embedding_path: str) -> None:
         with open(pretrained_embedding_path, "rb") as f:
@@ -85,7 +100,9 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(self.device)
         return mask * x
 
-    def forward(self, inputs):
+    def forward(
+        self, inputs: dict[str, torch.Tensor], labels: Optional[torch.Tensor] = None
+    ) -> SenticNetGCNModelOutput:
         text_indices, aspect_indices, left_indices, adj = inputs
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
@@ -104,15 +121,38 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         alpha_mat = torch.matmul(x, text_out.transpose(1, 2))
         alpha = F.softmax(alpha_mat.sum(1, keepdim=True), dim=2)
         x = torch.matmul(alpha, text_out).squeeze(1)  # batch_size x 2 * hidden_dim
-        output = self.fc(x)
-        return output
+        logits = self.fc(x)
+
+        loss = self.loss_function(logits, labels) if labels is not None else None
+        return SenticNetGCNModelOutput(loss=loss, logits=logits)
+
+
+@dataclass
+class SenticNetGCNBertModelOutput(ModelOutput):
+    """
+    Base class for outputs of SenticNetGCNBertModel.
+
+    Args:
+        loss (:obj:`torch.Tensor` of shape `(1,)`, `optional`, return when :obj:`labels` is provided):
+            classification loss, typically cross entropy.
+            Loss function used is dependent on what is specified in SenticNetGCNBertConfig.
+        logits (:obj:`torch.Tensor` of shape :obj:`(batch_size, num_classes)`):
+            raw logits for each class. num_classes = 3 by default.
+    """
+
+    loss: Optional[torch.Tensor] = None
+    logits: torch.Tensor = None
 
 
 class SenticNetGCNBertPreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for download and loading pretrained models.
+    """
+
     config_class = SenticNetGCNBertConfig
     base_model_prefix = "senticnetgcnbert"
 
-    def _init_weights(self, module: nn.Module):
+    def _init_weights(self, module: nn.Module) -> None:
         pass
 
 
@@ -127,6 +167,7 @@ class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
         self.text_embed_dropout = nn.Dropout(config.dropout)
         self.device = config.device
         self.max_seq_len = config.max_seq_len
+        self.loss_function = config.loss_function
 
     def _init_bert_model(self, bert_model: str):
         self.bert = BertModel.from_pretrained(bert_model)
@@ -164,7 +205,7 @@ class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
         mask = torch.tensor(mask).unsqueeze(2).float().to(self.device)
         return mask * x
 
-    def forward(self, inputs):
+    def forward(self, inputs, labels: torch.Tensor):
         text_bert_indices, text_indices, aspect_indices, bert_segments_ids, left_indices, adj = inputs
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
@@ -181,5 +222,7 @@ class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
         alpha_mat = torch.matmul(x, text_out.transpose(1, 2))
         alpha = F.softmax(alpha_mat.sum(1, keepdim=True), dim=2)
         x = torch.matmul(alpha, text_out).squeeze(1)  # batch_size x 2*hidden_dim
-        output = self.fc(x)
-        return output
+        logits = self.fc(x)
+
+        loss = self.loss_function(logits, labels) if labels is not None else None
+        return SenticNetGCNBertModelOutput(loss=loss, logits=logits)
