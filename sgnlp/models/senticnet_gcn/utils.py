@@ -110,113 +110,6 @@ def build_embedding_matrix(
     return embedding_matrix
 
 
-class BucketIterator(object):
-    """
-    Bucket iterator class which provides sorting and padding for input dataset, iterate thru dataset batches
-    """
-
-    def __init__(self, data, batch_size: int, sort_key="text_indices", shuffle=True, sort=True):
-        self.shuffle = shuffle
-        self.sort = sort
-        self.sort_key = sort_key
-        self.batches = self.sort_and_pad(data, batch_size)
-        self.batch_len = len(self.batches)
-
-    def sort_and_pad(self, data, batch_size: int) -> List[Dict[str, torch.tensor]]:
-        """
-        Class method to sort and pad data batches
-
-        Args:
-            data (ABSADataset): input data
-            batch_size (int): batch size
-
-        Returns:
-            List[Dict[str, torch.tensor]]: return a list of dictionaries of tensors
-        """
-        num_batch = int(math.ceil(len(data) / batch_size))
-        sorted_data = sorted(data, key=lambda x: len(x[self.sort_key])) if self.sort else data
-        batches = [self.pad_data(sorted_data[i * batch_size : (i + 1) * batch_size]) for i in range(num_batch)]
-        return batches
-
-    def pad_batch_encoding(self, data: BatchEncoding, max_len: int) -> BatchEncoding:
-        input_ids_pad = [0] * (max_len - len(data["input_ids"]))
-        token_type_ids_pad = input_ids_pad.copy()
-        attention_mask_pad = [1] * (max_len - len(data["attention_mask"]))
-        data["input_ids"] = torch.tensor(data["input_ids"] + input_ids_pad)
-        data["token_type_ids"] = torch.tensor(data["token_type_ids"] + token_type_ids_pad)
-        data["attention_mask_pad"] = torch.tensor(data["attention_mask"] + attention_mask_pad)
-        return data
-
-    def pad_data(self, batch_data: List[Dict[str, Union[BatchEncoding, int, np.ndarray]]]) -> Dict[str, torch.tensor]:
-        """
-        Class method to pad data batches
-
-        Args:
-            batch_data (List[Dict[str, Union[BatchEncoding, int, np.ndarray]]]): List of dictionaries containing all batches of data
-
-        Returns:
-            Dict[str, torch.tensor]: return dictionary of tensors from data batches
-        """
-        batch_text_indices = []
-        batch_context_indices = []
-        batch_aspect_indices = []
-        batch_left_indices = []
-        batch_polarity = []
-        batch_dependency_graph = []
-        batch_dependency_tree = []
-        max_len = max([len(t[self.sort_key]["input_ids"]) for t in batch_data])
-        # [text_indices, context_indices, aspect_indices, left_indices, polarity, dependency_graph, dependency_tree]
-        for item in batch_data:
-            text_indices = item["text_indices"]
-            context_indices = item["context_indices"]
-            aspect_indices = item["aspect_indices"]
-            left_indices = item["left_indices"]
-            polarity = item["polarity"]
-            dependency_graph = item["dependency_graph"]
-            dependency_tree = item["dependency_tree"]
-
-            batch_text_indices.append(self.pad_batch_encoding(text_indices, max_len))
-            batch_context_indices.append(self.pad_batch_encoding(context_indices, max_len))
-            batch_aspect_indices.append(self.pad_batch_encoding(aspect_indices, max_len))
-            batch_left_indices.append(self.pad_batch_encoding(left_indices, max_len))
-            batch_polarity.append(polarity)
-            batch_dependency_graph.append(
-                np.pad(
-                    dependency_graph,
-                    (
-                        (0, max_len - len(text_indices["input_ids"])),
-                        (0, max_len - len(text_indices["input_ids"])),
-                    ),
-                    "constant",
-                )
-            )
-            batch_dependency_tree.append(
-                np.pad(
-                    dependency_tree,
-                    (
-                        (0, max_len - len(text_indices["input_ids"])),
-                        (0, max_len - len(text_indices["input_ids"])),
-                    ),
-                    "constant",
-                )
-            )
-            return {
-                "text_indices": batch_text_indices,
-                "context_indices": batch_context_indices,
-                "aspect_indices": batch_aspect_indices,
-                "left_indices": batch_left_indices,
-                "polarity": batch_polarity,
-                "dependency_graph": torch.tensor(batch_dependency_graph),
-                "dependency_tree": torch.tensor(batch_dependency_tree),
-            }
-
-    def __iter__(self):
-        if self.shuffle:
-            random.shuffle(self.batches)
-        for idx in range(self.batch_len):
-            yield self.batches[idx]
-
-
 class ABSADataset(object):
     """
     Data class to hold dataset for training.
@@ -285,7 +178,6 @@ class ABSADatasetReader:
                 "left_indices": left_indices,
                 "polarity": polarity,
                 "dependency_graph": dependency_graph,
-                "dependency_tree": dependency_tree,
             }
             all_data.append(data)
         return all_data

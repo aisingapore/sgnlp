@@ -234,7 +234,7 @@ class SenticNetGCNEmbeddingPreTrainedModel(PreTrainedModel):
         pass
 
 
-class SenticNetGCNEmbeddingPreTrainedModel(SenticNetGCNEmbeddingPreTrainedModel):
+class SenticNetGCNEmbeddingModel(SenticNetGCNEmbeddingPreTrainedModel):
     def __init__(self, config: SenticNetGCNEmbeddingConfig):
         super().__init__()
         self.vocab_size = config.vocab_size

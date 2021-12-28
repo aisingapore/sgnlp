@@ -100,7 +100,7 @@ class SenticNetGCNTokenizer(PreTrainedTokenizer):
         return (str(vocab_file_path),)
 
 
-class SenticNetBertGCNTokenizer(BertTokenizer):
+class SenticNetGCNBertTokenizer(BertTokenizer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
