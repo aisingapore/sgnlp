@@ -42,7 +42,7 @@ class SenticNetGCNConfig(PreTrainedConfig):
         self.device = device
 
 
-class SenticNetBertGCNConfig(PreTrainedConfig):
+class SenticNetGCNBertConfig(PreTrainedConfig):
     """
     This is the configuration class to store the configuration of a :class:`~sgnlp.models.senticnet_gcn.modeling.SenticNetBertGCNModel`.
     It is used to instantiate a SenticNetBertGCNModel network according to the specific arguments, defining the model architecture.

@@ -96,7 +96,7 @@ class SenticNetGCNTrainArgs:
     )
 
     def __post_init__(self):
-        assert self.model in ["senticnetgcn", "senticnetgcn_bert"]
+        assert self.model in ["senticnetgcn", "senticnetgcnbert"]
         assert self.initializer in [
             "xavier_uniform",
             "xavier_uniform",

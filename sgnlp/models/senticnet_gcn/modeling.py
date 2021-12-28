@@ -9,7 +9,7 @@ from transformers.file_utils import ModelOutput
 
 from .modules.dynamic_rnn import DynamicLSTM
 from .modules.gcn import GraphConvolution
-from .config import SenticNetGCNConfig, SenticNetBertGCNConfig
+from .config import SenticNetGCNConfig, SenticNetGCNBertConfig
 
 
 @dataclass
@@ -23,7 +23,7 @@ class SenticNetGCNPreTrainedModel(PreTrainedModel):
     """
 
     config_class = SenticNetGCNConfig
-    base_model_prefix = "senticnet_gcn"
+    base_model_prefix = "senticnetgcn"
 
     def _init_weights(self, module):
         pass
@@ -108,16 +108,16 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         return output
 
 
-class SenticNetBertGCNPreTrainedModel(PreTrainedModel):
-    config_class = SenticNetBertGCNConfig
-    base_model_prefix = "senticnetbert_gcn"
+class SenticNetGCNBertPreTrainedModel(PreTrainedModel):
+    config_class = SenticNetGCNBertConfig
+    base_model_prefix = "senticnetgcnbert"
 
-    def _init_weights(self, module):
+    def _init_weights(self, module: nn.Module):
         pass
 
 
-class SenticNetBertGCPModel(SenticNetBertGCNPreTrainedModel):
-    def __init__(self, config: SenticNetBertGCNConfig) -> None:
+class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
+    def __init__(self, config: SenticNetGCNBertConfig) -> None:
         super().__init__()
         self._init_bert_model(config.bert_model)
         self.gc1 = GraphConvolution(config.hidden_dim, config.hidden_dim)
