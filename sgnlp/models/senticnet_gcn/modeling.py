@@ -1,6 +1,7 @@
+import pathlib
 import pickle
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 
 import torch
@@ -11,7 +12,13 @@ from transformers.file_utils import ModelOutput
 
 from .modules.dynamic_rnn import DynamicLSTM
 from .modules.gcn import GraphConvolution
-from .config import SenticNetGCNConfig, SenticNetGCNBertConfig, SenticNetGCNBertEmbeddingConfig
+from .config import (
+    SenticNetGCNConfig,
+    SenticNetGCNBertConfig,
+    SenticNetGCNEmbeddingConfig,
+    SenticNetGCNBertEmbeddingConfig,
+)
+from .utils import build_embedding_matrix
 
 
 @dataclass
@@ -45,7 +52,6 @@ class SenticNetGCNPreTrainedModel(PreTrainedModel):
 class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
     def __init__(self, config: SenticNetGCNConfig) -> None:
         super().__init__(config)
-        self.embedding = nn.Embedding(config.vocab_size, config.embed_dim)
         self.text_lstm = DynamicLSTM(
             config.embed_dim,
             config.hidden_dim,
@@ -60,12 +66,6 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         self.device = config.device
         if config.loss_function == "cross_entropy":
             self.loss_function = nn.CrossEntropyLoss()
-
-    def _load_pretrained_embeddings(self, pretrained_embedding_path: str) -> None:
-        with open(pretrained_embedding_path, "rb") as f:
-            embedding_matrix = pickle.load(f)
-        embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
-        self.embedding.weight.data.copy_(embedding_tensor)
 
     def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
         batch_size, seq_len = x.shape[0], x.shape[1]
@@ -108,6 +108,7 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
         left_len = torch.sum(left_indices != 0, dim=-1)
         aspect_double_idx = torch.cat([left_len.unsqueeze(1), (left_len + aspect_len - 1).unsqueeze(1)], dim=1)
+        # TODO: How to replace embedding layer here?
         text = self.embedding(text_indices)
         text = self.text_embed_dropout(text_indices)
         text_out, (_, _) = self.text_lstm(text, text_len)
@@ -223,6 +224,43 @@ class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
 
         loss = self.loss_function(logits, labels) if labels is not None else None
         return SenticNetGCNBertModelOutput(loss=loss, logits=logits)
+
+
+class SenticNetGCNEmbeddingPreTrainedModel(PreTrainedModel):
+    config_class = SenticNetGCNEmbeddingConfig
+    base_model_prefix = "senticnetgcnembedding"
+
+    def _init_weights(self, module: nn.Module) -> None:
+        pass
+
+
+class SenticNetGCNEmbeddingPreTrainedModel(SenticNetGCNEmbeddingPreTrainedModel):
+    def __init__(self, config: SenticNetGCNEmbeddingConfig):
+        super().__init__()
+        self.vocab_size = config.vocab_size
+        self.embed = nn.Embedding(config.vocab_size, config.embed_dim)
+
+    def load_pretrained_embedding(self, pretrained_embedding_path: Union[str, pathlib.Path]):
+        with open(pretrained_embedding_path, "rb") as emb_f:
+            embedding_matrix = pickle.load(emb_f)
+        embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
+        self.embed.weight.data.copy_(embedding_tensor)
+
+    @classmethod
+    def build_embedding_matrix(
+        cls,
+        word_vec_file_path: str,
+        vocab: dict[str, int],
+        embed_dim: int = 300,
+    ):
+        embedding_matrix = build_embedding_matrix(
+            word_vec_file_path=word_vec_file_path, vocab=vocab, embed_dim=embed_dim
+        )
+        embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
+        config = SenticNetGCNEmbeddingConfig()
+        senticnetgcn_embed = cls(config)
+        senticnetgcn_embed.embed.weight.data.copy_(embedding_tensor)
+        return senticnetgcn_embed
 
 
 class SenticNetGCNBertEmbeddingModel(BertModel):

@@ -87,10 +87,25 @@ class SenticNetGCNBertConfig(PreTrainedConfig):
         self.loss_function = loss_function
 
 
+class SenticNetGCNEmbeddingConfig(PreTrainedConfig):
+    """
+    This is the configuration class to store the configuration of a :class:`~SenticNetGCNEmbeddingModel`.
+    It is used to instantiate a SenticNetGCN Embedding model according to the specified arguments, defining the model architecture.
+
+    Args:
+        PreTrainedConfig (:obj:`PretrainedConfig`): transformer :obj:`PreTrainedConfig` base class
+    """
+
+    def __init__(self, vocab_size: int = 17662, embed_dim: int = 300, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.vocab_size = vocab_size
+        self.embed_dim = embed_dim
+
+
 class SenticNetGCNBertEmbeddingConfig(BertConfig):
     """
     This is the configuration class to store the configuration of a :class:`~SenticNetGCNBertEmbeddingModel`.
-    It is used to instantiate a UFD Embedding model according to the specified arguments, defining the model architecture.
+    It is used to instantiate a SenticNetGCN Bert Embedding model according to the specified arguments, defining the model architecture.
 
     Args:
         BertConfig (:obj:`BertConfig`): transformer :obj:`BertConfig` base class
