@@ -9,15 +9,15 @@ class DynamicLSTM(nn.Module):
 
     def __init__(
         self,
-        input_size,
-        hidden_size,
-        num_layers=1,
-        bias=True,
-        batch_first=True,
-        dropout=0,
-        bidirectional=False,
-        only_use_last_hidden_state=False,
-        rnn_type="LSTM",
+        input_size: int,
+        hidden_size: int,
+        num_layers: int = 1,
+        bias: bool = True,
+        batch_first: bool = True,
+        dropout: float = 0,
+        bidirectional: bool = False,
+        only_use_last_hidden_state: bool = False,
+        rnn_type: str = "LSTM",
     ) -> None:
         super(DynamicLSTM, self).__init__()
         self.input_size = input_size
@@ -51,7 +51,7 @@ class DynamicLSTM(nn.Module):
         elif self.rnn_type == "RNN":
             self.rnn = nn.RNN(**input_args)
 
-    def forward(self, x, x_len, h0=None):
+    def forward(self, x: torch.tensor, x_len: torch.tensor, h0: torch.tensor = None) -> torch.tensor:
         # Sort
         x_sort_idx = torch.argsort(-x_len)
         x_unsort_idx = torch.argsort(x_sort_idx).long()
