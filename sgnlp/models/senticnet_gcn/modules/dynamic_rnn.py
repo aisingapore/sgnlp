@@ -51,7 +51,7 @@ class DynamicLSTM(nn.Module):
         elif self.rnn_type == "RNN":
             self.rnn = nn.RNN(**input_args)
 
-    def forward(self, x: torch.tensor, x_len: torch.tensor, h0: torch.tensor = None) -> torch.tensor:
+    def forward(self, x: torch.Tensor, x_len: torch.Tensor, h0: torch.Tensor = None) -> torch.Tensor:
         # Sort
         x_sort_idx = torch.argsort(-x_len)
         x_unsort_idx = torch.argsort(x_sort_idx).long()
