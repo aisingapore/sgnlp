@@ -39,7 +39,11 @@ class SenticNetGCNModelOutput(ModelOutput):
 
 class SenticNetGCNPreTrainedModel(PreTrainedModel):
     """
-    An abstract class to handle weights initialization and a simple interface for download and loading pretrained models.
+    The SenticNetGCN Pre-Trained Model used as base class for derived SenticNetGCN Model.
+
+    This model is the abstract super class for the SenticNetGCN Model which defines the config
+    class types and weights initalization method. This class should not be used or instantiated directly,
+    see SenticNetGCNModel class for usage.
     """
 
     config_class = SenticNetGCNConfig
@@ -50,6 +54,20 @@ class SenticNetGCNPreTrainedModel(PreTrainedModel):
 
 
 class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
+    """
+    The SenticNetGCN Model for aspect based sentiment analysis.
+
+    This method inherits from :obj:`SenticNetGCNPreTrainedModel` for weights initalization and utility functions
+    from transformer :obj:`PreTrainedModel` class.
+
+    Args:
+        config (:obj:`~SenticNetGCNConfig`):
+            Model configuration class with all parameters required for the model.
+            Initializing with a config file does not load
+            the weights associated with the model, only the configuration.
+            Use the :obj:`.from_pretrained` method to load the model weights.
+    """
+
     def __init__(self, config: SenticNetGCNConfig) -> None:
         super().__init__(config)
         self.text_lstm = DynamicLSTM(
@@ -147,7 +165,11 @@ class SenticNetGCNBertModelOutput(ModelOutput):
 
 class SenticNetGCNBertPreTrainedModel(PreTrainedModel):
     """
-    An abstract class to handle weights initialization and a simple interface for download and loading pretrained models.
+    The SenticNetGCNBert Pre-Trained Model used as base class for derived SenticNetGCNBert Model.
+
+    This model is the abstract super class for the SenticNetGCNBert Model which defines the config
+    class types and weights initalization method. This class should not be used or instantiated directly,
+    see SenticNetGCNBertModel class for usage.
     """
 
     config_class = SenticNetGCNBertConfig
@@ -157,7 +179,21 @@ class SenticNetGCNBertPreTrainedModel(PreTrainedModel):
         pass
 
 
-class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
+class SenticNetGCNBertModel(SenticNetGCNBertPreTrainedModel):
+    """
+    The SenticNetGCNBert Model for aspect based sentiment analysis.
+
+    This method inherits from :obj:`SenticNetGCNBertPreTrainedModel` for weights initalization and utility functions
+    from transformer :obj:`PreTrainedModel` class.
+
+    Args:
+        config (:obj:`~SenticNetGCNBertConfig`):
+            Model configuration class with all parameters required for the model.
+            Initializing with a config file does not load
+            the weights associated with the model, only the configuration.
+            Use the :obj:`.from_pretrained` method to load the model weights.
+    """
+
     def __init__(self, config: SenticNetGCNBertConfig) -> None:
         super().__init__()
         self.gc1 = GraphConvolution(config.hidden_dim, config.hidden_dim)
@@ -227,6 +263,14 @@ class SenticNetGCNBertPModel(SenticNetGCNBertPreTrainedModel):
 
 
 class SenticNetGCNEmbeddingPreTrainedModel(PreTrainedModel):
+    """
+    The SenticNetGCN Embedding Pre-Trained Model used as base class for derived SenticNetGCN Embedding Model.
+
+    This model is the abstract super class for the SenticNetGCN Embedding Model which defines the config
+    class types and weights initalization method. This class should not be used or instantiated directly,
+    see SenticNetGCNEmbeddingModel class for usage.
+    """
+
     config_class = SenticNetGCNEmbeddingConfig
     base_model_prefix = "senticnetgcnembedding"
 
@@ -235,12 +279,29 @@ class SenticNetGCNEmbeddingPreTrainedModel(PreTrainedModel):
 
 
 class SenticNetGCNEmbeddingModel(SenticNetGCNEmbeddingPreTrainedModel):
+    """
+    The SenticNetGCN Embedding Model used to generate embeddings for model inputs.
+    By default, the embeddings are generated from the glove.840B.300d embeddings.
+
+    This class inherits from :obj:`SenticNetGCNEmbeddingPreTrainedModel` for weights initalization and utility functions
+    from transformers :obj:`PreTrainedModel` class.
+
+    This class can also be constructed via the SenticNetGCNEmbeddingModel.build_embedding_matrix class method.
+
+    Args:
+        config (:obj:`~SenticNetGCNEmbeddingConfig`):
+            Model configuration class with all parameters required for the model.
+            Initializing with a config file does not load
+            the weights associated with the model, only the configuration.
+            Use the :obj:`.from_pretrained` method to load the model weights.
+    """
+
     def __init__(self, config: SenticNetGCNEmbeddingConfig):
         super().__init__()
         self.vocab_size = config.vocab_size
         self.embed = nn.Embedding(config.vocab_size, config.embed_dim)
 
-    def load_pretrained_embedding(self, pretrained_embedding_path: Union[str, pathlib.Path]):
+    def load_pretrained_embedding(self, pretrained_embedding_path: Union[str, pathlib.Path]) -> None:
         with open(pretrained_embedding_path, "rb") as emb_f:
             embedding_matrix = pickle.load(emb_f)
         embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
@@ -253,6 +314,18 @@ class SenticNetGCNEmbeddingModel(SenticNetGCNEmbeddingPreTrainedModel):
         vocab: dict[str, int],
         embed_dim: int = 300,
     ):
+        """
+        This class method is a helper method to construct the embedding model from a file containing word vectors (i.e. GloVe)
+        and a vocab dictionary.
+
+        Args:
+            word_vec_file_path (str): file path to the word vectors
+            vocab (dict[str, int]): vocab dictionary consisting of words as key and index as values
+            embed_dim (int, optional): the embedding dimension. Defaults to 300.
+
+        Returns:
+            SenticNetGCNEmbeddingModel: return an instance of SenticNetGCNEmbeddingModel
+        """
         embedding_matrix = build_embedding_matrix(
             word_vec_file_path=word_vec_file_path, vocab=vocab, embed_dim=embed_dim
         )
