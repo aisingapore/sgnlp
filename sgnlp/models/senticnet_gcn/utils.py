@@ -1,10 +1,11 @@
 import argparse
 import json
-from logging import error
-import math
+import logging
 import pickle
 import random
 import pathlib
+import requests
+import urllib
 from typing import Dict, List, Union
 
 import numpy as np
@@ -48,6 +49,45 @@ def set_random_seed(seed: int = 776) -> None:
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def download_tokenizer_files(
+    base_url: str,
+    save_folder: str,
+    files: list[str] = ["special_tokens_map.json", "tokenizer_config.json", "vocab.pkl"],
+) -> None:
+    """
+    Helper method to download files from online storage.
+
+    Args:
+        base_url (str): Url string to storage folder.
+        save_folder (str): Local folder to save downloaded files. Folder will be created if it does not exists.
+    """
+    file_paths = [urllib.parse.urljoin(base_url, file_name) for file_name in files]
+    for file_path in file_paths:
+        pass
+
+
+def download_url_file(url: str, save_folder: str) -> None:
+    """
+    Helper method to download and save url file.
+
+    Args:
+        url (str): Url of file to download.
+        save_folder (str): Folder to save downloaded file. Will be created if it does not exists.
+    """
+    save_folder_path = pathlib.Path(save_folder)
+    save_folder_path.mkdir(exist_ok=True)
+    fn_start_pos = url.rfind("/") + 1
+    file_name = url[fn_start_pos:]
+    save_file_path = save_folder_path.joinpath(file_name)
+    req = requests.get(url)
+    if req.status_code == requests.codes.ok:
+        with open(save_file_path, "wb") as f:
+            for data in req:
+                f.write(data)
+    else:
+        logging.error(f"Fail to request files from {url}.")
 
 
 def load_word_vec(word_vec_file_path: str, vocab: Dict[str, int], embed_dim: int = 300) -> Dict[str, np.asarray]:
