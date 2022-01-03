@@ -8,20 +8,18 @@ from sklearn.metrics import f1_score
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from transformers.tokenization_utils import PreTrainedTokenizer
 
-from data_class import SenticNetGCNTrainArgs
-from modeling import SenticNetBertGCNPreTrainedModel
-from preprocess_dependency import DependencyProcessor
-from tokenization import SenticNetGCNTokenizer, SenticNetBertGCNTokenizer
+from data_class import SenticGCNTrainArgs
+from modeling import SenticGCNBertPreTrainedModel
+from tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
 from utils import parse_args_and_load_config, set_random_seed, ABSADatasetReader
 
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-class SenticNetGCNBaseTrainer:
-    def __init__(self, config: SenticNetGCNTrainArgs):
+class SenticGCNBaseTrainer:
+    def __init__(self, config: SenticGCNTrainArgs):
         self.config = config
         self.global_max_acc = 0.0
         self.global_max_f1 = 0.0
@@ -31,7 +29,7 @@ class SenticNetGCNBaseTrainer:
             else torch.device(self.config.device)
         )
         tokenizer = self._create_tokenizer()
-        # self.dataloader 
+        # self.dataloader
         if config.save_state_dict:
             self.save_state_dict_folder = pathlib.Path(self.config.saved_state_dict_folder_path)
             self.save_state_dict_folder.mkdir(exist_ok=True)
@@ -57,9 +55,11 @@ class SenticNetGCNBaseTrainer:
         return optimizers[self.config.optimizer]
 
     def _create_tokenizer(self):
-        self.tokenizer = SenticNetBertGCNTokenizer.from_pretrained(self.config.tokenizer) \
-            if self.config.model == 'senticnetgcn' \
-                else SenticNetBertGCNTokenizer.from_pretrained(self.config.tokenizer)
+        self.tokenizer = (
+            SenticGCNBertTokenizer.from_pretrained(self.config.tokenizer)
+            if self.config.model == "senticgcn"
+            else SenticGCNBertTokenizer.from_pretrained(self.config.tokenizer)
+        )
 
     def _reset_params(self):
         raise NotImplementedError("Please call from derived class only.")
@@ -184,13 +184,13 @@ class SenticNetGCNBaseTrainer:
         )
 
 
-class SenticNetBertGCNTrainer(SenticNetGCNBaseTrainer):
-    def __init__(self, config: SenticNetGCNTrainArgs):
+class SenticBertGCNTrainer(SenticGCNBaseTrainer):
+    def __init__(self, config: SenticGCNTrainArgs):
         self.config = config
 
     def _reset_params(self):
         for child in self.model.children():
-            if type(child) != SenticNetBertGCNPreTrainedModel:
+            if type(child) != SenticGCNBertPreTrainedModel:
                 for param in child.parameters():
                     if param.requires_grad:
                         if len(param.shape) > 1:
@@ -200,8 +200,8 @@ class SenticNetBertGCNTrainer(SenticNetGCNBaseTrainer):
                             nn.init.uniform_(param, a=-stdv, b=stdv)
 
 
-class SenticNetGCNTrainer(SenticNetGCNBaseTrainer):
-    def __init__(self, config: SenticNetGCNTrainArgs):
+class SenticGCNTrainer(SenticGCNBaseTrainer):
+    def __init__(self, config: SenticGCNTrainArgs):
         self.config = config
 
     def _reset_params(self):
@@ -218,5 +218,5 @@ if __name__ == "__main__":
     cfg = parse_args_and_load_config()
     if cfg.seed is not None:
         set_random_seed(cfg.seed)
-    trainer = SenticNetGCNTrainer(cfg) if cfg.model == "senticgcn" else SenticNetBertGCNTrainer(cfg)
+    trainer = SenticGCNTrainer(cfg) if cfg.model == "senticgcn" else SenticBertGCNTrainer(cfg)
     trainer.train()

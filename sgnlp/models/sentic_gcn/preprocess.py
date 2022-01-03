@@ -5,12 +5,12 @@ from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 from transformers.utils.dummy_pt_objects import PreTrainedModel
 
-from config import SenticNetGCNEmbeddingConfig, SenticNetGCNBertEmbeddingConfig
-from modeling import SenticNetGCNEmbeddingModel, SenticNetGCNBertEmbeddingModel
-from tokenization import SenticNetGCNTokenizer, SenticNetGCNBertTokenizer
+from config import SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
+from modeling import SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
+from tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
 
 
-class SenticNetGCNPreprocessor:
+class SenticGCNPreprocessor:
     def __init__(
         self,
         tokenizer: PreTrainedTokenizer = None,
@@ -23,13 +23,13 @@ class SenticNetGCNPreprocessor:
         if tokenizer is not None:
             self.tokenizer = tokenizer
         else:
-            self.tokenizer = SenticNetGCNTokenizer.from_pretrained(tokenizer_name)
+            self.tokenizer = SenticGCNTokenizer.from_pretrained(tokenizer_name)
 
         if embedding_model is not None:
             self.embedding_model = embedding_model
         else:
-            embedding_config = SenticNetGCNEmbeddingConfig.from_pretrained(embedding_model_name)
-            self.embedding_model = SenticNetGCNEmbeddingModel.from_pretrained(
+            embedding_config = SenticGCNEmbeddingConfig.from_pretrained(embedding_model_name)
+            self.embedding_model = SenticGCNEmbeddingModel.from_pretrained(
                 embedding_model_name, config=embedding_config
             ).to(device)
 
@@ -38,7 +38,7 @@ class SenticNetGCNPreprocessor:
         return tokens
 
 
-class SenticNetGCNBertPreprocessor:
+class SenticGCNBertPreprocessor:
     def __init__(
         self,
         tokenizer: PreTrainedTokenizer = None,
@@ -51,13 +51,13 @@ class SenticNetGCNBertPreprocessor:
         if tokenizer is not None:
             self.tokenizer = tokenizer
         else:
-            self.tokenizer = SenticNetGCNBertTokenizer.from_pretrained(tokenizer_name)
+            self.tokenizer = SenticGCNBertTokenizer.from_pretrained(tokenizer_name)
 
         if embedding_model is not None:
             self.embedding_model = embedding_model
         else:
-            embedding_config = SenticNetGCNBertEmbeddingConfig.from_pretrained(embedding_model_name)
-            self.embedding_model = SenticNetGCNBertEmbeddingModel.from_pretrained(
+            embedding_config = SenticGCNBertEmbeddingConfig.from_pretrained(embedding_model_name)
+            self.embedding_model = SenticGCNBertEmbeddingModel.from_pretrained(
                 embedding_model_name, config=embedding_config
             ).to(device)
 

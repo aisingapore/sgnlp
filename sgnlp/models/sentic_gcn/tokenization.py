@@ -8,7 +8,7 @@ from transformers import PreTrainedTokenizer, BertTokenizer
 VOCAB_FILES_NAMES = {"vocab_file": "vocab.pkl"}
 
 
-class SenticNetGCNTokenizer(PreTrainedTokenizer):
+class SenticGCNTokenizer(PreTrainedTokenizer):
     vocab_files_names = VOCAB_FILES_NAMES
 
     def __init__(
@@ -100,7 +100,7 @@ class SenticNetGCNTokenizer(PreTrainedTokenizer):
         return (str(vocab_file_path),)
 
 
-class SenticNetGCNBertTokenizer(BertTokenizer):
+class SenticGCNBertTokenizer(BertTokenizer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -13,22 +13,22 @@ from transformers.file_utils import ModelOutput
 from .modules.dynamic_rnn import DynamicLSTM
 from .modules.gcn import GraphConvolution
 from .config import (
-    SenticNetGCNConfig,
-    SenticNetGCNBertConfig,
-    SenticNetGCNEmbeddingConfig,
-    SenticNetGCNBertEmbeddingConfig,
+    SenticGCNConfig,
+    SenticGCNBertConfig,
+    SenticGCNEmbeddingConfig,
+    SenticGCNBertEmbeddingConfig,
 )
 from .utils import build_embedding_matrix
 
 
 @dataclass
-class SenticNetGCNModelOutput(ModelOutput):
+class SenticGCNModelOutput(ModelOutput):
     """
-    Base class for outputs of SenticNetGCNModel.
+    Base class for outputs of SenticGCNModel.
 
     Args:
         loss (:obj:`torch.Tensor` of shape `(1,)`, `optional`, return when :obj:`labels` is provided):
-            classification loss, typically cross entropy. Loss function used is dependent on what is specified in SenticNetGCNConfig.
+            classification loss, typically cross entropy. Loss function used is dependent on what is specified in SenticGCNConfig.
         logits (:obj:`torch.Tensor` of shape :obj:`(batch_size, num_classes)`):
             raw logits for each class. num_classes = 3 by default.
     """
@@ -37,38 +37,38 @@ class SenticNetGCNModelOutput(ModelOutput):
     logits: torch.Tensor = None
 
 
-class SenticNetGCNPreTrainedModel(PreTrainedModel):
+class SenticGCNPreTrainedModel(PreTrainedModel):
     """
-    The SenticNetGCN Pre-Trained Model used as base class for derived SenticNetGCN Model.
+    The SenticGCN Pre-Trained Model used as base class for derived SenticGCN Model.
 
-    This model is the abstract super class for the SenticNetGCN Model which defines the config
+    This model is the abstract super class for the SenticGCN Model which defines the config
     class types and weights initalization method. This class should not be used or instantiated directly,
-    see SenticNetGCNModel class for usage.
+    see SenticGCNModel class for usage.
     """
 
-    config_class = SenticNetGCNConfig
-    base_model_prefix = "senticnetgcn"
+    config_class = SenticGCNConfig
+    base_model_prefix = "senticgcn"
 
     def _init_weights(self, module: nn.Module) -> None:
         pass
 
 
-class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
+class SenticGCNModel(SenticGCNPreTrainedModel):
     """
-    The SenticNetGCN Model for aspect based sentiment analysis.
+    The SenticGCN Model for aspect based sentiment analysis.
 
-    This method inherits from :obj:`SenticNetGCNPreTrainedModel` for weights initalization and utility functions
+    This method inherits from :obj:`SenticGCNPreTrainedModel` for weights initalization and utility functions
     from transformer :obj:`PreTrainedModel` class.
 
     Args:
-        config (:obj:`~SenticNetGCNConfig`):
+        config (:obj:`~SenticGCNConfig`):
             Model configuration class with all parameters required for the model.
             Initializing with a config file does not load
             the weights associated with the model, only the configuration.
             Use the :obj:`.from_pretrained` method to load the model weights.
     """
 
-    def __init__(self, config: SenticNetGCNConfig) -> None:
+    def __init__(self, config: SenticGCNConfig) -> None:
         super().__init__(config)
         self.text_lstm = DynamicLSTM(
             config.embed_dim,
@@ -120,7 +120,7 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
 
     def forward(
         self, inputs: dict[str, torch.Tensor], labels: Optional[torch.Tensor] = None
-    ) -> SenticNetGCNModelOutput:
+    ) -> SenticGCNModelOutput:
         text_indices, aspect_indices, left_indices, adj = inputs
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
@@ -143,18 +143,18 @@ class SenticNetGCNModel(SenticNetGCNPreTrainedModel):
         logits = self.fc(x)
 
         loss = self.loss_function(logits, labels) if labels is not None else None
-        return SenticNetGCNModelOutput(loss=loss, logits=logits)
+        return SenticGCNModelOutput(loss=loss, logits=logits)
 
 
 @dataclass
-class SenticNetGCNBertModelOutput(ModelOutput):
+class SenticGCNBertModelOutput(ModelOutput):
     """
-    Base class for outputs of SenticNetGCNBertModel.
+    Base class for outputs of SenticGCNBertModel.
 
     Args:
         loss (:obj:`torch.Tensor` of shape `(1,)`, `optional`, return when :obj:`labels` is provided):
             classification loss, typically cross entropy.
-            Loss function used is dependent on what is specified in SenticNetGCNBertConfig.
+            Loss function used is dependent on what is specified in SenticGCNBertConfig.
         logits (:obj:`torch.Tensor` of shape :obj:`(batch_size, num_classes)`):
             raw logits for each class. num_classes = 3 by default.
     """
@@ -163,38 +163,38 @@ class SenticNetGCNBertModelOutput(ModelOutput):
     logits: torch.Tensor = None
 
 
-class SenticNetGCNBertPreTrainedModel(PreTrainedModel):
+class SenticGCNBertPreTrainedModel(PreTrainedModel):
     """
-    The SenticNetGCNBert Pre-Trained Model used as base class for derived SenticNetGCNBert Model.
+    The SenticGCNBert Pre-Trained Model used as base class for derived SenticGCNBert Model.
 
-    This model is the abstract super class for the SenticNetGCNBert Model which defines the config
+    This model is the abstract super class for the SenticGCNBert Model which defines the config
     class types and weights initalization method. This class should not be used or instantiated directly,
-    see SenticNetGCNBertModel class for usage.
+    see SenticGCNBertModel class for usage.
     """
 
-    config_class = SenticNetGCNBertConfig
-    base_model_prefix = "senticnetgcnbert"
+    config_class = SenticGCNBertConfig
+    base_model_prefix = "senticgcnbert"
 
     def _init_weights(self, module: nn.Module) -> None:
         pass
 
 
-class SenticNetGCNBertModel(SenticNetGCNBertPreTrainedModel):
+class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
     """
-    The SenticNetGCNBert Model for aspect based sentiment analysis.
+    The SenticGCNBert Model for aspect based sentiment analysis.
 
-    This method inherits from :obj:`SenticNetGCNBertPreTrainedModel` for weights initalization and utility functions
+    This method inherits from :obj:`SenticGCNBertPreTrainedModel` for weights initalization and utility functions
     from transformer :obj:`PreTrainedModel` class.
 
     Args:
-        config (:obj:`~SenticNetGCNBertConfig`):
+        config (:obj:`~SenticGCNBertConfig`):
             Model configuration class with all parameters required for the model.
             Initializing with a config file does not load
             the weights associated with the model, only the configuration.
             Use the :obj:`.from_pretrained` method to load the model weights.
     """
 
-    def __init__(self, config: SenticNetGCNBertConfig) -> None:
+    def __init__(self, config: SenticGCNBertConfig) -> None:
         super().__init__()
         self.gc1 = GraphConvolution(config.hidden_dim, config.hidden_dim)
         self.gc2 = GraphConvolution(config.hidden_dim, config.hidden_dim)
@@ -259,44 +259,44 @@ class SenticNetGCNBertModel(SenticNetGCNBertPreTrainedModel):
         logits = self.fc(x)
 
         loss = self.loss_function(logits, labels) if labels is not None else None
-        return SenticNetGCNBertModelOutput(loss=loss, logits=logits)
+        return SenticGCNBertModelOutput(loss=loss, logits=logits)
 
 
-class SenticNetGCNEmbeddingPreTrainedModel(PreTrainedModel):
+class SenticGCNEmbeddingPreTrainedModel(PreTrainedModel):
     """
-    The SenticNetGCN Embedding Pre-Trained Model used as base class for derived SenticNetGCN Embedding Model.
+    The SenticGCN Embedding Pre-Trained Model used as base class for derived SenticGCN Embedding Model.
 
-    This model is the abstract super class for the SenticNetGCN Embedding Model which defines the config
+    This model is the abstract super class for the SenticGCN Embedding Model which defines the config
     class types and weights initalization method. This class should not be used or instantiated directly,
-    see SenticNetGCNEmbeddingModel class for usage.
+    see SenticGCNEmbeddingModel class for usage.
     """
 
-    config_class = SenticNetGCNEmbeddingConfig
-    base_model_prefix = "senticnetgcnembedding"
+    config_class = SenticGCNEmbeddingConfig
+    base_model_prefix = "senticgcnembedding"
 
     def _init_weights(self, module: nn.Module) -> None:
         pass
 
 
-class SenticNetGCNEmbeddingModel(SenticNetGCNEmbeddingPreTrainedModel):
+class SenticGCNEmbeddingModel(SenticGCNEmbeddingPreTrainedModel):
     """
-    The SenticNetGCN Embedding Model used to generate embeddings for model inputs.
+    The SenticGCN Embedding Model used to generate embeddings for model inputs.
     By default, the embeddings are generated from the glove.840B.300d embeddings.
 
-    This class inherits from :obj:`SenticNetGCNEmbeddingPreTrainedModel` for weights initalization and utility functions
+    This class inherits from :obj:`SenticGCNEmbeddingPreTrainedModel` for weights initalization and utility functions
     from transformers :obj:`PreTrainedModel` class.
 
-    This class can also be constructed via the SenticNetGCNEmbeddingModel.build_embedding_matrix class method.
+    This class can also be constructed via the SenticGCNEmbeddingModel.build_embedding_matrix class method.
 
     Args:
-        config (:obj:`~SenticNetGCNEmbeddingConfig`):
+        config (:obj:`~SenticGCNEmbeddingConfig`):
             Model configuration class with all parameters required for the model.
             Initializing with a config file does not load
             the weights associated with the model, only the configuration.
             Use the :obj:`.from_pretrained` method to load the model weights.
     """
 
-    def __init__(self, config: SenticNetGCNEmbeddingConfig):
+    def __init__(self, config: SenticGCNEmbeddingConfig):
         super().__init__()
         self.vocab_size = config.vocab_size
         self.embed = nn.Embedding(config.vocab_size, config.embed_dim)
@@ -324,32 +324,32 @@ class SenticNetGCNEmbeddingModel(SenticNetGCNEmbeddingPreTrainedModel):
             embed_dim (int, optional): the embedding dimension. Defaults to 300.
 
         Returns:
-            SenticNetGCNEmbeddingModel: return an instance of SenticNetGCNEmbeddingModel
+            SenticGCNEmbeddingModel: return an instance of SenticGCNEmbeddingModel
         """
         embedding_matrix = build_embedding_matrix(
             word_vec_file_path=word_vec_file_path, vocab=vocab, embed_dim=embed_dim
         )
         embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
-        config = SenticNetGCNEmbeddingConfig(vocab_size=vocab, embed_dim=embed_dim)
-        senticnetgcn_embed = cls(config)
-        senticnetgcn_embed.embed.weight.data.copy_(embedding_tensor)
-        return senticnetgcn_embed
+        config = SenticGCNEmbeddingConfig(vocab_size=vocab, embed_dim=embed_dim)
+        senticgcn_embed = cls(config)
+        senticgcn_embed.embed.weight.data.copy_(embedding_tensor)
+        return senticgcn_embed
 
 
-class SenticNetGCNBertEmbeddingModel(BertModel):
+class SenticGCNBertEmbeddingModel(BertModel):
     """
-    The SenticNetGCN Bert Embedding Model used to generate embeddings for model inputs.
+    The SenticGCN Bert Embedding Model used to generate embeddings for model inputs.
 
     This class inherits from :obj:`BertModel` for weights initalization and utility functions
     from transformers :obj:`PreTrainedModel` class.
 
     Args:
-        config (:obj:`~SenticNetGCNBertEmbeddingConfig`):
+        config (:obj:`~SenticGCNBertEmbeddingConfig`):
             Model configuration class with all parameters required for the model.
             Initializing with a config file does not load
             the weights associated with the model, only the configuration.
             Use the :obj:`.from_pretrained` method to load the model weights.
     """
 
-    def __init__(self, config: SenticNetGCNBertEmbeddingConfig):
+    def __init__(self, config: SenticGCNBertEmbeddingConfig):
         super().__init__(config)

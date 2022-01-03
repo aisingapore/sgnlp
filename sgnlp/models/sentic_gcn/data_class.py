@@ -3,10 +3,10 @@ from typing import Dict, List
 
 
 @dataclass
-class SenticNetGCNTrainArgs:
-    model: str = field(default="senticnetgcn", metadata={"help": "Option to choose which model to train."})
+class SenticGCNTrainArgs:
+    model: str = field(default="senticgcn", metadata={"help": "Option to choose which model to train."})
     tokenizer: str = field(
-        default="senticnetgcn",
+        default="senticgcn",
         metadata={"help": "Option to choose which tokenizer to use for training preprocessing."},
     )
     senticnet_word_file_path: str = field(
@@ -97,7 +97,7 @@ class SenticNetGCNTrainArgs:
     )
 
     def __post_init__(self):
-        assert self.model in ["senticnetgcn", "senticnetgcnbert"]
+        assert self.model in ["senticgcn", "senticgcnbert"]
         assert self.initializer in [
             "xavier_uniform",
             "xavier_uniform",

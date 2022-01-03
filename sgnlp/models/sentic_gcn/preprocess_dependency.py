@@ -4,14 +4,14 @@ import pathlib
 import pickle
 
 from utils import parse_args_and_load_config
-from data_class import SenticNetGCNTrainArgs
+from data_class import SenticGCNTrainArgs
 
 
 class DependencyProcessor:
-    def __init__(self, config: SenticNetGCNTrainArgs):
+    def __init__(self, config: SenticGCNTrainArgs):
         self.config = config
         self.nlp = spacy.load(config.spacy_pipeline)
-        self.senticnet = self._load_senticnet(config.senticnet_word_file_path)
+        self.sentic = self._load_sentic(config.sentic_word_file_path)
         self.dataset_keys = ["raw"]
 
     def _load_senticnet(self, senticnet_file_path: str):
@@ -81,4 +81,3 @@ class DependencyProcessor:
             for key, func in dependency_keys_map.items():
                 if not dataset[key]:
                     self._process_file(dataset["raw"], dataset[key], func)
-

@@ -1,11 +1,11 @@
 from transformers import PreTrainedConfig, BertConfig
 
 
-class SenticNetGCNConfig(PreTrainedConfig):
+class SenticGCNConfig(PreTrainedConfig):
     """
     This is the configuration class to store the configuration of a
-    :class:`~sgnlp.models.senticnet_gcn.modeling.SenticNetGCNModel`.
-    It is used to instantiate a SenticNetGCNModel network according to the specific arguments, defining the model architecture.
+    :class:`~sgnlp.models.sentic_gcn.modeling.SenticGCNModel`.
+    It is used to instantiate a SenticGCNModel network according to the specific arguments, defining the model architecture.
 
     Args:
         embed_dim (:obj:`int`, defaults to 300): Embedding dimension size.
@@ -17,10 +17,10 @@ class SenticNetGCNConfig(PreTrainedConfig):
 
     Example:
 
-        from sgnlp.models.senticnet_gcn import SenticNetGCNConfig
+        from sgnlp.models.sentic_gcn import SenticGCNConfig
 
         # Initialize with default values
-        config = SenticNetGCNConfig()
+        config = SenticGCNConfig()
     """
 
     def __init__(
@@ -42,10 +42,10 @@ class SenticNetGCNConfig(PreTrainedConfig):
         self.loss_function = loss_function
 
 
-class SenticNetGCNBertConfig(PreTrainedConfig):
+class SenticGCNBertConfig(PreTrainedConfig):
     """
-    This is the configuration class to store the configuration of a :class:`~sgnlp.models.senticnet_gcn.modeling.SenticNetBertGCNModel`.
-    It is used to instantiate a SenticNetBertGCNModel network according to the specific arguments, defining the model architecture.
+    This is the configuration class to store the configuration of a :class:`~sgnlp.models.sentic_gcn.modeling.SenticBertGCNModel`.
+    It is used to instantiate a SenticBertGCNModel network according to the specific arguments, defining the model architecture.
 
     Args:
         hidden_dim (:obj:`int`, defaults to 768): The embedding dimension size for the Bert model as well as GCN dimension.
@@ -56,10 +56,10 @@ class SenticNetGCNBertConfig(PreTrainedConfig):
         loss_function (:obj:`str`, defaults to 'cross_entropy'): Loss function for training/eval.
     Example:
 
-        from sgnlp.models.senticnet_gcn import SenticNetGCNBertConfig
+        from sgnlp.models.sentic_gcn import SenticGCNBertConfig
 
         # Initialize with default values
-        config = SenticNetGCNBertConfig()
+        config = SenticGCNBertConfig()
     """
 
     def __init__(
@@ -81,10 +81,10 @@ class SenticNetGCNBertConfig(PreTrainedConfig):
         self.loss_function = loss_function
 
 
-class SenticNetGCNEmbeddingConfig(PreTrainedConfig):
+class SenticGCNEmbeddingConfig(PreTrainedConfig):
     """
-    This is the configuration class to store the configuration of a :class:`~SenticNetGCNEmbeddingModel`.
-    It is used to instantiate a SenticNetGCN Embedding model according to the specified arguments, defining the model architecture.
+    This is the configuration class to store the configuration of a :class:`~SenticGCNEmbeddingModel`.
+    It is used to instantiate a SenticGCN Embedding model according to the specified arguments, defining the model architecture.
 
     Args:
         PreTrainedConfig (:obj:`PretrainedConfig`): transformer :obj:`PreTrainedConfig` base class
@@ -96,10 +96,10 @@ class SenticNetGCNEmbeddingConfig(PreTrainedConfig):
         self.embed_dim = embed_dim
 
 
-class SenticNetGCNBertEmbeddingConfig(BertConfig):
+class SenticGCNBertEmbeddingConfig(BertConfig):
     """
-    This is the configuration class to store the configuration of a :class:`~SenticNetGCNBertEmbeddingModel`.
-    It is used to instantiate a SenticNetGCN Bert Embedding model according to the specified arguments, defining the model architecture.
+    This is the configuration class to store the configuration of a :class:`~SenticGCNBertEmbeddingModel`.
+    It is used to instantiate a SenticGCN Bert Embedding model according to the specified arguments, defining the model architecture.
 
     Args:
         BertConfig (:obj:`BertConfig`): transformer :obj:`BertConfig` base class
