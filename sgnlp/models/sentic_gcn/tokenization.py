@@ -9,6 +9,19 @@ VOCAB_FILES_NAMES = {"vocab_file": "vocab.pkl"}
 
 
 class SenticGCNTokenizer(PreTrainedTokenizer):
+    """
+    The SenticGCN tokenizer class used for to generate tokens for the embedding model.
+
+    Args:
+        text (:obj:`str`):
+            input text string to tokenize
+
+    Example::
+        tokenizer = SenticGCNTokenizer.from_pretrained("senticgcn")
+        inputs = tokenizer('Hello World!')
+        inputs['input_ids']
+    """
+
     vocab_files_names = VOCAB_FILES_NAMES
 
     def __init__(
@@ -101,11 +114,41 @@ class SenticGCNTokenizer(PreTrainedTokenizer):
 
 
 class SenticGCNBertTokenizer(BertTokenizer):
+    """
+    The senticGCN Bert Tokenizer class used to generate tokens for the embedding model, derived from BertTokenizer class.
+
+    Args:
+        text (:obj:`str`):
+            input text string to tokenize
+
+    Example::
+        tokenizer = SenticGCNBertTokenizer.from_pretrained('bert-base-uncased')
+        inputs = tokenizer('Hello World!')
+        inputs['input_ids']
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def __call__(self, text, max_length: int = 85, **kwargs):
+    def __call__(
+        self,
+        text,
+        max_length: int = 85,
+        add_special_tokens: bool = False,
+        padding: bool = True,
+        truncation: bool = True,
+        return_token_type_ids: bool = False,
+        return_attention_mask: bool = False,
+        **kwargs,
+    ):
         encoding = super().__call__(
-            text, add_special_tokens=False, padding="max_length", truncation=True, max_length=max_length, **kwargs
+            text,
+            max_length=max_length,
+            add_special_tokens=add_special_tokens,
+            padding=padding,
+            truncation=truncation,
+            return_token_type_ids=return_token_type_ids,
+            return_attention_mask=return_attention_mask,
+            **kwargs,
         )
         return encoding
