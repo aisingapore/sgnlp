@@ -14,16 +14,16 @@ from torch.utils.data import random_split, Dataset
 from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 
-from data_class import SenticNetGCNTrainArgs
+from data_class import SenticGCNTrainArgs
 
 
 def parse_args_and_load_config(
     config_path: str = "config/senticnet_gcn_config.json",
-) -> SenticNetGCNTrainArgs:
+) -> SenticGCNTrainArgs:
     """Get config from config file using argparser
 
     Returns:
-        SenticNetGCNTrainArgs: SenticNetGCNTrainArgs instance populated from config
+        SenticGCNTrainArgs: SenticGCNTrainArgs instance populated from config
     """
     parser = argparse.ArgumentParser(description="SenticASGCN Training")
     parser.add_argument("--config", type=str, default=config_path)
@@ -33,7 +33,7 @@ def parse_args_and_load_config(
     with open(cfg_path, "r") as cfg_file:
         cfg = json.load(cfg_file)
 
-    sentic_asgcn_args = SenticNetGCNTrainArgs(**cfg)
+    sentic_asgcn_args = SenticGCNTrainArgs(**cfg)
     return sentic_asgcn_args
 
 
@@ -65,7 +65,7 @@ def download_tokenizer_files(
     """
     file_paths = [urllib.parse.urljoin(base_url, file_name) for file_name in files]
     for file_path in file_paths:
-        pass
+        download_url_file(file_path, save_folder)
 
 
 def download_url_file(url: str, save_folder: str) -> None:
@@ -165,10 +165,27 @@ class ABSADataset(object):
         return len(self.data)
 
 
+def generate_senticgcn_dataset(cfg: SenticGCNTrainArgs) -> dict[str, torch.Tensor]:
+    # TODO: add senticgcn dataset prep
+    pass
+
+
+def generate_senticgcn_bert_dataset(cfg: SenticGCNTrainArgs) -> dict[str, torch.Tensor]:
+    # TODO: add senticgcn bert dataset prep
+    pass
+
+
+def generate_train_val_dataset(cfg: SenticGCNTrainArgs) -> dict[str, torch.Tensor]:
+    if cfg.model == "senticgcn":
+        return generate_senticgcn_dataset(cfg)
+    elif cfg.model == "senticgcnbert":
+        return generate_senticgcn_bert_dataset(cfg)
+
+
 class ABSADatasetReader:
     def __init__(
         self,
-        config: SenticNetGCNTrainArgs,
+        config: SenticGCNTrainArgs,
         tokenizer: PreTrainedTokenizer,
     ):
         self.cfg = config
