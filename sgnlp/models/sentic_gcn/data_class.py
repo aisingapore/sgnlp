@@ -15,34 +15,13 @@ class SenticGCNTrainArgs:
     spacy_pipeline: str = field(
         default="en_core_web_sm", metadata={"help": "Type of spacy pipeline to load for processor."}
     )
-    save_preprocessed_dependency: bool = field(
-        default=True,
-        metadata={
-            "help": """Flag to indicate if dependency preprocess should run,
-            if pickle files already present, it will be overwritten."""
-        },
+    dataset_train: str = field(
+        default="train.raw",
+        metadata={"help": "File path to train dataset."},
     )
-    dataset_keys: List[str] = field(
-        default_factory=lambda: ["raw", "dependency_sencticnet_graph"],
-        metadata={"help": "Default dataset keys."},
-    )
-    dataset_train: Dict[str, str] = field(
-        default=dict,
-        metadata={
-            "help": """Dictionary containing 3 file paths to the raw dataset file,
-                    dependency_graph, sentic_graph and the dependency_senticnet_graph files for the train datasets.
-                    Raw file path is mandatory, the graph files are optional. If graph files are not present,
-                    it will be generated during preprocessing step."""
-        },
-    )
-    dataset_test: Dict[str, str] = field(
-        default=dict,
-        metadata={
-            "help": """Dictionary containing 3 file paths to the raw dataset file,
-                    dependency_graph, sentic_graph and the dependency_senticnet_graph files for the test datasets.
-                    Raw file path is mandatory, the graph files are optional. If graph files are not present,
-                    it will be generated during preprocessing step."""
-        },
+    dataset_test: str = field(
+        default="test.raw",
+        metadata={"help": "File path to test dataset."},
     )
     valset_ratio: float = field(
         default=0.0,
@@ -128,15 +107,6 @@ class SenticGCNTrainArgs:
             "sgd",
         ], "Invalid optimizer"
         assert self.device in ["cuda", "cpu"], "Invalid device type."
-        assert "raw" in self.dataset_train.keys(), "File path to raw dataset is required!"
-        assert "raw" in self.dataset_test.keys(), "File path to raw dataset is required!"
-        # populate keys if not presents
-        train_diff_keys = set(self.dataset_keys).difference(set(self.dataset_train.keys()))
-        for key in train_diff_keys:
-            self.dataset_train[key] = ""
-        test_diff_keys = set(self.dataset_keys).difference(set(self.dataset_test.keys()))
-        for key in test_diff_keys:
-            self.dataset_test[key] = ""
         assert self.repeats > 1, "Repeats value must be at least 1."
         assert self.patience > 1, "Patience value must be at least 1."
         assert 0 >= self.valset_ratio < 1, "Valset_ratio must be greater or equals to 0 and less than 1."

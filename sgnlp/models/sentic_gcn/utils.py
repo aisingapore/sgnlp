@@ -253,7 +253,7 @@ class SenticGCNDatasetGenerator:
         Returns:
             list[namedtuple]: list of namedtuples consisting of the full text, the aspect and polarity.
         """
-        file_path = self.config.dataset_train["raw"] if dataset_type == "train" else self.config.dataset_test["raw"]
+        file_path = self.config.dataset_train if dataset_type == "train" else self.config.dataset_test
         RawDataSet = namedtuple("RawDataSet", ["text", "aspect", "polarity"])
         with open(file_path, "r", encoding="utf-8", newline="\n", errors="ignore") as f:
             lines = f.readlines()
