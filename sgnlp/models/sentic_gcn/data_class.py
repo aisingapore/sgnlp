@@ -81,7 +81,7 @@ class SenticGCNTrainArgs:
     hidden_dim: int = field(default=300, metadata={"help": "Number of neurons for hidden layer."})
     dropout: float = field(default=0.3, metadata={"help": "Default value for dropout percentages."})
     polarities_dim: int = field(default=3, metadata={"help": "Default dimension for polarities."})
-    save: bool = field(default=True, metadata={"help": "Flag to indicate if results should be saved."})
+    save_results: bool = field(default=True, metadata={"help": "Flag to indicate if results should be saved."})
     seed: int = field(default=776, metadata={"help": "Default random seed for training."})
     device: str = field(default="cuda", metadata={"help": "Type of compute device to use for training."})
     repeats: int = field(default=10, metadata={"help": "Number of times to repeat train loop."})
@@ -91,7 +91,7 @@ class SenticGCNTrainArgs:
     max_len: int = field(default=85, metadata={"help": "Max length to pad for bert tokenizer."})
 
     def __post_init__(self):
-        assert self.model in ["senticgcn", "senticgcnbert"]
+        assert self.model in ["senticgcn", "senticgcnbert"], "Invalid model type!"
         assert self.initializer in [
             "xavier_uniform",
             "xavier_uniform",
@@ -110,4 +110,4 @@ class SenticGCNTrainArgs:
         assert self.repeats > 1, "Repeats value must be at least 1."
         assert self.patience > 1, "Patience value must be at least 1."
         assert 0 >= self.valset_ratio < 1, "Valset_ratio must be greater or equals to 0 and less than 1."
-        assert 0 >= self.max_len < 1, "Max_len must be greater or equals to 0 and less than 1."
+        assert self.max_len > 0, "Max_len must be greater than 0."
