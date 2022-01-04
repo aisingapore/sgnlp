@@ -1,5 +1,4 @@
 import argparse
-from collections import namedtuple
 import json
 import logging
 import pickle
@@ -7,13 +6,13 @@ import random
 import pathlib
 import requests
 import urllib
-from typing import Dict, List, Union
+from typing import Dict, Tuple
 
 import numpy as np
+import spacy
 import torch
 from torch.utils.data import random_split, Dataset
 from transformers import PreTrainedTokenizer
-from transformers.tokenization_utils_base import BatchEncoding
 
 from data_class import SenticGCNTrainArgs
 
@@ -91,6 +90,38 @@ def download_url_file(url: str, save_folder: str) -> None:
         logging.error(f"Fail to request files from {url}.")
 
 
+def pad_and_truncate(
+    sequence: list[float],
+    max_len: int,
+    dtype: str = "int64",
+    padding: str = "post",
+    truncating: str = "post",
+    value: int = 0,
+):
+    """
+    Helper method for padding and truncating text and aspect segment.
+
+    Args:
+        sequence (list[float]): input sequence of indices
+        max_len (int): maximum len to pad
+        dtype (str, optional): data type to cast indices. Defaults to "int64".
+        padding (str, optional): type of padding, 'pre' or 'post'. Defaults to "post".
+        truncating (str, optional): type of truncating, 'pre' or 'post'. Defaults to "post".
+        value (int, optional): value used for padding. Defaults to 0.
+
+    Returns:
+        [type]: [description]
+    """
+    seq_arr = (np.ones(max_len) * value).astype(dtype)
+    trunc = sequence[-max_len:] if truncating == "pre" else sequence[:max_len]
+    trunc = np.asarray(trunc, dtype=dtype)
+    if padding == "post":
+        seq_arr[: len(trunc)] = trunc
+    else:
+        seq_arr[-len(trunc) :] = trunc
+    return seq_arr
+
+
 def load_word_vec(word_vec_file_path: str, vocab: Dict[str, int], embed_dim: int = 300) -> Dict[str, np.asarray]:
     """
     Helper method to load word vectors from file (e.g. GloVe) for each word in vocab.
@@ -155,7 +186,7 @@ def load_and_process_senticnet(
     senticnet_file_path: str = None,
     save_preprocessed_senticnet: bool = False,
     saved_preprocessed_senticnet_file_path: str = "senticnet.pkl",
-) -> dict[str, float]:
+) -> Dict[str, float]:
     """
     Helper method to load and process senticnet. Default is SenticNet 5.0.
     If a saved preprocess senticnet file is available, and save flag is set to false, it will be loaded from file instead.
@@ -168,7 +199,7 @@ def load_and_process_senticnet(
         saved_preprocessed_senticnet_file_path: (str): File path to saved preprocessed senticnet file.
 
     Returns:
-        dict[str, float]: return dictionary with concept word as keys and intensity as values.
+        Dict[str, float]: return dictionary with concept word as keys and intensity as values.
     """
     saved_senticnet_file_path = pathlib.Path(saved_preprocessed_senticnet_file_path)
     if saved_senticnet_file_path.exists() and not save_preprocessed_senticnet:
@@ -193,14 +224,14 @@ def load_and_process_senticnet(
     return sentic_dict
 
 
-def generate_dependency_adj_matrix(text: str, aspect: str, senticnet: dict[str, float], spacy_pipeline) -> np.ndarray:
+def generate_dependency_adj_matrix(text: str, aspect: str, senticnet: Dict[str, float], spacy_pipeline) -> np.ndarray:
     """
     Helper method to generate senticnet depdency adj matrix.
 
     Args:
         text (str): input text to process
         aspect (str): aspect from input text
-        senticnet (dict[str, float]): dictionary of preprocessed senticnet. See load_and_process_senticnet()
+        senticnet (Dict[str, float]): dictionary of preprocessed senticnet. See load_and_process_senticnet()
         spacy_pipeline : Spacy pretrained pipeline (e.g. 'en_core_web_sm')
 
     Returns:
@@ -229,10 +260,10 @@ class SenticGCNDataset(Dataset):
     Data class for SenticGCN dataset.
     """
 
-    def __init__(self, data: list[dict[str, torch.Tensor]]) -> None:
+    def __init__(self, data: list[Dict[str, torch.Tensor]]) -> None:
         self.data = data
 
-    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+    def __getitem__(self, index: int) -> Dict[str, torch.Tensor]:
         return self.data[index]
 
     def __len__(self):
@@ -240,10 +271,26 @@ class SenticGCNDataset(Dataset):
 
 
 class SenticGCNDatasetGenerator:
-    def __init__(self, config: SenticGCNTrainArgs):
-        self.config = config
+    """
+    Main dataset generator class to preprocess raw dataset file.
+    """
 
-    def _read_raw_dataset(self, dataset_type: str) -> list[namedtuple]:
+    def __init__(self, config: SenticGCNTrainArgs, tokenizer: PreTrainedTokenizer):
+        self.config = config
+        self.senticnet = load_and_process_senticnet(
+            config.senticnet_word_file_path,
+            config.save_preprocessed_senticnet,
+            config.saved_preprocessed_senticnet_file_path,
+        )
+        self.spacy_pipeline = spacy.load(config.spacy_pipeline)
+        self.tokenizer = tokenizer
+        self.device = (
+            torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            if config.device is None
+            else torch.device(config.device)
+        )
+
+    def _read_raw_dataset(self, dataset_type: str) -> list[str]:
         """
         Private helper method to read raw dataset files based on requested type (e.g. Train or Test).
 
@@ -251,47 +298,132 @@ class SenticGCNDatasetGenerator:
             dataset_type (str): Type of dataset files to read. Train or Test.
 
         Returns:
-            list[namedtuple]: list of namedtuples consisting of the full text, the aspect and polarity.
+            list[str]: list of str consisting of the full text, aspect and polarity index.
         """
         file_path = self.config.dataset_train if dataset_type == "train" else self.config.dataset_test
-        RawDataSet = namedtuple("RawDataSet", ["text", "aspect", "polarity"])
         with open(file_path, "r", encoding="utf-8", newline="\n", errors="ignore") as f:
             lines = f.readlines()
-        output = []
-        for i in range(0, len(lines), 3):
-            output.append(
-                RawDataSet(lines[i].lower().strip(), lines[i + 1].lower().strip(), lines[i + 2].lower().strip())
+        return lines
+
+    def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, torch.Tensor]:
+        """
+        Data preprocess method to generate all indices required for SenticGCN model training.
+
+        Args:
+            raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
+
+        Returns:
+            Dict[str, torch.Tensor]: return a dictionary of dataset sub-type and their tensors.
+        """
+        all_data = []
+        for i in range(0, len(raw_data), 3):
+            # Process full text, aspect and polarity index
+            text_left, _, text_right = [s.lower().strip() for s in raw_data[i].partition("$T$")]
+            aspect = raw_data[i + 1].lower().strip()
+            full_text = f"{text_left} {aspect} {text_right}"
+            polarity = raw_data[i + 2].strip()
+
+            # Process indices
+            text_indices = self.tokenizer(full_text)
+            aspect_indices = self.tokenizer(aspect)
+            left_indices = self.tokenizer(text_left)
+            polarity = int(polarity) + 1
+            graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)
+
+            all_data.append(
+                {
+                    "text_indices": text_indices.to(self.device),
+                    "aspect_indices": aspect_indices.to(self.device),
+                    "left_indices": left_indices.to(self.device),
+                    "polarity": polarity.to(self.device),
+                    "sdat_graph": graph.to(self.device),
+                }
             )
-        return output
+        return all_data
 
-    # @staticmethod
-    # def __read_data__(datasets: Dict[str, str], tokenizer: PreTrainedTokenizer):
-    #     # Read raw data, graph data and tree data
-    #     with open(datasets["raw"], "r", encoding="utf-8", newline="\n", errors="ignore") as fin:
-    #         lines = fin.readlines()
-    #     with open(datasets["graph"], "rb") as fin_graph:
-    #         idx2graph = pickle.load(fin_graph)
+    def _generate_senticgcnbert_dataset(self, raw_data: list[str]) -> Dict[str, torch.Tensor]:
+        """
+        Data preprocess method to generate all indices required for SenticGCNBert model training.
 
-    #     # Prep all data
-    #     all_data = []
-    #     for i in range(0, len(lines), 3):
-    #         text_left, _, text_right = [s.lower().strip() for s in lines[i].partition("$T$")]
-    #         aspect = lines[i + 1].lower().strip()
-    #         polarity = lines[i + 2].lower().strip()
-    #         text_indices = tokenizer(f"{text_left} {aspect} {text_right}")
-    #         context_indices = tokenizer(f"{text_left} {text_right}")
-    #         aspect_indices = tokenizer(aspect)
-    #         left_indices = tokenizer(text_left)
-    #         polarity = int(polarity) + 1
-    #         dependency_graph = idx2graph[i]
+        Args:
+            raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
 
-    #         data = {
-    #             "text_indices": text_indices,
-    #             "context_indices": context_indices,
-    #             "aspect_indices": aspect_indices,
-    #             "left_indices": left_indices,
-    #             "polarity": polarity,
-    #             "dependency_graph": dependency_graph,
-    #         }
-    #         all_data.append(data)
-    #     return all_data
+        Returns:
+            Dict[str, torch.Tensor]: return a dictionary of dataset sub-type and their tensors.
+        """
+        all_data = []
+        max_len = self.config.max_len
+        for i in range(0, len(raw_data), 3):
+            # Process full text, aspect and polarity index
+            text_left, _, text_right = [s.lower().strip() for s in raw_data[i].partition("$T$")]
+            aspect = raw_data[i + 1].lower().strip()
+            polarity = raw_data[i + 2].strip()
+            full_text = f"{text_left} {aspect} {text_right}"
+            full_text_with_bert_tokens = f"[CLS] {full_text} [SEP] {aspect} [SEP]"
+
+            # Process indices
+            text_indices = self.tokenizer(full_text, return_tensors="pt")
+            aspect_indices = self.tokenizer(aspect, return_tensors="pt")
+            left_indices = self.tokenizer(text_left, return_tensors="pt")
+            polarity = int(polarity) + 1
+            polarity = torch.tensor(polarity)
+
+            # Process bert related indices
+            text_bert_indices = self.tokenizer(full_text_with_bert_tokens)
+            text_len = np.sum(text_indices["input_ids"] != 0)
+            aspect_len = np.sum(aspect_indices["input_ids"] != 0)
+
+            # array of [0] for texts including [CLS] and [SEP] and [1] for aspect and ending [SEP]
+            concat_segment_indices = [0] * (text_len + 2) + [1] * (aspect_len + 1)
+            concat_segment_indices = pad_and_truncate(concat_segment_indices, max_len)
+            concat_segment_indices = torch.tensor(concat_segment_indices)
+
+            # Process graph
+            graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)
+            sdat_graph = np.pad(
+                graph,
+                (
+                    (0, max_len - graph.shape[0]),
+                    (0, max_len - graph.shape[0]),
+                ),
+                "constant",
+            )
+            sdat_graph = torch.tensor(sdat_graph)
+
+            all_data.append(
+                {
+                    "text_indices": text_indices.to(self.device),
+                    "aspect_indices": aspect_indices.to(self.device),
+                    "left_indices": left_indices.to(self.device),
+                    "text_bert_indices": text_bert_indices.to(self.device),
+                    "bert_segment_indices": concat_segment_indices.to(self.device),
+                    "polarity": polarity.to(self.device),
+                    "sdat_graph": sdat_graph.to(self.device),
+                }
+            )
+        return all_data
+
+    def generate_datasets(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        """
+        Main wrapper method to generate datasets for both SenticGCN and SenticGCNBert based on config.
+
+        Returns:
+            Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor]]: return dictionaries for train/val/test data.
+        """
+        # Read raw data from dataset files
+        raw_train_data = self._read_raw_dataset(self.config.dataset_train)
+        raw_test_data = self._read_raw_dataset(self.config.dataset_test)
+        # Generate dataset dictionary
+        if self.config.model == "senticgcn":
+            train_data = self._generate_senticgcn_dataset(raw_train_data)
+            test_data = self._generate_senticgcn_dataset(raw_test_data)
+        else:
+            train_data = self._generate_senticgcnbert_dataset(raw_train_data)
+            test_data = self._generate_senticgcnbert_dataset(raw_test_data)
+        # Train/Val/Test split
+        if self.config.valset_ratio > 0:
+            valset_len = int(len(train_data) * self.config.valset_ratio)
+            train_data, val_data = random_split(train_data, (len(train_data) - valset_len, valset_len))
+        else:
+            val_data = test_data
+        return train_data, val_data, test_data

@@ -139,6 +139,7 @@ class SenticGCNBertTokenizer(BertTokenizer):
         truncation: bool = True,
         return_token_type_ids: bool = False,
         return_attention_mask: bool = False,
+        return_tensors: str = None,
         **kwargs,
     ):
         encoding = super().__call__(
@@ -149,6 +150,7 @@ class SenticGCNBertTokenizer(BertTokenizer):
             truncation=truncation,
             return_token_type_ids=return_token_type_ids,
             return_attention_mask=return_attention_mask,
+            return_tensors=return_tensors,
             **kwargs,
         )
         return encoding

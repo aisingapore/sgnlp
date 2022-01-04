@@ -89,6 +89,7 @@ class SenticGCNTrainArgs:
     patience: int = field(
         default=5, metadata={"help": "Number of train epoch without improvements prior to early stopping."}
     )
+    max_len: int = field(default=85, metadata={"help": "Max length to pad for bert tokenizer."})
 
     def __post_init__(self):
         assert self.model in ["senticgcn", "senticgcnbert"]
@@ -110,3 +111,4 @@ class SenticGCNTrainArgs:
         assert self.repeats > 1, "Repeats value must be at least 1."
         assert self.patience > 1, "Patience value must be at least 1."
         assert 0 >= self.valset_ratio < 1, "Valset_ratio must be greater or equals to 0 and less than 1."
+        assert 0 >= self.max_len < 1, "Max_len must be greater or equals to 0 and less than 1."

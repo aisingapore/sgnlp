@@ -28,5 +28,6 @@
     "seed": 776,
     "device": "cuda",
     "repeats": 10,
-    "patience": 5
+    "patience": 5,
+    "max_len": 85
 }
