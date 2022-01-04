@@ -403,16 +403,18 @@ class SenticGCNDatasetGenerator:
             )
         return all_data
 
-    def generate_datasets(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    def generate_datasets(self) -> Tuple[SenticGCNDataset, SenticGCNDataset, SenticGCNDataset]:
         """
         Main wrapper method to generate datasets for both SenticGCN and SenticGCNBert based on config.
 
         Returns:
-            Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor]]: return dictionaries for train/val/test data.
+            Tuple[SenticGCNDataset, SenticGCNDataset, SenticGCNDataset]:
+                return SenticGCNDataset instances for train/val/test data.
         """
         # Read raw data from dataset files
         raw_train_data = self._read_raw_dataset(self.config.dataset_train)
         raw_test_data = self._read_raw_dataset(self.config.dataset_test)
+
         # Generate dataset dictionary
         if self.config.model == "senticgcn":
             train_data = self._generate_senticgcn_dataset(raw_train_data)
@@ -420,10 +422,11 @@ class SenticGCNDatasetGenerator:
         else:
             train_data = self._generate_senticgcnbert_dataset(raw_train_data)
             test_data = self._generate_senticgcnbert_dataset(raw_test_data)
+
         # Train/Val/Test split
         if self.config.valset_ratio > 0:
             valset_len = int(len(train_data) * self.config.valset_ratio)
             train_data, val_data = random_split(train_data, (len(train_data) - valset_len, valset_len))
         else:
             val_data = test_data
-        return train_data, val_data, test_data
+        return SenticGCNDataset(train_data), SenticGCNDataset(val_data), SenticGCNDataset(test_data)
