@@ -180,6 +180,9 @@ def load_and_process_senticnet(config: SenticGCNTrainArgs) -> dict[str, float]:
                 if "_" in items[0]:
                     continue  # skip words with '_'
                 sentic_dict[items[0]] = items[-1]
+        if config.save_preprocessed_senticnet:
+            with open(saved_senticnet_file_path, "wb") as f:
+                pickle.dump(sentic_dict, f)
     return sentic_dict
 
 
