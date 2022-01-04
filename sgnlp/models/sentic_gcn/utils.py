@@ -151,7 +151,11 @@ def build_embedding_matrix(
     return embedding_matrix
 
 
-def load_and_process_senticnet(config: SenticGCNTrainArgs) -> dict[str, float]:
+def load_and_process_senticnet(
+    senticnet_file_path: str = None,
+    save_preprocessed_senticnet: bool = False,
+    saved_preprocessed_senticnet_file_path: str = "senticnet.pkl",
+) -> dict[str, float]:
     """
     Helper method to load and process senticnet. Default is SenticNet 5.0.
     If a saved preprocess senticnet file is available, and save flag is set to false, it will be loaded from file instead.
@@ -159,17 +163,19 @@ def load_and_process_senticnet(config: SenticGCNTrainArgs) -> dict[str, float]:
     https://github.com/BinLiang-NLP/Sentic-GCN/tree/main/senticnet-5.0
 
     Args:
-        config (SenticGCNTrainArgs): SenticGCN training config
+        senticnet_file_path (str): File path to senticnet 5.0 file.
+        save_preprocessed_senticnet (bool): Flag to indicate if processed senticnet should be saved.
+        saved_preprocessed_senticnet_file_path: (str): File path to saved preprocessed senticnet file.
 
     Returns:
         dict[str, float]: return dictionary with concept word as keys and intensity as values.
     """
-    saved_senticnet_file_path = pathlib.Path(config.saved_preprocessed_senticnet_file_path)
-    if saved_senticnet_file_path.exists() and not config.save_preprocessed_senticnet:
+    saved_senticnet_file_path = pathlib.Path(saved_preprocessed_senticnet_file_path)
+    if saved_senticnet_file_path.exists() and not save_preprocessed_senticnet:
         with open(saved_senticnet_file_path, "r") as f:
             sentic_dict = pickle.load(f)
     else:
-        senticnet_file_path = pathlib.Path(config.senticnet_word_file_path)
+        senticnet_file_path = pathlib.Path(senticnet_file_path)
         sentic_dict = {}
         with open(senticnet_file_path, "r") as f:
             for line in f:
@@ -180,27 +186,62 @@ def load_and_process_senticnet(config: SenticGCNTrainArgs) -> dict[str, float]:
                 if "_" in items[0]:
                     continue  # skip words with '_'
                 sentic_dict[items[0]] = items[-1]
-        if config.save_preprocessed_senticnet:
+        if save_preprocessed_senticnet:
+            saved_senticnet_file_path.parent.mkdir(exist_ok=True)
             with open(saved_senticnet_file_path, "wb") as f:
                 pickle.dump(sentic_dict, f)
     return sentic_dict
 
 
-class SenticGCNDatasetGenerator(Dataset):
-    def __init__(
-        self,
-        dataset_type: str,
-        config: SenticGCNTrainArgs,
-        tokenizer: PreTrainedTokenizer,
-    ):
-        self.config = config
-        self.tokenizer = tokenizer
+def generate_dependency_adj_matrix(text: str, aspect: str, senticnet: dict[str, float], spacy_pipeline) -> np.ndarray:
+    """
+    Helper method to generate senticnet depdency adj matrix.
 
-    def __getitem__(self, index: int):
+    Args:
+        text (str): input text to process
+        aspect (str): aspect from input text
+        senticnet (dict[str, float]): dictionary of preprocessed senticnet. See load_and_process_senticnet()
+        spacy_pipeline : Spacy pretrained pipeline (e.g. 'en_core_web_sm')
+
+    Returns:
+        np.ndarray: return ndarry representing adj matrix.
+    """
+    document = spacy_pipeline(text)
+    seq_len = len(text.split())
+    matrix = np.zeros((seq_len, seq_len)).astype("float32")
+    for token in document:
+        sentic = float(senticnet[str(token)]) + 1.0 if str(token) in senticnet else 0
+        if str(token) in aspect:
+            sentic += 1.0
+        if token.i < seq_len:
+            matrix[token.i][token.i] = 1.0 * sentic
+            for child in token.children:
+                if str(child) in aspect:
+                    sentic += 1.0
+                if child.i < seq_len:
+                    matrix[token.i][child.i] = 1.0 * sentic
+                    matrix[child.i][token.i] = 1.0 * sentic
+    return matrix
+
+
+class SenticGCNDataset(Dataset):
+    """
+    Data class for SenticGCN dataset.
+    """
+
+    def __init__(self, data: list[dict[str, torch.Tensor]]) -> None:
+        self.data = data
+
+    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         return self.data[index]
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self.data)
+
+
+class SenticGCNDatasetGenerator:
+    def __init__(self, config: SenticGCNTrainArgs):
+        self.config = config
 
     def _read_raw_dataset(self, dataset_type: str) -> list[namedtuple]:
         """
@@ -223,53 +264,34 @@ class SenticGCNDatasetGenerator(Dataset):
             )
         return output
 
-    def _read_dependency_senticnet_graph(self, dataset_type: str) -> dict[str, np.ndarray]:
-        """
-        Private helpder method to read senticnet graph dataset based on requested type (i.e. Train or Test).
+    # @staticmethod
+    # def __read_data__(datasets: Dict[str, str], tokenizer: PreTrainedTokenizer):
+    #     # Read raw data, graph data and tree data
+    #     with open(datasets["raw"], "r", encoding="utf-8", newline="\n", errors="ignore") as fin:
+    #         lines = fin.readlines()
+    #     with open(datasets["graph"], "rb") as fin_graph:
+    #         idx2graph = pickle.load(fin_graph)
 
-        Args:
-            dataset_type (str): Type of dataset files to read. Train or Test.
+    #     # Prep all data
+    #     all_data = []
+    #     for i in range(0, len(lines), 3):
+    #         text_left, _, text_right = [s.lower().strip() for s in lines[i].partition("$T$")]
+    #         aspect = lines[i + 1].lower().strip()
+    #         polarity = lines[i + 2].lower().strip()
+    #         text_indices = tokenizer(f"{text_left} {aspect} {text_right}")
+    #         context_indices = tokenizer(f"{text_left} {text_right}")
+    #         aspect_indices = tokenizer(aspect)
+    #         left_indices = tokenizer(text_left)
+    #         polarity = int(polarity) + 1
+    #         dependency_graph = idx2graph[i]
 
-        Returns:
-            dict[str, np.ndarray]: dictionary with
-        """
-        file_path = (
-            self.config.dataset_train["dependency_sencticnet_graph"]
-            if dataset_type == "train"
-            else self.config.dataset_test["dependency_sencticnet_graph"]
-        )
-        with open(file_path, "rb") as f:
-            graph = pickle.load(f)
-        return graph
-
-    @staticmethod
-    def __read_data__(datasets: Dict[str, str], tokenizer: PreTrainedTokenizer):
-        # Read raw data, graph data and tree data
-        with open(datasets["raw"], "r", encoding="utf-8", newline="\n", errors="ignore") as fin:
-            lines = fin.readlines()
-        with open(datasets["graph"], "rb") as fin_graph:
-            idx2graph = pickle.load(fin_graph)
-
-        # Prep all data
-        all_data = []
-        for i in range(0, len(lines), 3):
-            text_left, _, text_right = [s.lower().strip() for s in lines[i].partition("$T$")]
-            aspect = lines[i + 1].lower().strip()
-            polarity = lines[i + 2].lower().strip()
-            text_indices = tokenizer(f"{text_left} {aspect} {text_right}")
-            context_indices = tokenizer(f"{text_left} {text_right}")
-            aspect_indices = tokenizer(aspect)
-            left_indices = tokenizer(text_left)
-            polarity = int(polarity) + 1
-            dependency_graph = idx2graph[i]
-
-            data = {
-                "text_indices": text_indices,
-                "context_indices": context_indices,
-                "aspect_indices": aspect_indices,
-                "left_indices": left_indices,
-                "polarity": polarity,
-                "dependency_graph": dependency_graph,
-            }
-            all_data.append(data)
-        return all_data
+    #         data = {
+    #             "text_indices": text_indices,
+    #             "context_indices": context_indices,
+    #             "aspect_indices": aspect_indices,
+    #             "left_indices": left_indices,
+    #             "polarity": polarity,
+    #             "dependency_graph": dependency_graph,
+    #         }
+    #         all_data.append(data)
+    #     return all_data
