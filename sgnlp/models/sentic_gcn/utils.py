@@ -1,4 +1,5 @@
 import argparse
+from collections import namedtuple
 import json
 import logging
 import pickle
@@ -150,62 +151,93 @@ def build_embedding_matrix(
     return embedding_matrix
 
 
-class ABSADataset(object):
+def load_and_process_senticnet(config: SenticGCNTrainArgs) -> dict[str, float]:
     """
-    Data class to hold dataset for training.
+    Helper method to load and process senticnet. Default is SenticNet 5.0.
+    If a saved preprocess senticnet file is available, and save flag is set to false, it will be loaded from file instead.
+    Source:
+    https://github.com/BinLiang-NLP/Sentic-GCN/tree/main/senticnet-5.0
+
+    Args:
+        config (SenticGCNTrainArgs): SenticGCN training config
+
+    Returns:
+        dict[str, float]: return dictionary with concept word as keys and intensity as values.
     """
-
-    def __init__(self, data):
-        self.data = data
-
-    def __getitem__(self, index):
-        return self.data[index]
-
-    def __len__(self):
-        return len(self.data)
-
-
-def generate_senticgcn_dataset(cfg: SenticGCNTrainArgs) -> dict[str, torch.Tensor]:
-    # TODO: add senticgcn dataset prep
-    pass
-
-
-def generate_senticgcn_bert_dataset(cfg: SenticGCNTrainArgs) -> dict[str, torch.Tensor]:
-    # TODO: add senticgcn bert dataset prep
-    pass
+    saved_senticnet_file_path = pathlib.Path(config.saved_preprocessed_senticnet_file_path)
+    if saved_senticnet_file_path.exists() and not config.save_preprocessed_senticnet:
+        with open(saved_senticnet_file_path, "r") as f:
+            sentic_dict = pickle.load(f)
+    else:
+        senticnet_file_path = pathlib.Path(config.senticnet_word_file_path)
+        sentic_dict = {}
+        with open(senticnet_file_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                items = line.split("\t")
+                if "_" in items[0]:
+                    continue  # skip words with '_'
+                sentic_dict[items[0]] = items[-1]
+    return sentic_dict
 
 
-def generate_train_val_dataset(cfg: SenticGCNTrainArgs) -> dict[str, torch.Tensor]:
-    if cfg.model == "senticgcn":
-        return generate_senticgcn_dataset(cfg)
-    elif cfg.model == "senticgcnbert":
-        return generate_senticgcn_bert_dataset(cfg)
-
-
-class ABSADatasetReader:
+class SenticGCNDatasetGenerator(Dataset):
     def __init__(
         self,
+        dataset_type: str,
         config: SenticGCNTrainArgs,
         tokenizer: PreTrainedTokenizer,
     ):
-        self.cfg = config
+        self.config = config
         self.tokenizer = tokenizer
-        self.embedding_matrix = build_embedding_matrix(
-            config.word_vec_file_path,
-            tokenizer.vocab,
-            config.embed_dim,
-            config.save_embedding_matrix,
-            config.saved_embedding_matrix_file_path,
-        )
-        self.train_data = ABSADataset(ABSADatasetReader.__read_data__(self.cfg.dataset_train, tokenizer))
-        self.test_data = ABSADataset(ABSADatasetReader.__read_data__(self.cfg.dataset_test, tokenizer))
-        if config.valset_ratio:
-            valset_len = int(len(self.train_data) * config.valset_ratio)
-            self.train_data, self.val_data = random_split(
-                self.train_data, (len(self.train_data) - valset_len, valset_len)
+
+    def __getitem__(self, index: int):
+        return self.data[index]
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def _read_raw_dataset(self, dataset_type: str) -> list[namedtuple]:
+        """
+        Private helper method to read raw dataset files based on requested type (e.g. Train or Test).
+
+        Args:
+            dataset_type (str): Type of dataset files to read. Train or Test.
+
+        Returns:
+            list[namedtuple]: list of namedtuples consisting of the full text, the aspect and polarity.
+        """
+        file_path = self.config.dataset_train["raw"] if dataset_type == "train" else self.config.dataset_test["raw"]
+        RawDataSet = namedtuple("RawDataSet", ["text", "aspect", "polarity"])
+        with open(file_path, "r", encoding="utf-8", newline="\n", errors="ignore") as f:
+            lines = f.readlines()
+        output = []
+        for i in range(0, len(lines), 3):
+            output.append(
+                RawDataSet(lines[i].lower().strip(), lines[i + 1].lower().strip(), lines[i + 2].lower().strip())
             )
-        else:
-            self.val_data = self.test_data
+        return output
+
+    def _read_dependency_senticnet_graph(self, dataset_type: str) -> dict[str, np.ndarray]:
+        """
+        Private helpder method to read senticnet graph dataset based on requested type (i.e. Train or Test).
+
+        Args:
+            dataset_type (str): Type of dataset files to read. Train or Test.
+
+        Returns:
+            dict[str, np.ndarray]: dictionary with
+        """
+        file_path = (
+            self.config.dataset_train["dependency_sencticnet_graph"]
+            if dataset_type == "train"
+            else self.config.dataset_test["dependency_sencticnet_graph"]
+        )
+        with open(file_path, "rb") as f:
+            graph = pickle.load(f)
+        return graph
 
     @staticmethod
     def __read_data__(datasets: Dict[str, str], tokenizer: PreTrainedTokenizer):
