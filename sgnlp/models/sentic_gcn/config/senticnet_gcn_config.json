@@ -16,6 +16,8 @@
     "word_vec_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/glove/glove.840B.300d.txt",
     "save_embedding_matrix": true,
     "saved_embedding_matrix_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/embedding/embeddings.pickle",
+    "save_preprocessed_senticnet": true,
+    "saved_preprocessed_senticnet_file_path": "senticnet/senticnet.pickle",
     "initializer": "xavier_uniform",
     "optimizer": "adam",
     "loss_function": "cross_entropy",

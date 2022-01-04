@@ -60,14 +60,15 @@ class SenticGCNTrainArgs:
         default=True,
         metadata={
             "help": """Flag to indicate if embedding matrix should be saved.
-                    Flag is ignored if 'saved_embedding_matrix_file_path' is populated and valid."""
+                    If 'saved_embedding_matrix_file_path' is populated and valid, it will be overwritten if flag is set to True.
+                    """
         },
     )
     saved_embedding_matrix_file_path: str = field(
         default="embedding/embeddings.pickle",
         metadata={
-            "help": """Full path of saved embedding matrix, if file exists,
-                    embeddings will be generated from file instead of generated from word vector and vocab."""
+            "help": """Full path of saved embedding matrix, if file exists and 'save_embedding_matrix' flag is set to False.
+                    Embeddings will be generated from file instead of generated from word vector and vocab."""
         },
     )
     save_state_dict: bool = field(
@@ -75,6 +76,20 @@ class SenticGCNTrainArgs:
     )
     saved_state_dict_folder_path: str = field(
         default="/state_dict", metadata={"help": "Folder to save model state_dict."}
+    )
+    save_preprocessed_senticnet: str = field(
+        default=True,
+        metadata={
+            "help": """Flag to indicate if senticnet dictionary should be saved during preprocess step.
+                    If 'saved_preprocessed_senticnet_file_path' is populated and valid, it will be overwritten if flag is set to True."""
+        },
+    )
+    saved_preprocessed_senticnet_file_path: str = field(
+        default="senticnet/senticnet.pickle",
+        metadata={
+            "help": """File path to saved preprocessed senticnet, if file exists and 'save_preprocessed_senticnet' flag is set to False.
+                    SenticNet will be loaded from file instead of generated from raw senticnet files."""
+        },
     )
     initializer: str = field(default="xavier_uniform", metadata={"help": "Type of initalizer to use."})
     optimizer: str = field(default="adam", metadata={"help": "Type of optimizer to use."})
