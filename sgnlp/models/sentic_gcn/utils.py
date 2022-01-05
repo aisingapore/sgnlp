@@ -302,7 +302,7 @@ class SenticGCNDatasetGenerator:
             lines = f.readlines()
         return lines
 
-    def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, BatchEncoding]:
+    def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, list]:
         """
         Data preprocess method to generate all indices required for SenticGCN model training.
 
@@ -310,10 +310,9 @@ class SenticGCNDatasetGenerator:
             raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
 
         Returns:
-            Dict[str, BatchEncoding]]: return a dictionary of dataset sub-type and their tensors.
+            Dict[str, list]]: return a dictionary of dataset sub-type and their list of values.
         """
         all_data = []
-        max_len = self.config.max_len
         for i in range(0, len(raw_data), 3):
             # Process full text, aspect and polarity index
             text_left, _, text_right = [s.lower().strip() for s in raw_data[i].partition("$T$")]
@@ -451,6 +450,10 @@ class SenticGCNDatasetGenerator:
 
 
 class BucketIterator:
+    """
+    Iterator class for use with non-bert version of SenticGCN.
+    """
+
     def __init__(
         self,
         data: list[dict[str, BatchEncoding]],
@@ -461,6 +464,7 @@ class BucketIterator:
     ):
         self.shuffle = shuffle
         self.sort = sort
+        self.sort_key = sort_key
         self.batches = self.sort_and_pad(data, batch_size)
         self.batch_len = len(self.batches)
 
@@ -479,16 +483,14 @@ class BucketIterator:
         batch_text_indices = []
         batch_aspect_indices = []
         batch_left_indices = []
-        batch_text_embeddings = []
         batch_polarity = []
         batch_sdat_graph = []
         max_len = max([len(t[self.sortkey]) for t in batch_data])
         for item in batch_data:
-            (text_indices, aspect_indices, left_indices, text_embeddings, polarity, sdat_graph,) = (
+            (text_indices, aspect_indices, left_indices, polarity, sdat_graph,) = (
                 item["text_indices"],
                 item["aspect_indices"],
                 item["left_indices"],
-                item["text_embeddings"],
                 item["polarity"],
                 item["sdat_graph"],
             )
@@ -496,20 +498,25 @@ class BucketIterator:
             text_padding = [0] * (max_len - len(text_indices["input_ids"]))
             aspect_padding = [0] * (max_len - len(aspect_indices["input_ids"]))
             left_padding = [0] * (max_len - len(left_indices["input_ids"]))
-            text_embed_padding = [0] * (max_len - len(text_embeddings["input_ids"]))
-
-            # Convert to tensor
-            text_indices["input_ids"] = torch.concat((text_indices, torch.tensor(text_padding)))
-            context_padding
 
             batch_text_indices.append(text_indices + text_padding)
-            batch_context_indices.append(context_indices + context_padding)
             batch_aspect_indices.append(aspect_indices + aspect_padding)
             batch_left_indices.append(left_indices + left_padding)
-            batch_text_embeddings.append(text_embeddings + text_embed_padding)
             batch_polarity.append(polarity)
             batch_sdat_graph.append(
                 np.pad(sdat_graph, ((0, max_len - len(text_indices)), (0, max_len - len(text_indices))), "constant")
             )
 
-        return
+        return {
+            "text_indices": torch.tensor(batch_text_indices),
+            "aspect_indices": torch.tensor(batch_aspect_indices),
+            "left_indices": torch.tensor(batch_left_indices),
+            "polarity": torch.tensor(batch_polarity),
+            "sdat_graph": torch.tensor(batch_sdat_graph),
+        }
+
+    def __iter__(self):
+        if self.shuffle:
+            random.shuffle(self.batches)
+        for idx in range(self.batch_len):
+            yield self.batches[idx]
