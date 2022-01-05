@@ -1,7 +1,7 @@
-from transformers import PreTrainedConfig, BertConfig
+from transformers import PretrainedConfig, BertConfig
 
 
-class SenticGCNConfig(PreTrainedConfig):
+class SenticGCNConfig(PretrainedConfig):
     """
     This is the configuration class to store the configuration of a
     :class:`~sgnlp.models.sentic_gcn.modeling.SenticGCNModel`.
@@ -42,7 +42,7 @@ class SenticGCNConfig(PreTrainedConfig):
         self.loss_function = loss_function
 
 
-class SenticGCNBertConfig(PreTrainedConfig):
+class SenticGCNBertConfig(PretrainedConfig):
     """
     This is the configuration class to store the configuration of a :class:`~sgnlp.models.sentic_gcn.modeling.SenticBertGCNModel`.
     It is used to instantiate a SenticBertGCNModel network according to the specific arguments, defining the model architecture.
@@ -81,13 +81,13 @@ class SenticGCNBertConfig(PreTrainedConfig):
         self.loss_function = loss_function
 
 
-class SenticGCNEmbeddingConfig(PreTrainedConfig):
+class SenticGCNEmbeddingConfig(PretrainedConfig):
     """
     This is the configuration class to store the configuration of a :class:`~SenticGCNEmbeddingModel`.
     It is used to instantiate a SenticGCN Embedding model according to the specified arguments, defining the model architecture.
 
     Args:
-        PreTrainedConfig (:obj:`PretrainedConfig`): transformer :obj:`PreTrainedConfig` base class
+        PretrainedConfig (:obj:`PretrainedConfig`): transformer :obj:`PretrainedConfig` base class
     """
 
     def __init__(self, vocab_size: int = 17662, embed_dim: int = 300, **kwargs) -> None:

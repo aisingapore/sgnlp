@@ -10,15 +10,15 @@ import torch.nn.functional as F
 from transformers import PreTrainedModel, BertModel
 from transformers.file_utils import ModelOutput
 
-from .modules.dynamic_rnn import DynamicLSTM
-from .modules.gcn import GraphConvolution
-from .config import (
+from modules.dynamic_rnn import DynamicLSTM
+from modules.gcn import GraphConvolution
+from config import (
     SenticGCNConfig,
     SenticGCNBertConfig,
     SenticGCNEmbeddingConfig,
     SenticGCNBertEmbeddingConfig,
 )
-from .utils import build_embedding_matrix
+from utils import build_embedding_matrix
 
 
 @dataclass
@@ -118,9 +118,7 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
         mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(self.device)
         return mask * x
 
-    def forward(
-        self, inputs: dict[str, torch.Tensor], labels: Optional[torch.Tensor] = None
-    ) -> SenticGCNModelOutput:
+    def forward(self, inputs: dict[str, torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNModelOutput:
         text_indices, aspect_indices, left_indices, adj = inputs
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
