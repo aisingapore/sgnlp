@@ -1,8 +1,5 @@
-import pathlib
-import pickle
 from dataclasses import dataclass
-from typing import Optional, Union
-
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -81,7 +78,7 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
         self.gc2 = GraphConvolution(2 * config.hidden_dim, 2 * config.hidden_dim)
         self.fc = nn.Linear(2 * config.hidden_dim, config.polarities_dim)
         self.text_embed_dropout = nn.Dropout(config.dropout)
-        self.device = config.device
+        self.torch_device = torch.device(config.device)
         if config.loss_function == "cross_entropy":
             self.loss_function = nn.CrossEntropyLoss()
 
@@ -101,7 +98,7 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
                 weight[i].append(1 - (j - aspect_double_idx[i, 1] / context_len))
             for j in range(text_len[i], seq_len):
                 weight[i].append(0)
-        weight = torch.tensor(weight, dtype=torch.float).unsqueeze(2).to(self.device)
+        weight = torch.tensor(weight, dtype=torch.float).unsqueeze(2).to(self.torch_device)
         return weight * x
 
     def mask(self, x, aspect_double_idx):
@@ -115,18 +112,16 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
                 mask[i].append(1)
             for j in range(aspect_double_idx[i, 1] + 1, seq_len):
                 mask[i].append(0)
-        mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(self.device)
+        mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(self.torch_device)
         return mask * x
 
     def forward(self, inputs: dict[str, torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNModelOutput:
-        text_indices, aspect_indices, left_indices, adj = inputs
+        text_indices, aspect_indices, left_indices, text_embeddings, adj = inputs
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
         left_len = torch.sum(left_indices != 0, dim=-1)
         aspect_double_idx = torch.cat([left_len.unsqueeze(1), (left_len + aspect_len - 1).unsqueeze(1)], dim=1)
-        # TODO: How to replace embedding layer here?
-        text = self.embedding(text_indices)
-        text = self.text_embed_dropout(text_indices)
+        text = self.text_embed_dropout(text_embeddings)
         text_out, (_, _) = self.text_lstm(text, text_len)
         x = F.relu(
             self.gc1(
@@ -199,7 +194,7 @@ class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
         self.gc3 = GraphConvolution(config.hidden_dim, config.hidden_dim)
         self.fc = nn.Linear(config.hidden_dim, config.polarities_dim)
         self.text_embed_dropout = nn.Dropout(config.dropout)
-        self.device = config.device
+        self.torch_device = torch.device(config.device)
         self.max_seq_len = config.max_seq_len
         self.loss_function = config.loss_function
 
@@ -219,7 +214,7 @@ class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
                 weight[i].append(1 - (j - aspect_double_idx[i, 1]) / context_len)
             for j in range(text_len[i], seq_len):
                 weight[i].append(0)
-        weight = torch.tensor(weight).unsqueeze(2).to(self.device)
+        weight = torch.tensor(weight).unsqueeze(2).to(self.torch_device)
         return weight * x
 
     def mask(self, x, aspect_double_idx):
@@ -233,11 +228,12 @@ class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
                 mask[i].append(1)
             for j in range(min(aspect_double_idx[i, 1] + 1, self.max_seq_len), seq_len):
                 mask[i].append(0)
-        mask = torch.tensor(mask).unsqueeze(2).float().to(self.device)
+        mask = torch.tensor(mask).unsqueeze(2).float().to(self.torch_device)
         return mask * x
 
     def forward(self, inputs, labels: torch.Tensor):
         text_bert_indices, text_indices, aspect_indices, bert_segments_ids, left_indices, adj = inputs
+        # text_indices, text_
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
         left_len = torch.sum(left_indices != 0, dim=-1)
@@ -294,16 +290,22 @@ class SenticGCNEmbeddingModel(SenticGCNEmbeddingPreTrainedModel):
             Use the :obj:`.from_pretrained` method to load the model weights.
     """
 
-    def __init__(self, config: SenticGCNEmbeddingConfig):
-        super().__init__()
+    def __init__(self, config: SenticGCNEmbeddingConfig) -> None:
+        super().__init__(config)
         self.vocab_size = config.vocab_size
         self.embed = nn.Embedding(config.vocab_size, config.embed_dim)
 
-    def load_pretrained_embedding(self, pretrained_embedding_path: Union[str, pathlib.Path]) -> None:
-        with open(pretrained_embedding_path, "rb") as emb_f:
-            embedding_matrix = pickle.load(emb_f)
-        embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
-        self.embed.weight.data.copy_(embedding_tensor)
+    def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
+        """
+        Encode input token ids using word embedding.
+
+        Args:
+            token_ids (torch.Tensor): Tensor of token ids with shape [batch_size, num_words]
+
+        Returns:
+            torch.Tensor: return Tensor of embeddings with shape (batch_size, num_words, embed_dim)
+        """
+        return self.embed(token_ids)
 
     @classmethod
     def build_embedding_matrix(
@@ -328,8 +330,8 @@ class SenticGCNEmbeddingModel(SenticGCNEmbeddingPreTrainedModel):
             word_vec_file_path=word_vec_file_path, vocab=vocab, embed_dim=embed_dim
         )
         embedding_tensor = torch.tensor(embedding_matrix, dtype=torch.float)
-        config = SenticGCNEmbeddingConfig(vocab_size=vocab, embed_dim=embed_dim)
-        senticgcn_embed = cls(config)
+        sentic_embed_config = SenticGCNEmbeddingConfig(vocab_size=len(vocab), embed_dim=embed_dim)
+        senticgcn_embed = cls(sentic_embed_config)
         senticgcn_embed.embed.weight.data.copy_(embedding_tensor)
         return senticgcn_embed
 
@@ -349,5 +351,5 @@ class SenticGCNBertEmbeddingModel(BertModel):
             Use the :obj:`.from_pretrained` method to load the model weights.
     """
 
-    def __init__(self, config: SenticGCNBertEmbeddingConfig):
+    def __init__(self, config: SenticGCNBertEmbeddingConfig) -> None:
         super().__init__(config)

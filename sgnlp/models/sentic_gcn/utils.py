@@ -12,7 +12,7 @@ import numpy as np
 import spacy
 import torch
 from torch.utils.data import random_split, Dataset
-from transformers import PreTrainedTokenizer
+from transformers import PreTrainedTokenizer, PreTrainedModel
 from transformers.tokenization_utils_base import BatchEncoding
 
 from data_class import SenticGCNTrainArgs
@@ -276,7 +276,9 @@ class SenticGCNDatasetGenerator:
     Main dataset generator class to preprocess raw dataset file.
     """
 
-    def __init__(self, config: SenticGCNTrainArgs, tokenizer: PreTrainedTokenizer):
+    def __init__(
+        self, config: SenticGCNTrainArgs, tokenizer: PreTrainedTokenizer, embedding_model: PreTrainedModel
+    ) -> None:
         self.config = config
         self.senticnet = load_and_process_senticnet(
             config.senticnet_word_file_path,
@@ -285,6 +287,7 @@ class SenticGCNDatasetGenerator:
         )
         self.spacy_pipeline = spacy.load(config.spacy_pipeline)
         self.tokenizer = tokenizer
+        self.embedding_model = embedding_model
         self.device = (
             torch.device("cuda" if torch.cuda.is_available() else "cpu")
             if config.device is None
@@ -335,11 +338,16 @@ class SenticGCNDatasetGenerator:
             graph = BatchEncoding({"input_ids": graph})
             graph.convert_to_tensors("pt")
 
+            # Process embeddings
+            text_embeddings = self.embedding_model(text_indices["input_ids"])
+            text_embeddings = BatchEncoding({"input_ids": text_embeddings})
+
             all_data.append(
                 {
                     "text_indices": text_indices.to(self.device),
                     "aspect_indices": aspect_indices.to(self.device),
                     "left_indices": left_indices.to(self.device),
+                    "text_embeddings": text_embeddings.to(self.device),
                     "polarity": polarity.to(self.device),
                     "sdat_graph": graph.to(self.device),
                 }
@@ -375,7 +383,9 @@ class SenticGCNDatasetGenerator:
             polarity = polarity.convert_to_tensors("pt")
 
             # Process bert related indices
-            text_bert_indices = self.tokenizer(full_text_with_bert_tokens, return_tensors="pt")
+            text_bert_indices = self.tokenizer(
+                full_text_with_bert_tokens, return_tensors="pt", add_special_tokens=True, return_token_type_ids=True
+            )
             text_len = np.sum(text_indices["input_ids"].numpy() != 0)
             aspect_len = np.sum(aspect_indices["input_ids"].numpy() != 0)
 
@@ -384,6 +394,8 @@ class SenticGCNDatasetGenerator:
             concat_segment_indices = pad_and_truncate(concat_segment_indices, max_len)
             concat_segment_indices = BatchEncoding({"input_ids": concat_segment_indices})
             concat_segment_indices = concat_segment_indices.convert_to_tensors("pt")
+
+            # Process embeddings
 
             # Process graph
             graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)

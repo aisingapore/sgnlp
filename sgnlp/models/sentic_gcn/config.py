@@ -32,7 +32,7 @@ class SenticGCNConfig(PretrainedConfig):
         device: str = "cuda",
         loss_function: str = "cross_entropy",
         **kwargs
-    ):
+    ) -> None:
         super().__init__(**kwargs)
         self.embed_dim = embed_dim
         self.hidden_dim = hidden_dim
@@ -71,7 +71,7 @@ class SenticGCNBertConfig(PretrainedConfig):
         device: str = "cuda",
         loss_function: str = "cross_entropy",
         **kwargs
-    ):
+    ) -> None:
         super().__init__(**kwargs)
         self.hidden_dim = hidden_dim
         self.max_seq_len = max_seq_len
@@ -105,5 +105,5 @@ class SenticGCNBertEmbeddingConfig(BertConfig):
         BertConfig (:obj:`BertConfig`): transformer :obj:`BertConfig` base class
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
