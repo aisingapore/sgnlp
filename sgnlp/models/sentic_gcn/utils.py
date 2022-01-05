@@ -6,6 +6,7 @@ import random
 import pathlib
 import requests
 import urllib
+import math
 from typing import Dict, Tuple
 
 import numpy as np
@@ -276,9 +277,7 @@ class SenticGCNDatasetGenerator:
     Main dataset generator class to preprocess raw dataset file.
     """
 
-    def __init__(
-        self, config: SenticGCNTrainArgs, tokenizer: PreTrainedTokenizer, embedding_model: PreTrainedModel
-    ) -> None:
+    def __init__(self, config: SenticGCNTrainArgs, tokenizer: PreTrainedTokenizer) -> None:
         self.config = config
         self.senticnet = load_and_process_senticnet(
             config.senticnet_word_file_path,
@@ -287,12 +286,6 @@ class SenticGCNDatasetGenerator:
         )
         self.spacy_pipeline = spacy.load(config.spacy_pipeline)
         self.tokenizer = tokenizer
-        self.embedding_model = embedding_model
-        self.device = (
-            torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            if config.device is None
-            else torch.device(config.device)
-        )
 
     def _read_raw_dataset(self, dataset_type: str) -> list[str]:
         """
@@ -320,6 +313,7 @@ class SenticGCNDatasetGenerator:
             Dict[str, BatchEncoding]]: return a dictionary of dataset sub-type and their tensors.
         """
         all_data = []
+        max_len = self.config.max_len
         for i in range(0, len(raw_data), 3):
             # Process full text, aspect and polarity index
             text_left, _, text_right = [s.lower().strip() for s in raw_data[i].partition("$T$")]
@@ -328,28 +322,33 @@ class SenticGCNDatasetGenerator:
             polarity = raw_data[i + 2].strip()
 
             # Process indices
-            text_indices = self.tokenizer(full_text, return_tensors="pt")
-            aspect_indices = self.tokenizer(aspect, return_tensors="pt")
-            left_indices = self.tokenizer(text_left, return_tensors="pt")
+            text_indices = self.tokenizer(
+                full_text,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            aspect_indices = self.tokenizer(
+                aspect,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            left_indices = self.tokenizer(
+                text_left,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
             polarity = int(polarity) + 1
-            polarity = BatchEncoding({"input_ids": polarity})
-            polarity.convert_to_tensors("pt")
             graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)
-            graph = BatchEncoding({"input_ids": graph})
-            graph.convert_to_tensors("pt")
-
-            # Process embeddings
-            text_embeddings = self.embedding_model(text_indices["input_ids"])
-            text_embeddings = BatchEncoding({"input_ids": text_embeddings})
-
             all_data.append(
                 {
-                    "text_indices": text_indices.to(self.device),
-                    "aspect_indices": aspect_indices.to(self.device),
-                    "left_indices": left_indices.to(self.device),
-                    "text_embeddings": text_embeddings.to(self.device),
-                    "polarity": polarity.to(self.device),
-                    "sdat_graph": graph.to(self.device),
+                    "text_indices": text_indices["input_ids"],
+                    "aspect_indices": aspect_indices["input_ids"],
+                    "left_indices": left_indices["input_ids"],
+                    "polarity": polarity,
+                    "sdat_graph": graph,
                 }
             )
         return all_data
@@ -449,3 +448,68 @@ class SenticGCNDatasetGenerator:
         else:
             val_data = test_data
         return SenticGCNDataset(train_data), SenticGCNDataset(val_data), SenticGCNDataset(test_data)
+
+
+class BucketIterator:
+    def __init__(
+        self,
+        data: list[dict[str, BatchEncoding]],
+        batch_size: int,
+        sort_key: str = "text_indices",
+        shuffle=True,
+        sort=True,
+    ):
+        self.shuffle = shuffle
+        self.sort = sort
+        self.batches = self.sort_and_pad(data, batch_size)
+        self.batch_len = len(self.batches)
+
+    def sort_and_pad(self, data: list[dict[str, BatchEncoding]], batch_size: int):
+        num_batch = int(math.ceil(len(data) / batch_size))
+        if self.sort:
+            sorted_data = sorted(data, key=lambda x: len(x[self.sort_key]))
+        else:
+            sorted_data = data
+        batches = []
+        for i in range(num_batch):
+            batches.append(self.pad_data(sorted_data[i * batch_size : (i + 1) * batch_size]))
+        return batches
+
+    def pad_data(self, batch_data):
+        batch_text_indices = []
+        batch_aspect_indices = []
+        batch_left_indices = []
+        batch_text_embeddings = []
+        batch_polarity = []
+        batch_sdat_graph = []
+        max_len = max([len(t[self.sortkey]) for t in batch_data])
+        for item in batch_data:
+            (text_indices, aspect_indices, left_indices, text_embeddings, polarity, sdat_graph,) = (
+                item["text_indices"],
+                item["aspect_indices"],
+                item["left_indices"],
+                item["text_embeddings"],
+                item["polarity"],
+                item["sdat_graph"],
+            )
+            # Calculate padding length
+            text_padding = [0] * (max_len - len(text_indices["input_ids"]))
+            aspect_padding = [0] * (max_len - len(aspect_indices["input_ids"]))
+            left_padding = [0] * (max_len - len(left_indices["input_ids"]))
+            text_embed_padding = [0] * (max_len - len(text_embeddings["input_ids"]))
+
+            # Convert to tensor
+            text_indices["input_ids"] = torch.concat((text_indices, torch.tensor(text_padding)))
+            context_padding
+
+            batch_text_indices.append(text_indices + text_padding)
+            batch_context_indices.append(context_indices + context_padding)
+            batch_aspect_indices.append(aspect_indices + aspect_padding)
+            batch_left_indices.append(left_indices + left_padding)
+            batch_text_embeddings.append(text_embeddings + text_embed_padding)
+            batch_polarity.append(polarity)
+            batch_sdat_graph.append(
+                np.pad(sdat_graph, ((0, max_len - len(text_indices)), (0, max_len - len(text_indices))), "constant")
+            )
+
+        return
