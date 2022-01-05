@@ -372,12 +372,12 @@ class SenticGCNDatasetGenerator:
             left_indices = self.tokenizer(text_left, return_tensors="pt")
             polarity = int(polarity) + 1
             polarity = BatchEncoding({"input_ids": polarity})
-            polarty = polarity.convert_to_tensors("pt")
+            polarity = polarity.convert_to_tensors("pt")
 
             # Process bert related indices
-            text_bert_indices = self.tokenizer(full_text_with_bert_tokens)
-            text_len = np.sum(text_indices["input_ids"] != 0)
-            aspect_len = np.sum(aspect_indices["input_ids"] != 0)
+            text_bert_indices = self.tokenizer(full_text_with_bert_tokens, return_tensors="pt")
+            text_len = np.sum(text_indices["input_ids"].numpy() != 0)
+            aspect_len = np.sum(aspect_indices["input_ids"].numpy() != 0)
 
             # array of [0] for texts including [CLS] and [SEP] and [1] for aspect and ending [SEP]
             concat_segment_indices = [0] * (text_len + 2) + [1] * (aspect_len + 1)
