@@ -6,7 +6,7 @@ import random
 import pathlib
 import requests
 import urllib
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import numpy as np
 import spacy
@@ -306,7 +306,7 @@ class SenticGCNDatasetGenerator:
             lines = f.readlines()
         return lines
 
-    def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, Union[BatchEncoding, torch.Tensor]]:
+    def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, BatchEncoding]:
         """
         Data preprocess method to generate all indices required for SenticGCN model training.
 
@@ -314,7 +314,7 @@ class SenticGCNDatasetGenerator:
             raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
 
         Returns:
-            Dict[str, Union[BatchEncoding, torch.Tensor]]: return a dictionary of dataset sub-type and their tensors.
+            Dict[str, BatchEncoding]]: return a dictionary of dataset sub-type and their tensors.
         """
         all_data = []
         for i in range(0, len(raw_data), 3):
@@ -329,9 +329,11 @@ class SenticGCNDatasetGenerator:
             aspect_indices = self.tokenizer(aspect, return_tensors="pt")
             left_indices = self.tokenizer(text_left, return_tensors="pt")
             polarity = int(polarity) + 1
-            polarity = torch.tensor(polarity)
+            polarity = BatchEncoding({"input_ids": polarity})
+            polarity.convert_to_tensors("pt")
             graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)
-            graph = torch.tensor(graph)
+            graph = BatchEncoding({"input_ids": graph})
+            graph.convert_to_tensors("pt")
 
             all_data.append(
                 {
@@ -344,7 +346,7 @@ class SenticGCNDatasetGenerator:
             )
         return all_data
 
-    def _generate_senticgcnbert_dataset(self, raw_data: list[str]) -> Dict[str, torch.Tensor]:
+    def _generate_senticgcnbert_dataset(self, raw_data: list[str]) -> Dict[str, BatchEncoding]:
         """
         Data preprocess method to generate all indices required for SenticGCNBert model training.
 
@@ -352,7 +354,7 @@ class SenticGCNDatasetGenerator:
             raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
 
         Returns:
-            Dict[str, torch.Tensor]: return a dictionary of dataset sub-type and their tensors.
+            Dict[str, BatchEncoding]: return a dictionary of dataset sub-type and their tensors.
         """
         all_data = []
         max_len = self.config.max_len
@@ -369,7 +371,8 @@ class SenticGCNDatasetGenerator:
             aspect_indices = self.tokenizer(aspect, return_tensors="pt")
             left_indices = self.tokenizer(text_left, return_tensors="pt")
             polarity = int(polarity) + 1
-            polarity = torch.tensor(polarity)
+            polarity = BatchEncoding({"input_ids": polarity})
+            polarty = polarity.convert_to_tensors("pt")
 
             # Process bert related indices
             text_bert_indices = self.tokenizer(full_text_with_bert_tokens)
@@ -392,7 +395,7 @@ class SenticGCNDatasetGenerator:
                 ),
                 "constant",
             )
-            sdat_graph = BatchEncoding({"graph": sdat_graph})
+            sdat_graph = BatchEncoding({"input_ids": sdat_graph})
             sdat_graph = sdat_graph.convert_to_tensors("pt")
 
             all_data.append(
