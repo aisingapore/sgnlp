@@ -331,7 +331,7 @@ class SenticGCNDatasetGenerator:
             polarity = int(polarity) + 1
             polarity = torch.tensor(polarity)
             graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)
-            graph = torch.tensor(polarity)
+            graph = torch.tensor(graph)
 
             all_data.append(
                 {
