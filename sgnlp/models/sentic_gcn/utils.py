@@ -6,13 +6,14 @@ import random
 import pathlib
 import requests
 import urllib
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import spacy
 import torch
 from torch.utils.data import random_split, Dataset
 from transformers import PreTrainedTokenizer
+from transformers.tokenization_utils_base import BatchEncoding
 
 from data_class import SenticGCNTrainArgs
 
@@ -305,7 +306,7 @@ class SenticGCNDatasetGenerator:
             lines = f.readlines()
         return lines
 
-    def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, torch.Tensor]:
+    def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, Union[BatchEncoding, torch.Tensor]]:
         """
         Data preprocess method to generate all indices required for SenticGCN model training.
 
@@ -313,7 +314,7 @@ class SenticGCNDatasetGenerator:
             raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
 
         Returns:
-            Dict[str, torch.Tensor]: return a dictionary of dataset sub-type and their tensors.
+            Dict[str, Union[BatchEncoding, torch.Tensor]]: return a dictionary of dataset sub-type and their tensors.
         """
         all_data = []
         for i in range(0, len(raw_data), 3):
@@ -324,11 +325,13 @@ class SenticGCNDatasetGenerator:
             polarity = raw_data[i + 2].strip()
 
             # Process indices
-            text_indices = self.tokenizer(full_text)
-            aspect_indices = self.tokenizer(aspect)
-            left_indices = self.tokenizer(text_left)
+            text_indices = self.tokenizer(full_text, return_tensors="pt")
+            aspect_indices = self.tokenizer(aspect, return_tensors="pt")
+            left_indices = self.tokenizer(text_left, return_tensors="pt")
             polarity = int(polarity) + 1
+            polarity = torch.tensor(polarity)
             graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)
+            graph = torch.tensor(polarity)
 
             all_data.append(
                 {
@@ -376,7 +379,8 @@ class SenticGCNDatasetGenerator:
             # array of [0] for texts including [CLS] and [SEP] and [1] for aspect and ending [SEP]
             concat_segment_indices = [0] * (text_len + 2) + [1] * (aspect_len + 1)
             concat_segment_indices = pad_and_truncate(concat_segment_indices, max_len)
-            concat_segment_indices = torch.tensor(concat_segment_indices)
+            concat_segment_indices = BatchEncoding({"input_ids": concat_segment_indices})
+            concat_segment_indices = concat_segment_indices.convert_to_tensors("pt")
 
             # Process graph
             graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)
@@ -388,7 +392,8 @@ class SenticGCNDatasetGenerator:
                 ),
                 "constant",
             )
-            sdat_graph = torch.tensor(sdat_graph)
+            sdat_graph = BatchEncoding({"graph": sdat_graph})
+            sdat_graph = sdat_graph.convert_to_tensors("pt")
 
             all_data.append(
                 {
@@ -422,7 +427,6 @@ class SenticGCNDatasetGenerator:
         else:
             train_data = self._generate_senticgcnbert_dataset(raw_train_data)
             test_data = self._generate_senticgcnbert_dataset(raw_test_data)
-
         # Train/Val/Test split
         if self.config.valset_ratio > 0:
             valset_len = int(len(train_data) * self.config.valset_ratio)
