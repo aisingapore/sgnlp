@@ -48,6 +48,7 @@ class SenticGCNBertConfig(PretrainedConfig):
     It is used to instantiate a SenticBertGCNModel network according to the specific arguments, defining the model architecture.
 
     Args:
+        embed_dim (:obj:`int`, defaults to 300): The input dimension for the LSTM layer
         hidden_dim (:obj:`int`, defaults to 768): The embedding dimension size for the Bert model as well as GCN dimension.
         max_seq_len (:obj:`int`, defaults to 85): The max sequence length to pad and truncate.
         dropout (:obj:`float`, defaults to 0.3): Dropout percentage.
@@ -64,6 +65,7 @@ class SenticGCNBertConfig(PretrainedConfig):
 
     def __init__(
         self,
+        embed_dim: int = 300,
         hidden_dim: int = 768,
         max_seq_len: int = 85,
         polarities_dim: int = 3,
@@ -73,6 +75,7 @@ class SenticGCNBertConfig(PretrainedConfig):
         **kwargs
     ) -> None:
         super().__init__(**kwargs)
+        self.embed_dim = embed_dim
         self.hidden_dim = hidden_dim
         self.max_seq_len = max_seq_len
         self.dropout = dropout
