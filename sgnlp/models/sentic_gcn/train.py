@@ -121,6 +121,9 @@ class SenticGCNBaseTrainer:
         t_targets_all, t_outputs_all = None, None
         with torch.no_grad():
             for _, t_batch in enumerate(dataloader):
+                # Generate embedings
+                t_batch["text_embeddings"] = self.embed(t_batch["text_indices"])
+
                 # Prepare input data and targets
                 t_inputs = [t_batch[col] for col in self.config.data_cols]
                 t_targets = t_batch["polarity"]
@@ -129,15 +132,15 @@ class SenticGCNBaseTrainer:
                 t_outputs = self.model(t_inputs)
 
                 # Calculate loss
-                n_correct += (torch.argmax(t_outputs, -1) == t_targets).sum().item()
-                n_total += len(t_outputs)
+                n_correct += (torch.argmax(t_outputs.logits, -1) == t_targets).sum().item()
+                n_total += len(t_outputs.logits)
 
                 if t_targets_all is None:
                     t_targets_all = t_targets
-                    t_outputs_all = t_outputs
+                    t_outputs_all = t_outputs.logits
                 else:
                     t_targets_all = torch.cat((t_targets_all, t_targets), dim=0)
-                    t_outputs_all = torch.cat((t_outputs_all, t_outputs), dim=0)
+                    t_outputs_all = torch.cat((t_outputs_all, t_outputs.logits), dim=0)
         test_acc = n_correct / n_total
         f1 = f1_score(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2], average="macro")
         return test_acc, f1
@@ -163,20 +166,23 @@ class SenticGCNBaseTrainer:
                 global_step += 1
                 optimizer.zero_grad()
 
+                # Generate embeddings
+                batch["text_embeddings"] = self.embed(batch["text_indices"])
+
                 # Prepare input data and targets
-                inputs = [batch[col] for col in self.config.data_cols]
+                inputs = [batch[col].to(self.device) for col in self.config.data_cols]
                 targets = batch["polarity"]
 
                 # Inference
                 outputs = self.model(inputs)
-                loss = criterion(outputs, targets)
+                loss = criterion(outputs.logits, targets)
                 loss.backward()
                 optimizer.step()
 
                 # Calculate loss
-                n_correct += (torch.argmax(outputs, -1) == targets).sum().item()
-                n_total += len(outputs)
-                loss_total += loss.item() * len(outputs)
+                n_correct += (torch.argmax(outputs.logits, -1) == targets).sum().item()
+                n_total += len(outputs.logits)
+                loss_total += loss.item() * len(outputs.logits)
 
                 # Report batch loop step results
                 if global_step % self.config.log_step == 0:
@@ -250,24 +256,6 @@ class SenticGCNBaseTrainer:
                 self.global_max_f1
 
         return repeat_result
-
-        # Save results for all repeat runs
-        # if self.config.save_results:
-        #     pickle.dump(repeat_record, "results.pkl")
-
-        # Evaluate test set
-        # config_path = self.global_best_model_tmpdir.joinpath('config.json')
-        # model_config =
-        # max_test_acc, max_test_f1 = self._evaluate_acc_f1(test_dataloader)
-
-        # logging.info(
-        #     f"""
-        #     Test acc average: {test_accs_avg}
-        #     Test f1 average: {test_f1s_avg}
-        #     Test acc max: {max_accs}
-        #     Test f1 max: {max_f1s}
-        # """
-        # )
 
 
 class SenticGCNBertTrainer(SenticGCNBaseTrainer):
@@ -366,7 +354,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         config_path = self.global_best_model_tmpdir.joinpath("config.json")
         model_config = SenticGCNBertConfig.from_pretrained(config_path)
         model_path = self.global_best_model_tmpdir.joinpath("pytorch_model.bin")
-        self.model = SenticGCNBertConfig.from_pretrained(model_path, config=model_config)
+        self.model = SenticGCNBertModel.from_pretrained(model_path, config=model_config)
 
         # Evaluate test set
         test_acc, test_f1 = self._evaluate_acc_f1(test_dataloader)
@@ -471,7 +459,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         Private helper method to reset model parameters.
         To be used during repeats train loop.
         """
-        for param in self.modelparameters():
+        for param in self.model.parameters():
             if param.requires_grad:
                 if len(param.shape) > 1:
                     self.initializer(param)
@@ -497,12 +485,13 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
 
         # Run main train
         repeat_result = self._train(train_dataloader, val_dataloader)
+        logging.info(f"Best Train Acc: {self.global_max_acc} - Best Train F1: {self.global_max_f1}")
 
         # Recreate best model from all repeat loops
         config_path = self.global_best_model_tmpdir.joinpath("config.json")
         model_config = SenticGCNConfig.from_pretrained(config_path)
         model_path = self.global_best_model_tmpdir.joinpath("pytorch_model.bin")
-        self.model = SenticGCNConfig.from_pretrained(model_path, config=model_config)
+        self.model = SenticGCNModel.from_pretrained(model_path, config=model_config)
 
         # Evaluate test set
         test_acc, test_f1 = self._evaluate_acc_f1(test_dataloader)
@@ -511,7 +500,8 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
 
         if self.config.save_results:
-            pickle.dump(repeat_result, "results.pkl")
+            with open("results.pkl", "wb") as f:
+                pickle.dump(repeat_result, f)
 
         self._save_model()
         self._clean_temp_dir(repeat_result)
@@ -546,7 +536,7 @@ if __name__ == "__main__":
         "loss_function": "cross_entropy",
         "learning_rate": 0.001,
         "l2reg": 0.00001,
-        "epochs": 100,
+        "epochs": 2,
         "batch_size": 32,
         "log_step": 5,
         "embed_dim": 300,
