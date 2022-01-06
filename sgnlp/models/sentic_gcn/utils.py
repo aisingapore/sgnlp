@@ -485,7 +485,7 @@ class BucketIterator:
         batch_left_indices = []
         batch_polarity = []
         batch_sdat_graph = []
-        max_len = max([len(t[self.sortkey]) for t in batch_data])
+        max_len = max([len(t[self.sort_key]) for t in batch_data])
         for item in batch_data:
             (text_indices, aspect_indices, left_indices, polarity, sdat_graph,) = (
                 item["text_indices"],
@@ -495,9 +495,9 @@ class BucketIterator:
                 item["sdat_graph"],
             )
             # Calculate padding length
-            text_padding = [0] * (max_len - len(text_indices["input_ids"]))
-            aspect_padding = [0] * (max_len - len(aspect_indices["input_ids"]))
-            left_padding = [0] * (max_len - len(left_indices["input_ids"]))
+            text_padding = [0] * (max_len - len(text_indices))
+            aspect_padding = [0] * (max_len - len(aspect_indices))
+            left_padding = [0] * (max_len - len(left_indices))
 
             batch_text_indices.append(text_indices + text_padding)
             batch_aspect_indices.append(aspect_indices + aspect_padding)
