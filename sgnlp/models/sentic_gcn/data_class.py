@@ -111,3 +111,17 @@ class SenticGCNTrainArgs:
         assert self.patience > 1, "Patience value must be at least 1."
         assert 0 >= self.valset_ratio < 1, "Valset_ratio must be greater or equals to 0 and less than 1."
         assert self.max_len > 0, "Max_len must be greater than 0."
+
+        # Assign sub dataset columns name
+        self.data_cols = (
+            ["text_indices", "aspect_indices", "left_indices", "text_embeddings", "sdat_graph"]
+            if self.model == "senticgcn"
+            else [
+                "text_indices",
+                "aspect_indices",
+                "left_indices",
+                "text_bert_indices",
+                "text_embeddings",
+                "sdat_graph",
+            ]
+        )
