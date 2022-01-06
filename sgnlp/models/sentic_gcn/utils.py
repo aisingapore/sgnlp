@@ -352,7 +352,7 @@ class SenticGCNDatasetGenerator:
             )
         return all_data
 
-    def _generate_senticgcnbert_dataset(self, raw_data: list[str]) -> Dict[str, BatchEncoding]:
+    def _generate_senticgcnbert_dataset(self, raw_data: list[str]) -> Dict[str, list]:
         """
         Data preprocess method to generate all indices required for SenticGCNBert model training.
 
@@ -360,7 +360,7 @@ class SenticGCNDatasetGenerator:
             raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
 
         Returns:
-            Dict[str, BatchEncoding]: return a dictionary of dataset sub-type and their tensors.
+            Dict[str, list]: return a dictionary of dataset sub-type and their values.
         """
         all_data = []
         max_len = self.config.max_len
