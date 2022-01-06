@@ -308,7 +308,7 @@ class SenticGCNEmbeddingModel(SenticGCNEmbeddingPreTrainedModel):
         return self.embed(token_ids)
 
     @classmethod
-    def build_embedding_matrix(
+    def build_embedding_model(
         cls,
         word_vec_file_path: str,
         vocab: dict[str, int],

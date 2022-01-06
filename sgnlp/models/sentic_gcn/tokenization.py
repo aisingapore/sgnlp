@@ -83,7 +83,7 @@ class SenticGCNTokenizer(PreTrainedTokenizer):
         return text
 
     def create_vocab(self, train_files: List[str]) -> Dict[str, int]:
-        text = self.__read_text_file(train_files)
+        text = SenticGCNTokenizer.__read_text_file(train_files)
         if self.do_lower_case:
             text = text.lower()
         vocab = {}

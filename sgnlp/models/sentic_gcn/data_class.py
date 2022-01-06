@@ -72,7 +72,7 @@ class SenticGCNTrainArgs:
 
     # Tokenizer specific config
     tokenizer: str = field(
-        default="senticgcn",
+        default="senticgcn_tokenizer",
         metadata={
             "help": """Option to choose which tokenizer to use for training preprocessing.
                         Value will be used to create tokenizer via the from_pretrained method."""
@@ -81,7 +81,7 @@ class SenticGCNTrainArgs:
     train_tokenizer: bool = field(
         default=False,
         metadata={
-            "help": """Flag to indicate if tokenizer should be trained on input dataset.
+            "help": """Flag to indicate if tokenizer should be trained on train and test input dataset.
                         Only applies to non-bert SenticGCN tokenizer."""
         },
     )
@@ -102,7 +102,7 @@ class SenticGCNTrainArgs:
 
     # Embedding specific config
     embedding_model: str = field(
-        default="senticgcn",
+        default="senticgcn_embed_model",
         metadata={
             "help": """Option to choose which embeding model to use for training preprocessing.
                     For non-bert model, value should point to a pretraine model folder.
@@ -128,7 +128,7 @@ class SenticGCNTrainArgs:
         },
     )
     save_embedding_model_path: str = field(
-        default=False,
+        default="senticgcn_embed_model",
         metadata={
             "help": """Folder path to save pretrained embedding model using the save_pretrained method.
                         Only applies to non-bert SenticGCN embeddding model."""
