@@ -465,10 +465,20 @@ class BucketIterator:
         self.shuffle = shuffle
         self.sort = sort
         self.sort_key = sort_key
-        self.batches = self.sort_and_pad(data, batch_size)
+        self.batches = self._sort_and_pad(data, batch_size)
         self.batch_len = len(self.batches)
 
-    def sort_and_pad(self, data: list[dict[str, BatchEncoding]], batch_size: int):
+    def _sort_and_pad(self, data: list[dict[str, list]], batch_size: int) -> list[dict[str, list[torch.Tensor]]]:
+        """
+        Private method to sort and pad input dataset.
+
+        Args:
+            data (list[dict[str, list]]): input dataset
+            batch_size (int): batch size to split dataset
+
+        Returns:
+            list[dict[str, list[torch.Tensor]]]: return list of dictionary of dataset batches
+        """
         num_batch = int(math.ceil(len(data) / batch_size))
         if self.sort:
             sorted_data = sorted(data, key=lambda x: len(x[self.sort_key]))
@@ -476,10 +486,19 @@ class BucketIterator:
             sorted_data = data
         batches = []
         for i in range(num_batch):
-            batches.append(self.pad_data(sorted_data[i * batch_size : (i + 1) * batch_size]))
+            batches.append(self._pad_data(sorted_data[i * batch_size : (i + 1) * batch_size]))
         return batches
 
-    def pad_data(self, batch_data):
+    def _pad_data(self, batch_data: dict[str, list]) -> dict[str, list[torch.Tensor]]:
+        """
+        Private method to each sub dataset to max length for their specific batch
+
+        Args:
+            batch_data (dict[str, list]): dictionary of sub dataset and their list of values
+
+        Returns:
+            dict[str, list[torch.Tensor]]: return a dictionary of list of tensor values
+        """
         batch_text_indices = []
         batch_aspect_indices = []
         batch_left_indices = []
