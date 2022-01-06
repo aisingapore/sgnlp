@@ -105,7 +105,11 @@ class SenticGCNTrainArgs:
         default="senticgcn",
         metadata={
             "help": """Option to choose which embeding model to use for training preprocessing.
-                    Value will be used to create embedding model via the from_pretrained method."""
+                    For non-bert model, value should point to a pretraine model folder.
+                    'config.json' and 'pytorch_model.bin' will be used to create the config and embedding model
+                    via the from_pretrained method.
+                    Ignore if 'build_embedding_model' flag is set, only affects non-bert SenticGCN embedding model.
+                    For bert model, value should be model name used to download from huggingface model hub."""
         },
     )
     build_embedding_model: bool = field(
