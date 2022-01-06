@@ -3,7 +3,21 @@ from flask import request
 from transformers import cached_path
 
 from demo_api.common import create_api
-from sgnlp.models.sentic_gcn import SenticGCNModel
+from sgnlp.models.sentic_gcn import (
+    SenticGCNModel, 
+    SenticGCNModelOutput, 
+    SenticGCNPreTrainedModel,
+    SenticGCNBertModelOutput,
+    SenticGCNBertPreTrainedModel,
+    SenticGCNBertModel,
+    SenticGCNEmbeddingPreTrainedModel,
+    SenticGCNEmbeddingModel,
+    SenticGCNBertEmbeddingModel,
+    SenticGCNConfig,
+    SenticGCNPreprocessor,
+    SenticGCNTokenizer,
+    SenticGCNBertTokenizer
+    )
 
 app = create_api(app_name=__name__, model_card_path="model_card/sentic_gcn.json")
 
@@ -13,10 +27,14 @@ app = create_api(app_name=__name__, model_card_path="model_card/sentic_gcn.json"
 
 # Load model
 
-config =
+config = SenticGCNConfig.from_pretrained("") # Input JSON file
 
-model = 
+model = SenticGCNModel.from_pretrained(
+    "", # Input model
+    config=config
+)
 
+model.eval()
 
 app.logger.info("Preprocessing pipeline and model initialization complete.")
 

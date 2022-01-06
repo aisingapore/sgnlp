@@ -1,40 +1,40 @@
 {
     "name": "Sentic GCN",
     "languages": "English",
-    "description": "This is a neural network that induces a latent document-level graph and uses a refinement strategy that allows the model to incrementally aggregate relevant information for multi-hop reasoning. This particular model corresponds to the GloVe+LSR model described in the paper.",
+    "description": "",
     "paper": {
-      "text": "Nan, G., Guo, Z., Sekulić, I., & Lu, W. (2020). Reasoning with Latent Structure Refinement for Document-Level Relation Extraction. Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, July 2020 (pp. 1546-1557).",
-      "url": "https://aclanthology.org/2020.acl-main.141/"
+      "text": "Bin Liang, Hang Su, Lin Gui, Erik Cambria, Ruifeng Xu. Knowledge-Based Systems, 2021: 107643.",
+      "url": "https://github.com/BinLiang-NLP/Sentic-GCN"
     },
     "trainingDataset": {
-      "text": "DocRED",
-      "url": "https://github.com/thunlp/DocRED/tree/master/data"
+      "text": "",
+      "url": ""
     },
     "evaluationDataset": {
-      "text": "DocRED",
-      "url": "https://github.com/thunlp/DocRED/tree/master/data"
+      "text": "",
+      "url": ""
     },
-    "evaluationScores": "0.55 F1 on development set. 0.55 F1 reported by authors in paper on development set.",
+    "evaluationScores": "",
     "trainingConfig": {
-      "text": "Not available."
+      "text": ""
     },
-    "trainingTime": "~17 hours for 100 epochs on a single V100 GPU.",
+    "trainingTime": "",
     "modelWeights": {
-      "text": "https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin",
-      "url": "https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin"
+      "text": "",
+      "url": ""
     },
     "modelConfig": {
-      "text": "https://storage.googleapis.com/sgnlp/models/lsr/config.json",
-      "url": "https://storage.googleapis.com/sgnlp/models/lsr/config.json"
+      "text": "",
+      "url": ""
     },
-    "modelInput": "Coreference clusters of entities, relations between clusters of entities, and text.",
-    "modelOutput": "Scores of all possible relation labels between all possible pairs of entity clusters.",
-    "modelSize": "~85MB",
-    "inferenceInfo": "Not available.",
-    "usageScenarios": "Knowledge graph building.",
+    "modelInput": "",
+    "modelOutput": "",
+    "modelSize": "",
+    "inferenceInfo": "",
+    "usageScenarios": "",
     "originalCode": {
-      "text": "https://github.com/nanguoshun/LSR",
-      "url": "https://github.com/nanguoshun/LSR"
+      "text": "https://github.com/BinLiang-NLP/Sentic-GCN",
+      "url": "https://github.com/BinLiang-NLP/Sentic-GCN"
     },
     "license": {
       "text": "MIT License",
