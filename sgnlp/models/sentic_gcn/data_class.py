@@ -1,19 +1,41 @@
 from dataclasses import dataclass, field
 
+from torch.cuda.memory import memory_stats_as_nested_dict
+
 
 @dataclass
 class SenticGCNTrainArgs:
-    model: str = field(default="senticgcn", metadata={"help": "Option to choose which model to train."})
-    tokenizer: str = field(
-        default="senticgcn",
-        metadata={"help": "Option to choose which tokenizer to use for training preprocessing."},
-    )
+    """
+    Data class for training config for both SenticGCNModel and SenticGCNBertModel
+    """
+
+    # External resources (e.g. Senticnet file, GloVe word vectors, etc)
     senticnet_word_file_path: str = field(
         default="./senticNet/senticnet_word.txt", metadata={"help": "SenticNet word file path."}
+    )
+    save_preprocessed_senticnet: str = field(
+        default=True,
+        metadata={
+            "help": """Flag to indicate if senticnet dictionary should be saved during preprocess step.
+                    If 'saved_preprocessed_senticnet_file_path' is populated and valid, it will be overwritten if flag is set to True."""
+        },
+    )
+    saved_preprocessed_senticnet_file_path: str = field(
+        default="senticnet/senticnet.pickle",
+        metadata={
+            "help": """File path to saved preprocessed senticnet, if file exists and 'save_preprocessed_senticnet' flag is set to False.
+                    SenticNet will be loaded from file instead of generated from raw senticnet files."""
+        },
     )
     spacy_pipeline: str = field(
         default="en_core_web_sm", metadata={"help": "Type of spacy pipeline to load for processor."}
     )
+    word_vec_file_path: str = field(
+        default="glove/glove.840B.300d.txt",
+        metadata={"help": "File path to word vector."},
+    )
+
+    # Dataset specific config
     dataset_train: str = field(
         default="train.raw",
         metadata={"help": "File path to train dataset."},
@@ -30,45 +52,85 @@ class SenticGCNTrainArgs:
                 If value is set to 0, test dataset is set as validation dataset as well."""
         },
     )
-    word_vec_file_path: str = field(
-        default="glove/glove.840B.300d.txt",
-        metadata={"help": "File path to word vector."},
-    )
-    save_embedding_matrix: bool = field(
+
+    # Model specific config
+    model: str = field(default="senticgcn", metadata={"help": "Option to choose which model to train."})
+    save_best_model: bool = field(
         default=True,
         metadata={
-            "help": """Flag to indicate if embedding matrix should be saved.
-                    If 'saved_embedding_matrix_file_path' is populated and valid, it will be overwritten if flag is set to True.
-                    """
+            "help": """Flag to indicate if best model should be saved during training.
+                    Applies to both bert and non-bert SenticGCN models."""
         },
     )
-    saved_embedding_matrix_file_path: str = field(
-        default="embedding/embeddings.pickle",
+    save_model_path: str = field(
+        default="senticgcn",
         metadata={
-            "help": """Full path of saved embedding matrix, if file exists and 'save_embedding_matrix' flag is set to False.
-                    Embeddings will be generated from file instead of generated from word vector and vocab."""
+            "help": """Folder path to save trained model using the save_pretrained method.
+                    Applies to both bert and non-bert SenticGCN models."""
         },
     )
-    save_state_dict: bool = field(
-        default=True, metadata={"help": "Flag to indicate if best model state_dict should be saved."}
-    )
-    saved_state_dict_folder_path: str = field(
-        default="/state_dict", metadata={"help": "Folder to save model state_dict."}
-    )
-    save_preprocessed_senticnet: str = field(
-        default=True,
+
+    # Tokenizer specific config
+    tokenizer: str = field(
+        default="senticgcn",
         metadata={
-            "help": """Flag to indicate if senticnet dictionary should be saved during preprocess step.
-                    If 'saved_preprocessed_senticnet_file_path' is populated and valid, it will be overwritten if flag is set to True."""
+            "help": """Option to choose which tokenizer to use for training preprocessing.
+                        Value will be used to create tokenizer via the from_pretrained method."""
         },
     )
-    saved_preprocessed_senticnet_file_path: str = field(
-        default="senticnet/senticnet.pickle",
+    train_tokenizer: bool = field(
+        default=False,
         metadata={
-            "help": """File path to saved preprocessed senticnet, if file exists and 'save_preprocessed_senticnet' flag is set to False.
-                    SenticNet will be loaded from file instead of generated from raw senticnet files."""
+            "help": """Flag to indicate if tokenizer should be trained on input dataset.
+                        Only applies to non-bert SenticGCN tokenizer."""
         },
     )
+    save_tokenizer: bool = field(
+        default=False,
+        metadata={
+            "help": """Flag to indicate if tokenizer should be saved using the save_pretrained method.
+                            Only applies to non-bert SenticGCN tokenizer."""
+        },
+    )
+    save_tokenizer_path: str = field(
+        default="senticgcn_tokenizer",
+        metadata={
+            "help": """Folder path to save pretrained tokenizer using the save_pretrained method.
+                            Only applies to non-bert SenticGCN tokenizer."""
+        },
+    )
+
+    # Embedding specific config
+    embedding_model: str = field(
+        default="senticgcn",
+        metadata={
+            "help": """Option to choose which embeding model to use for training preprocessing.
+                    Value will be used to create embedding model via the from_pretrained method."""
+        },
+    )
+    build_embedding_model: bool = field(
+        default=False,
+        metadata={
+            "help": """Flag to indicate if embedding model should be built from input word vectors.
+                    Only applies to non-bert SenticGCN embedding models.
+                    Word vectors to train on is indicated in 'word_vec_file_path' config."""
+        },
+    )
+    save_embedding_model: bool = field(
+        default=False,
+        metadata={
+            "help": """Flag to indicate if embedding model should be saved using the save_pretrained method.
+                            Only applies to non-bert SenticGCN embedding model."""
+        },
+    )
+    save_embedding_model_path: str = field(
+        default=False,
+        metadata={
+            "help": """Folder path to save pretrained embedding model using the save_pretrained method.
+                        Only applies to non-bert SenticGCN embeddding model."""
+        },
+    )
+
     initializer: str = field(default="xavier_uniform", metadata={"help": "Type of initalizer to use."})
     optimizer: str = field(default="adam", metadata={"help": "Type of optimizer to use."})
     loss_function: str = field(default="cross_entropy", metadata={"help": "Loss function for training/eval."})
@@ -91,7 +153,9 @@ class SenticGCNTrainArgs:
     max_len: int = field(default=85, metadata={"help": "Max length to pad for bert tokenizer."})
 
     def __post_init__(self):
+        # Model
         assert self.model in ["senticgcn", "senticgcnbert"], "Invalid model type!"
+
         assert self.initializer in [
             "xavier_uniform",
             "xavier_uniform",
