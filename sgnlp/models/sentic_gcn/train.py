@@ -274,7 +274,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         # Create
         self.embed = self._create_embedding_model()
         self.embed.to(self.device)
-        self.model = self._save_model()
+        self.model = self._create_model()
         self.model.to(self.device)
         data_gen = SenticGCNDatasetGenerator(config, tokenizer)
         self.train_data, self.val_data, self.test_data = data_gen.generate_datasets()
@@ -520,14 +520,14 @@ if __name__ == "__main__":
         "dataset_train": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/datasets/semeval14/restaurant_train.raw",
         "dataset_test": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/datasets/semeval14/restaurant_test.raw",
         "valset_ratio": 0,
-        "model": "senticgcn",
+        "model": "senticgcnbert",
         "save_best_model": True,
         "save_model_path": "senticgcn_model",
-        "tokenizer": "senticgcn_tokenizer_temp",
+        "tokenizer": "bert-base-uncased",
         "train_tokenizer": False,
         "save_tokenizer": False,
         "save_tokenizer_path": "senticgcn_tokenizer_temp",
-        "embedding_model": "senticgcn_embed_model_temp",
+        "embedding_model": "bert-base-uncased",
         "build_embedding_model": False,
         "save_embedding_model": False,
         "save_embedding_model_path": "senticgcn_embed_model_temp",

@@ -373,27 +373,27 @@ class SenticGCNDatasetGenerator:
             full_text_with_bert_tokens = f"[CLS] {full_text} [SEP] {aspect} [SEP]"
 
             # Process indices
-            text_indices = self.tokenizer(full_text, return_tensors="pt")
-            aspect_indices = self.tokenizer(aspect, return_tensors="pt")
-            left_indices = self.tokenizer(text_left, return_tensors="pt")
+            text_indices = self.tokenizer(
+                full_text, return_tensors=None, return_attention_mask=False, return_token_type_ids=False
+            )
+            aspect_indices = self.tokenizer(
+                aspect, return_tensors=None, return_attention_mask=False, return_token_type_ids=False
+            )
+            left_indices = self.tokenizer(
+                text_left, return_tensors=None, return_attention_mask=False, return_token_type_ids=False
+            )
             polarity = int(polarity) + 1
-            polarity = BatchEncoding({"input_ids": polarity})
-            polarity = polarity.convert_to_tensors("pt")
 
             # Process bert related indices
             text_bert_indices = self.tokenizer(
-                full_text_with_bert_tokens, return_tensors="pt", add_special_tokens=True, return_token_type_ids=True
+                full_text_with_bert_tokens, return_tensors=None, add_special_tokens=False, return_token_type_ids=False
             )
-            text_len = np.sum(text_indices["input_ids"].numpy() != 0)
-            aspect_len = np.sum(aspect_indices["input_ids"].numpy() != 0)
+            text_len = np.sum(text_indices["input_ids"] != 0)
+            aspect_len = np.sum(aspect_indices["input_ids"] != 0)
 
             # array of [0] for texts including [CLS] and [SEP] and [1] for aspect and ending [SEP]
             concat_segment_indices = [0] * (text_len + 2) + [1] * (aspect_len + 1)
             concat_segment_indices = pad_and_truncate(concat_segment_indices, max_len)
-            concat_segment_indices = BatchEncoding({"input_ids": concat_segment_indices})
-            concat_segment_indices = concat_segment_indices.convert_to_tensors("pt")
-
-            # Process embeddings
 
             # Process graph
             graph = generate_dependency_adj_matrix(full_text, aspect, self.senticnet, self.spacy_pipeline)
@@ -405,18 +405,16 @@ class SenticGCNDatasetGenerator:
                 ),
                 "constant",
             )
-            sdat_graph = BatchEncoding({"input_ids": sdat_graph})
-            sdat_graph = sdat_graph.convert_to_tensors("pt")
 
             all_data.append(
                 {
-                    "text_indices": text_indices.to(self.device),
-                    "aspect_indices": aspect_indices.to(self.device),
-                    "left_indices": left_indices.to(self.device),
-                    "text_bert_indices": text_bert_indices.to(self.device),
-                    "bert_segment_indices": concat_segment_indices.to(self.device),
-                    "polarity": polarity.to(self.device),
-                    "sdat_graph": sdat_graph.to(self.device),
+                    "text_indices": text_indices["input_ids"],
+                    "aspect_indices": aspect_indices["input_ids"],
+                    "left_indices": left_indices["input_ids"],
+                    "text_bert_indices": text_bert_indices["input_ids"],
+                    "bert_segment_indices": concat_segment_indices,
+                    "polarity": polarity,
+                    "sdat_graph": sdat_graph,
                 }
             )
         return all_data
