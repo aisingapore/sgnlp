@@ -1,17 +1,26 @@
 import logging
 import math
 import pathlib
+import pickle
+import shutil
+import tempfile
 from typing import Tuple, Union
 
-from sklearn.metrics import f1_score
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.metrics import f1_score
 from torch.utils.data.dataloader import DataLoader
 
-from config import SenticGCNBertConfig, SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
+from config import SenticGCNConfig, SenticGCNBertConfig, SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
 from data_class import SenticGCNTrainArgs
-from modeling import SenticGCNBertPreTrainedModel, SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
+from modeling import (
+    SenticGCNBertPreTrainedModel,
+    SenticGCNModel,
+    SenticGCNBertModel,
+    SenticGCNEmbeddingModel,
+    SenticGCNBertEmbeddingModel,
+)
 from tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
 from utils import parse_args_and_load_config, set_random_seed, SenticGCNDatasetGenerator, BucketIterator
 
@@ -28,14 +37,15 @@ class SenticGCNBaseTrainer:
         self.config = config
         self.global_max_acc = 0.0
         self.global_max_f1 = 0.0
+        self.global_best_model_tmpdir = None
         self.device = (
             torch.device("cuda" if torch.cuda.is_available() else "cpu")
             if not self.config.device
             else torch.device(self.config.device)
         )
-        if config.save_state_dict:
-            self.save_state_dict_folder = pathlib.Path(self.config.saved_state_dict_folder_path)
-            self.save_state_dict_folder.mkdir(exist_ok=True)
+        self.initializer = self._create_initializers()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.temp_dir = pathlib.Path(tmpdir)
 
     def _create_initializers(self):
         """
@@ -43,12 +53,12 @@ class SenticGCNBaseTrainer:
         """
         initializers = {
             "xavier_uniform_": nn.init.xavier_uniform_,
-            "xavier_normal_": nn.init.xavier_normal,
+            "xavier_normal_": nn.init.xavier_normal_,
             "orthogonal": nn.init.orthogonal_,
         }
         return initializers[self.config.initializer]
 
-    def _create_optimizer(self):
+    def _create_optimizer(self, params, lr, weight_decay):
         """
         Private helper method to instantiate optimzer.
         """
@@ -61,7 +71,7 @@ class SenticGCNBaseTrainer:
             "rmsprop": optim.RMSprop,
             "sgd": optim.SGD,
         }
-        return optimizers[self.config.optimizer]
+        return optimizers[self.config.optimizer](params, lr=lr, weight_decay=weight_decay)
 
     def _reset_params(self) -> None:
         raise NotImplementedError("Please call from derived class only.")
@@ -76,6 +86,25 @@ class SenticGCNBaseTrainer:
 
     def _create_embedding_model(self) -> Union[SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel]:
         raise NotImplementedError("Please call from derived class only.")
+
+    def _save_model(self) -> None:
+        """
+        Private helper method to save the pretrained model.
+        """
+        if self.config.save_best_model:
+            self.model.save_pretrained(self.config.save_model_path)
+
+    def _clean_temp_dir(self, result_records: dict[str, dict[str, float]]) -> None:
+        """
+        Helper method to clean up temp dir and model weights from repeat train loops.
+
+        Args:
+            result_records (dict[str, dict[str, float]]): dictionary of result_records after training.
+        """
+        for key, val in result_records.items():
+            if key == "test":
+                continue
+            shutil.rmtree(val["tmp_dir"], ignore_errors=True)
 
     def _evaluate_acc_f1(self, dataloader: DataLoader) -> Tuple[float, float]:
         """
@@ -92,10 +121,14 @@ class SenticGCNBaseTrainer:
         t_targets_all, t_outputs_all = None, None
         with torch.no_grad():
             for _, t_batch in enumerate(dataloader):
-                t_inputs = [t_batch[col] for col in t_batch.keys() if col != "polarity"]
+                # Prepare input data and targets
+                t_inputs = [t_batch[col] for col in self.config.data_cols]
                 t_targets = t_batch["polarity"]
+
+                # Inference
                 t_outputs = self.model(t_inputs)
 
+                # Calculate loss
                 n_correct += (torch.argmax(t_outputs, -1) == t_targets).sum().item()
                 n_total += len(t_outputs)
 
@@ -109,97 +142,123 @@ class SenticGCNBaseTrainer:
         f1 = f1_score(t_targets_all.cpu(), torch.argmax(t_outputs_all, -1).cpu(), labels=[0, 1, 2], average="macro")
         return test_acc, f1
 
-    # def _save_state_dict(self, epoch: int) -> pathlib.Path:
-    #     curr_dt = datetime.datetime.now()
-    #     curr_dt_str = curr_dt.strftime("%Y-%m-%d_%H%M%S")
-    #     filename = f"{self.config.model}_epoch_{epoch}_{curr_dt_str}.pkl"
-    #     full_path = self.save_state_dict_folder.joinpath(filename)
-    #     try:
-    #         torch.save(self.model.state_dict(), full_path)
-    #     except:
-    #         raise Exception("Error saving model state dict!")
-    #     return full_path
-
-    def _train_epoch(
-        self, criterion: function, optimizer: function, train_dataloader: DataLoader, val_dataloader: DataLoader
+    def _train_loop(
+        self,
+        criterion,
+        optimizer,
+        train_dataloader: DataLoader,
+        val_dataloader: DataLoader,
+        tmpdir: pathlib.Path,
     ) -> pathlib.Path:
-        # max_val_acc, max_val_f1 = 0, 0
-        # max_val_epoch = 0
-        # global_step = 0
-        # path = None
+        max_val_acc, max_val_f1 = 0, 0
+        max_val_epoch = 0
+        global_step = 0
+        path = None
 
-        # for epoch in range(self.config.epochs):
-        #     n_correct, n_total, loss_total = 0, 0, 0
-        #     self.model.train()
-        #     for _, batch in enumerate(train_dataloader):
-        #         global_step += 1
-        #         optimizer.zero_grad()
+        for epoch in range(self.config.epochs):
+            logging.info(f"Training epoch: {epoch + 1}")
+            n_correct, n_total, loss_total = 0, 0, 0
+            self.model.train()
+            for _, batch in enumerate(train_dataloader):
+                global_step += 1
+                optimizer.zero_grad()
 
-        #         inputs = [batch[col]["input_ids"] for col in batch.keys() if col != "polarity"]
-        #         targets = batch["polarity"]["input_ids"]
-        #         outputs = self.model(inputs)
-        #         loss = criterion(outputs, targets)
-        #         loss.backward()
-        #         optimizer.step()
+                # Prepare input data and targets
+                inputs = [batch[col] for col in self.config.data_cols]
+                targets = batch["polarity"]
 
-        #         n_correct += (torch.argmax(outputs, -1) == targets).sum().item()
-        #         n_total += len(outputs)
-        #         loss_total += loss.item() * len(outputs)
+                # Inference
+                outputs = self.model(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
 
-        #         if global_step % self.config.log_step == 0:
-        #             train_acc = n_correct / n_total
-        #             train_loss = loss_total / n_total
-        #             logging.info(f"Train Acc: {train_acc:.4f}, Train Loss: {train_loss:.4f}")
+                # Calculate loss
+                n_correct += (torch.argmax(outputs, -1) == targets).sum().item()
+                n_total += len(outputs)
+                loss_total += loss.item() * len(outputs)
 
-        #     val_acc, val_f1 = self._evaluate_acc_f1(val_dataloader)
-        #     logging.info(
-        #         f"""
-        #         Epoch: {epoch}
-        #         Test Acc: {val_acc:.4f}
-        #         Test Loss: {val_f1:.4f}
-        #     """
-        #     )
-        #     if val_f1 > max_val_f1:
-        #         max_val_f1 = val_f1
+                # Report batch loop step results
+                if global_step % self.config.log_step == 0:
+                    train_acc = n_correct / n_total
+                    train_loss = loss_total / n_total
+                    logging.info(f"Train Acc: {train_acc:.4f}, Train Loss: {train_loss:.4f}")
 
-        #     if val_acc > max_val_acc:
-        #         max_val_acc = val_acc
-        #         max_val_epoch = epoch
-        #         if self.config.save_state_dict:
-        #             path = self._save_state_dict(epoch)
-        #         logging.info(
-        #             f"""
-        #             Best model saved. Acc: {max_val_acc:.4f}, F1: {max_val_f1}, Epoch: {max_val_epoch}
-        #         """
-        #         )
+            # Run eval for validation dataloader
+            val_acc, val_f1 = self._evaluate_acc_f1(val_dataloader)
+            logging.info(
+                f"""
+                Epoch: {epoch}
+                Test Acc: {val_acc:.4f}
+                Test Loss: {val_f1:.4f}
+            """
+            )
 
-        #     if epoch - max_val_epoch >= self.config.patience:
-        #         logging.info(f"Early stopping")
-        #         break
-        # return path
-        pass
+            # Report new max F1
+            if val_f1 > max_val_f1:
+                logging.info(f"New max F1: {val_f1:.4f} @ epoch {epoch}")
+                max_val_f1 = val_f1
 
-    def train(self):
-        # criterion = nn.CrossEntropyLoss()
-        # _params = filter(lambda p: p.requires_grad, self.model.parameters())
-        # optimizer = self._create_optimizer()(_params, lr=self.config.learning_rate, weight_decay=self.config.l2reg)
+            # Report new max acc and save if required
+            if val_acc > max_val_acc:
+                logging.info(f"New max Accuracy: {val_acc:.4f} @ epoch {epoch}")
+                max_val_acc = val_acc
+                max_val_epoch = epoch
+                self.model.save_pretrained(tmpdir)
+                logging.info(
+                    f"""
+                    Best model saved. Acc: {max_val_acc:.4f}, F1: {max_val_f1}, Epoch: {max_val_epoch}
+                """
+                )
 
-        # train_dataloader, val_dataloader, test_dataloader = self._generate_data_loaders()
+            # Early stopping
+            if epoch - max_val_epoch >= self.config.patience:
+                logging.info(f"Early stopping")
+                break
+        return max_val_acc, max_val_f1, max_val_epoch
 
-        # test_accs, test_f1s = [], []
-        # for i in range(self.config.repeats):
-        #     logging.info(f"Start overall train loop : {i + 1}")
+    def _train(
+        self, train_dataloader: Union[DataLoader, BucketIterator], val_dataloader: Union[DataLoader, BucketIterator]
+    ) -> dict[str, dict[str, Union[int, float]]]:
+        criterion = nn.CrossEntropyLoss()
+        _params = filter(lambda p: p.requires_grad, self.model.parameters())
+        optimizer = self._create_optimizer(_params, lr=self.config.learning_rate, weight_decay=self.config.l2reg)
 
-        #     self._reset_params()
-        #     test_acc, test_f1 = self._train_epoch(criterion, optimizer, train_dataloader, val_dataloader)
-        #     test_accs.append(test_acc)
-        #     test_f1s.append(test_f1)
+        repeat_result = {}
+        for i in range(self.config.repeats):
+            logging.info(f"Start repeat train loop : {i + 1}")
+            repeat_tmpdir = self.temp_dir.joinpath(f"repeat{i + 1}")
 
-        #     logging.info(f"Test_acc: {test_acc}, Test_f1: {test_f1}")
-        # test_accs_avg = np.sum(test_accs) / self.config.repeats
-        # test_f1s_avg = np.sum(test_f1s) / self.config.repeats
-        # max_accs = np.max(test_accs)
-        # max_f1s = np.max(test_f1s)
+            self._reset_params()
+            max_val_acc, max_val_f1, max_val_epoch = self._train_loop(
+                criterion, optimizer, train_dataloader, val_dataloader, repeat_tmpdir
+            )
+
+            # Record repeat runs
+            repeat_result[f"Repeat_{i + 1}"] = {
+                "max_val_acc": max_val_acc,
+                "max_val_f1": max_val_f1,
+                "max_val_epoch": max_val_epoch,
+                "tmp_dir": repeat_tmpdir,
+            }
+
+            # Overwrite global stats
+            if max_val_acc > self.global_max_acc:
+                self.global_max_acc = max_val_acc
+                self.global_best_model_tmpdir = repeat_tmpdir
+            if max_val_f1 > self.global_max_f1:
+                self.global_max_f1
+
+        return repeat_result
+
+        # Save results for all repeat runs
+        # if self.config.save_results:
+        #     pickle.dump(repeat_record, "results.pkl")
+
+        # Evaluate test set
+        # config_path = self.global_best_model_tmpdir.joinpath('config.json')
+        # model_config =
+        # max_test_acc, max_test_f1 = self._evaluate_acc_f1(test_dataloader)
 
         # logging.info(
         #     f"""
@@ -209,7 +268,6 @@ class SenticGCNBaseTrainer:
         #     Test f1 max: {max_f1s}
         # """
         # )
-        pass
 
 
 class SenticGCNBertTrainer(SenticGCNBaseTrainer):
@@ -223,8 +281,13 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
     def __init__(self, config: SenticGCNTrainArgs):
         super().__init__(config)
         self.config = config
+        # Create tokenizer
         tokenizer = self._create_tokenizer()
+        # Create
         self.embed = self._create_embedding_model()
+        self.embed.to(self.device)
+        self.model = self._save_model()
+        self.model.to(self.device)
         data_gen = SenticGCNDatasetGenerator(config, tokenizer)
         self.train_data, self.val_data, self.test_data = data_gen.generate_datasets()
         del data_gen
@@ -248,6 +311,23 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         config = SenticGCNBertEmbeddingConfig.from_pretrained(self.config.embedding_model)
         return SenticGCNBertEmbeddingModel.from_pretrained(self.config.embedding_model, config=config)
 
+    def _create_model(self) -> SenticGCNBertModel:
+        """
+        Private helper method to create the SenticGCNBertModel instance.
+
+        Returns:
+            SenticGCNBertModel: return a SenticGCNBertModel based on SenticGCNBertConfig
+        """
+        model_config = SenticGCNBertConfig(
+            hidden_dim=self.config.hidden_dim,
+            max_seq_len=self.config.max_len,
+            polarities_dim=self.config.polarities_dim,
+            dropout=self.config.dropout,
+            device=self.config.device,
+            loss_function=self.config.loss_function,
+        )
+        return SenticGCNModel(model_config)
+
     def _reset_params(self):
         """
         Private helper method to reset model parameters.
@@ -258,7 +338,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
                 for param in child.parameters():
                     if param.requires_grad:
                         if len(param.shape) > 1:
-                            self._create_initializers(param)
+                            self.initializer(param)
                         else:
                             stdv = 1.0 / math.sqrt(param.shape[0])
                             nn.init.uniform_(param, a=-stdv, b=stdv)
@@ -275,6 +355,33 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         test_dataloader = DataLoader(self.test_data, batch_size=self.config.batch_size, shuffle=False)
         return train_dataloader, val_dataloader, test_dataloader
 
+    def train(self):
+        # Generate data_loaders
+        train_dataloader, val_dataloader, test_dataloader = self._generate_data_loaders()
+
+        # Run main train
+        repeat_result = self._train(train_dataloader, val_dataloader)
+
+        # Recreate best model from all repeat loops
+        config_path = self.global_best_model_tmpdir.joinpath("config.json")
+        model_config = SenticGCNBertConfig.from_pretrained(config_path)
+        model_path = self.global_best_model_tmpdir.joinpath("pytorch_model.bin")
+        self.model = SenticGCNBertConfig.from_pretrained(model_path, config=model_config)
+
+        # Evaluate test set
+        test_acc, test_f1 = self._evaluate_acc_f1(test_dataloader)
+        logging.info(f"Best Model - Test Acc: {test_acc:.4f} - Test F1: {test_f1:.4f}")
+
+        repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
+
+        if self.config.save_results:
+            pickle.dump(repeat_result, "results.pkl")
+
+        self._save_model()
+        self._clean_temp_dir(repeat_result)
+
+        logging.info("Training Completed!")
+
 
 class SenticGCNTrainer(SenticGCNBaseTrainer):
     """
@@ -287,8 +394,15 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
     def __init__(self, config: SenticGCNTrainArgs) -> None:
         super().__init__(config)
         self.config = config
+        # Create tokenizer
         tokenizer = self._create_tokenizer()
+        # Create embedding model
         self.embed = self._create_embedding_model(tokenizer.vocab)
+        self.embed.to(self.device)
+        # Create model
+        self.model = self._create_model()
+        self.model.to(self.device)
+        # Create dataset
         data_gen = SenticGCNDatasetGenerator(config, tokenizer)
         self.train_data, self.val_data, self.test_data = data_gen.generate_datasets()
         del data_gen
@@ -335,6 +449,23 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
                 embedding_model.save_pretrained(self.config.save_embedding_model_path)
             return embedding_model
 
+    def _create_model(self) -> SenticGCNModel:
+        """
+        Private helper method to create the SenticGCNModel instance.
+
+        Returns:
+            SenticGCNModel: return a SenticGCNModel based on SenticGCNConfig
+        """
+        model_config = SenticGCNConfig(
+            embed_dim=self.config.embed_dim,
+            hidden_dim=self.config.hidden_dim,
+            polarities_dim=self.config.polarities_dim,
+            dropout=self.config.dropout,
+            device=self.config.device,
+            loss_function=self.config.loss_function,
+        )
+        return SenticGCNModel(model_config)
+
     def _reset_params(self) -> None:
         """
         Private helper method to reset model parameters.
@@ -343,7 +474,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         for param in self.modelparameters():
             if param.requires_grad:
                 if len(param.shape) > 1:
-                    self._create_initializers(param)
+                    self.initializer(param)
                 else:
                     stdv = 1.0 / math.sqrt(param.shape[0])
                     nn.init.uniform_(param, a=-stdv, b=stdv)
@@ -360,30 +491,57 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         test_dataloader = BucketIterator(self.test_data, batch_size=self.config.batch_size, shuffle=False)
         return train_dataloader, val_dataloader, test_dataloader
 
+    def train(self):
+        # Generate data_loaders
+        train_dataloader, val_dataloader, test_dataloader = self._generate_data_loaders()
+
+        # Run main train
+        repeat_result = self._train(train_dataloader, val_dataloader)
+
+        # Recreate best model from all repeat loops
+        config_path = self.global_best_model_tmpdir.joinpath("config.json")
+        model_config = SenticGCNConfig.from_pretrained(config_path)
+        model_path = self.global_best_model_tmpdir.joinpath("pytorch_model.bin")
+        self.model = SenticGCNConfig.from_pretrained(model_path, config=model_config)
+
+        # Evaluate test set
+        test_acc, test_f1 = self._evaluate_acc_f1(test_dataloader)
+        logging.info(f"Best Model - Test Acc: {test_acc:.4f} - Test F1: {test_f1:.4f}")
+
+        repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
+
+        if self.config.save_results:
+            pickle.dump(repeat_result, "results.pkl")
+
+        self._save_model()
+        self._clean_temp_dir(repeat_result)
+
+        logging.info("Training Completed!")
+
 
 if __name__ == "__main__":
     # cfg = parse_args_and_load_config()
     args = {
-        "senticnet_word_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/senticNet/senticnet_word.txt",
+        "senticnet_word_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/senticNet/senticnet_word.txt",
         "save_preprocessed_senticnet": True,
-        "saved_preprocessed_senticnet_file_path": "senticnet/senticnet.pickle",
+        "saved_preprocessed_senticnet_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/senticnet/senticnet.pickle",
         "spacy_pipeline": "en_core_web_sm",
-        "word_vec_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/glove/glove.840B.300d.txt",
-        "dataset_train": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_train.raw",
-        "dataset_test": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_test.raw",
+        "word_vec_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/glove/glove.840B.300d.txt",
+        "dataset_train": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/datasets/semeval14/restaurant_train.raw",
+        "dataset_test": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/datasets/semeval14/restaurant_test.raw",
         "valset_ratio": 0,
         "model": "senticgcn",
         "save_best_model": True,
-        "save_model_path": "senticgcn",
-        "tokenizer": "senticgcn",
+        "save_model_path": "senticgcn_model",
+        "tokenizer": "senticgcn_tokenizer_temp",
         "train_tokenizer": False,
         "save_tokenizer": False,
-        "save_tokenizer_path": "senticgcn_tokenizer",
-        "embedding_model": "senticgcn_embed_model",
+        "save_tokenizer_path": "senticgcn_tokenizer_temp",
+        "embedding_model": "senticgcn_embed_model_temp",
         "build_embedding_model": False,
         "save_embedding_model": False,
-        "save_embedding_model_path": "senticgcn_embed_model",
-        "initializer": "xavier_uniform",
+        "save_embedding_model_path": "senticgcn_embed_model_temp",
+        "initializer": "xavier_uniform_",
         "optimizer": "adam",
         "loss_function": "cross_entropy",
         "learning_rate": 0.001,
@@ -397,8 +555,8 @@ if __name__ == "__main__":
         "dropout": 0.3,
         "save_results": True,
         "seed": 776,
-        "device": "cuda",
-        "repeats": 10,
+        "device": "cpu",
+        "repeats": 2,
         "patience": 5,
         "max_len": 85,
     }

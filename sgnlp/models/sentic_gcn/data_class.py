@@ -161,9 +161,9 @@ class SenticGCNTrainArgs:
         assert self.model in ["senticgcn", "senticgcnbert"], "Invalid model type!"
 
         assert self.initializer in [
-            "xavier_uniform",
-            "xavier_uniform",
-            "orthogonal",
+            "xavier_uniform_",
+            "xavier_normal_",
+            "orthogonal_",
         ], "Invalid initializer type!"
         assert self.optimizer in [
             "adadelta",
