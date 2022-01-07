@@ -59,7 +59,7 @@ class DynamicLSTM(nn.Module):
         x = x[x_sort_idx.long()]
 
         # Pack
-        x_emb_p = torch.nn.utils.rnn.pack_padded_sequence(x, x_len, batch_first=self.batch_first)
+        x_emb_p = torch.nn.utils.rnn.pack_padded_sequence(x, x_len.cpu(), batch_first=self.batch_first)
 
         if self.rnn_type == "LSTM":
             out_pack, (ht, ct) = self.rnn(x_emb_p, None) if h0 is None else self.rnn(x_emb_p, (h0, h0))
