@@ -17,6 +17,9 @@
 
     "embedding_model": "bert-base-uncased",
 
+    "save_results": true,
+    "save_results_folder": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/results/",
+
     "initializer": "xavier_uniform",
     "optimizer": "adam",
     "loss_function": "cross_entropy",
@@ -29,7 +32,6 @@
     "hidden_dim": 768,
     "polarities_dim": 3,
     "dropout": 0.3,
-    "save_results": true,
     "seed": 776,
     "device": "cuda",
     "repeats": 10,

@@ -1,3 +1,4 @@
+import datetime
 import logging
 import math
 import pathlib
@@ -96,6 +97,16 @@ class SenticGCNBaseTrainer:
         """
         if self.config.save_best_model:
             self.model.save_pretrained(self.config.save_model_path)
+
+    def _save_results(self, repeat_results: dict[str, dict]) -> None:
+        if self.config.save_results:
+            save_root_folder = pathlib.Path(self.config.save_results_folder)
+            save_root_folder.mkdir(exist_ok=True)
+            save_result_file = save_root_folder.joinpath(
+                f"{self.config.model}_{datetime.datetime.now().strftime('%d-%m-%y_%H-%M-%S')}_results.pkl"
+            )
+            with open(save_result_file, "wb") as f:
+                pickle.dump(repeat_results, f)
 
     def _clean_temp_dir(self, result_records: dict[str, dict[str, float]]) -> None:
         """
@@ -371,9 +382,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
 
         repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
 
-        if self.config.save_results:
-            pickle.dump(repeat_result, "results.pkl")
-
+        self._save_results()
         self._save_model()
         self._clean_temp_dir(repeat_result)
 
@@ -511,10 +520,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
 
         repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
 
-        if self.config.save_results:
-            with open("results.pkl", "wb") as f:
-                pickle.dump(repeat_result, f)
-
+        self._save_results()
         self._save_model()
         self._clean_temp_dir(repeat_result)
 
