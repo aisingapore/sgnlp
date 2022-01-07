@@ -99,6 +99,12 @@ class SenticGCNBaseTrainer:
             self.model.save_pretrained(self.config.save_model_path)
 
     def _save_results(self, repeat_results: dict[str, dict]) -> None:
+        """
+        Private helper metho to save the results dictionary at the end of the training.
+
+        Args:
+            repeat_results (dict[str, dict]): dictionary containing the training results
+        """
         if self.config.save_results:
             save_root_folder = pathlib.Path(self.config.save_results_folder)
             save_root_folder.mkdir(exist_ok=True)
@@ -167,6 +173,9 @@ class SenticGCNBaseTrainer:
         val_dataloader: DataLoader,
         tmpdir: pathlib.Path,
     ) -> pathlib.Path:
+        """
+        Method to execute a single train repeat
+        """
         max_val_acc, max_val_f1 = 0, 0
         max_val_epoch = 0
         global_step = 0
@@ -239,6 +248,16 @@ class SenticGCNBaseTrainer:
     def _train(
         self, train_dataloader: Union[DataLoader, BucketIterator], val_dataloader: Union[DataLoader, BucketIterator]
     ) -> dict[str, dict[str, Union[int, float]]]:
+        """
+        Method to execute a repeat train loop. Repeat amount is dependent on config.
+
+        Args:
+            train_dataloader (Union[DataLoader, BucketIterator]): dataloader for train dataset
+            val_dataloader (Union[DataLoader, BucketIterator]): dataloader for test dataset
+
+        Returns:
+            dict[str, dict[str, Union[int, float]]]: return a dictionary containing the train results.
+        """
         criterion = nn.CrossEntropyLoss()
         _params = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = self._create_optimizer(_params, lr=self.config.learning_rate, weight_decay=self.config.l2reg)
@@ -279,7 +298,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         config (SenticGCNTrainArgs): Training config for SenticGCNBertModel
     """
 
-    def __init__(self, config: SenticGCNTrainArgs):
+    def __init__(self, config: SenticGCNTrainArgs) -> None:
         super().__init__(config)
         self.config = config
         # Create tokenizer
@@ -331,7 +350,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         )
         return SenticGCNBertModel(model_config)
 
-    def _reset_params(self):
+    def _reset_params(self) -> None:
         """
         Private helper method to reset model parameters.
         To be used during repeats train loop.
@@ -359,11 +378,23 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         return train_dataloader, val_dataloader, test_dataloader
 
     def _generate_embeddings(self, batch: list[torch.Tensor]) -> torch.Tensor:
+        """
+        Private helper method to generate embeddings.
+
+        Args:
+            batch (list[torch.Tensor]): a batch of sub dataset
+
+        Returns:
+            torch.Tensor: return embedding tensor
+        """
         return self.embed(batch["text_bert_indices"], token_type_ids=batch["bert_segment_indices"])[
             "last_hidden_state"
         ]
 
-    def train(self):
+    def train(self) -> None:
+        """
+        Main train method
+        """
         # Generate data_loaders
         train_dataloader, val_dataloader, test_dataloader = self._generate_data_loaders()
 
@@ -382,7 +413,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
 
         repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
 
-        self._save_results()
+        self._save_results(repeat_result)
         self._save_model()
         self._clean_temp_dir(repeat_result)
 
@@ -498,9 +529,21 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         return train_dataloader, val_dataloader, test_dataloader
 
     def _generate_embeddings(self, batch: list[torch.Tensor]) -> torch.Tensor:
+        """
+        Private helper method to generate embeddings.
+
+        Args:
+            batch (list[torch.Tensor]): a batch of sub dataset
+
+        Returns:
+            torch.Tensor: return embedding tensor
+        """
         return self.embed(batch["text_indices"])
 
-    def train(self):
+    def train(self) -> None:
+        """
+        Main train method
+        """
         # Generate data_loaders
         train_dataloader, val_dataloader, test_dataloader = self._generate_data_loaders()
 
@@ -520,7 +563,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
 
         repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
 
-        self._save_results()
+        self._save_results(repeat_result)
         self._save_model()
         self._clean_temp_dir(repeat_result)
 
