@@ -7,7 +7,6 @@ import shutil
 import tempfile
 from typing import Tuple, Union
 
-import spacy
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -408,6 +407,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         model_config = SenticGCNBertConfig.from_pretrained(config_path)
         model_path = self.global_best_model_tmpdir.joinpath("pytorch_model.bin")
         self.model = SenticGCNBertModel.from_pretrained(model_path, config=model_config)
+        self.model.to(self.device)
 
         # Evaluate test set
         test_acc, test_f1 = self._evaluate_acc_f1(test_dataloader)
