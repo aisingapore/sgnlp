@@ -26,7 +26,7 @@
     "learning_rate": 0.001,
     "l2reg": 0.00001,
     "epochs": 100,
-    "batch_size": 32,
+    "batch_size": 16,
     "log_step": 5,
     "embed_dim": 300,
     "hidden_dim": 768,
