@@ -1,0 +1,22 @@
+---
+version: 1
+
+kind: experiment
+
+build:
+  dockerfile: polyaxon/docker/experiment.df
+  context: .
+
+environment:
+  resources:
+   gpu:
+    requests: 1
+    limits: 1
+  persistence:
+    data: ["data"]
+
+logging:
+  level: DEBUG
+
+run:
+  cmd: python train.py --config config/senticnet_gcn_bert_config.json

@@ -1,0 +1,16 @@
+name: polyaxon
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9.7
+  - pip
+  - pip:
+    - spacy
+    - numpy
+    - torch
+    - scikit-learn
+    - transformers
+    - sentencepiece
+    - tokenizers
+
+# Feel free to change the version of any package
