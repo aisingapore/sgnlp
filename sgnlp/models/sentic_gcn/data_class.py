@@ -188,7 +188,6 @@ class SenticGCNTrainArgs:
                 "text_indices",
                 "aspect_indices",
                 "left_indices",
-                "text_bert_indices",
                 "text_embeddings",
                 "sdat_graph",
             ]

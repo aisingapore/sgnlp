@@ -374,19 +374,47 @@ class SenticGCNDatasetGenerator:
 
             # Process indices
             text_indices = self.tokenizer(
-                full_text, return_tensors=None, return_attention_mask=False, return_token_type_ids=False
+                full_text,
+                max_length=max_len,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
             )
             aspect_indices = self.tokenizer(
-                aspect, return_tensors=None, return_attention_mask=False, return_token_type_ids=False
+                aspect,
+                max_length=max_len,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
             )
             left_indices = self.tokenizer(
-                text_left, return_tensors=None, return_attention_mask=False, return_token_type_ids=False
+                text_left,
+                max_length=max_len,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
             )
             polarity = int(polarity) + 1
 
             # Process bert related indices
             text_bert_indices = self.tokenizer(
-                full_text_with_bert_tokens, return_tensors=None, add_special_tokens=False, return_token_type_ids=False
+                full_text_with_bert_tokens,
+                max_length=max_len,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
             )
             text_len = np.sum(text_indices["input_ids"] != 0)
             aspect_len = np.sum(aspect_indices["input_ids"] != 0)
@@ -406,15 +434,22 @@ class SenticGCNDatasetGenerator:
                 "constant",
             )
 
+            assert len(text_indices["input_ids"]) == max_len
+            assert len(aspect_indices["input_ids"]) == max_len
+            assert len(left_indices["input_ids"]) == max_len
+            assert len(text_bert_indices["input_ids"]) == max_len
+            assert len(concat_segment_indices) == max_len
+            assert len(sdat_graph) == max_len
+
             all_data.append(
                 {
-                    "text_indices": text_indices["input_ids"],
-                    "aspect_indices": aspect_indices["input_ids"],
-                    "left_indices": left_indices["input_ids"],
-                    "text_bert_indices": text_bert_indices["input_ids"],
-                    "bert_segment_indices": concat_segment_indices,
-                    "polarity": polarity,
-                    "sdat_graph": sdat_graph,
+                    "text_indices": torch.tensor(text_indices["input_ids"]),
+                    "aspect_indices": torch.tensor(aspect_indices["input_ids"]),
+                    "left_indices": torch.tensor(left_indices["input_ids"]),
+                    "text_bert_indices": torch.tensor(text_bert_indices["input_ids"]),
+                    "bert_segment_indices": torch.tensor(concat_segment_indices),
+                    "polarity": torch.tensor(polarity),
+                    "sdat_graph": torch.tensor(sdat_graph),
                 }
             )
         return all_data

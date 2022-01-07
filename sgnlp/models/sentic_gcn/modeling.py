@@ -82,7 +82,9 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
         if config.loss_function == "cross_entropy":
             self.loss_function = nn.CrossEntropyLoss()
 
-    def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
+    def position_weight(
+        self, x: torch.Tensor, aspect_double_idx: torch.Tensor, text_len: torch.Tensor, aspect_len: torch.Tensor
+    ) -> torch.Tensor:
         batch_size, seq_len = x.shape[0], x.shape[1]
         aspect_double_idx = aspect_double_idx.cpu().numpy()
         text_len = text_len.cpu().numpy()
@@ -101,7 +103,7 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
         weight = torch.tensor(weight, dtype=torch.float).unsqueeze(2).to(self.torch_device)
         return weight * x
 
-    def mask(self, x, aspect_double_idx):
+    def mask(self, x: torch.Tensor, aspect_double_idx: torch.Tensor) -> torch.Tensor:
         batch_size, seq_len = x.shape[0], x.shape[1]
         aspect_double_idx = aspect_double_idx.cpu().numpy()
         mask = [[] for i in range(batch_size)]
@@ -115,7 +117,7 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
         mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(self.torch_device)
         return mask * x
 
-    def forward(self, inputs: dict[str, torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNModelOutput:
+    def forward(self, inputs: list[torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNModelOutput:
         text_indices, aspect_indices, left_indices, text_embeddings, adj = inputs
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
@@ -188,7 +190,7 @@ class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
     """
 
     def __init__(self, config: SenticGCNBertConfig) -> None:
-        super().__init__()
+        super().__init__(config)
         self.gc1 = GraphConvolution(config.hidden_dim, config.hidden_dim)
         self.gc2 = GraphConvolution(config.hidden_dim, config.hidden_dim)
         self.gc3 = GraphConvolution(config.hidden_dim, config.hidden_dim)
@@ -198,7 +200,9 @@ class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
         self.max_seq_len = config.max_seq_len
         self.loss_function = config.loss_function
 
-    def position_weight(self, x, aspect_double_idx, text_len, aspect_len):
+    def position_weight(
+        self, x: torch.Tensor, aspect_double_idx: torch.Tensor, text_len: torch.Tensor, aspect_len: torch.Tensor
+    ) -> torch.Tensor:
         batch_size, seq_len = x.shape[0], x.shape[1]
         aspect_double_idx = aspect_double_idx.cpu().numpy()
         text_len = text_len.cpu().numpy()
@@ -217,7 +221,7 @@ class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
         weight = torch.tensor(weight).unsqueeze(2).to(self.torch_device)
         return weight * x
 
-    def mask(self, x, aspect_double_idx):
+    def mask(self, x: torch.Tensor, aspect_double_idx: torch.Tensor) -> torch.Tensor:
         batch_size, seq_len = x.shape[0], x.shape[1]
         aspect_double_idx = aspect_double_idx.cpu().numpy()
         mask = [[] for i in range(batch_size)]
@@ -231,18 +235,15 @@ class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
         mask = torch.tensor(mask).unsqueeze(2).float().to(self.torch_device)
         return mask * x
 
-    def forward(self, inputs, labels: torch.Tensor):
-        text_bert_indices, text_indices, aspect_indices, bert_segments_ids, left_indices, adj = inputs
+    def forward(self, inputs: list[torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNBertModelOutput:
+        text_indices, aspect_indices, left_indices, text_embeddings, adj = inputs
         # text_indices, text_
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
         left_len = torch.sum(left_indices != 0, dim=-1)
         aspect_double_idx = torch.cat([left_len.unsqueeze(1), (left_len + aspect_len - 1).unsqueeze(1)], dim=1)
-        # TODO: How to embed in the preprocessor?
-        encoder_layer, _ = self.bert(
-            text_bert_indices, token_type_ids=bert_segments_ids, output_all_encoded_layers=False
-        )
-        text_out = encoder_layer
+
+        text_out = text_embeddings
         x = F.relu(self.gc1(self.position_weight(text_out, aspect_double_idx, text_len, aspect_len), adj))
         x = F.relu(self.gc2(self.position_weight(x, aspect_double_idx, text_len, aspect_len), adj))
         x = F.relu(self.gc3(self.position_weight(x, aspect_double_idx, text_len, aspect_len), adj))

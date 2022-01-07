@@ -87,6 +87,9 @@ class SenticGCNBaseTrainer:
     def _create_embedding_model(self) -> Union[SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel]:
         raise NotImplementedError("Please call from derived class only.")
 
+    def _generate_embeddings(self, batch: list[torch.Tensor]) -> torch.Tensor:
+        raise NotImplementedError("Please call from derived class only")
+
     def _save_model(self) -> None:
         """
         Private helper method to save the pretrained model.
@@ -122,11 +125,11 @@ class SenticGCNBaseTrainer:
         with torch.no_grad():
             for _, t_batch in enumerate(dataloader):
                 # Generate embedings
-                t_batch["text_embeddings"] = self.embed(t_batch["text_indices"])
+                t_batch["text_embeddings"] = self._generate_embeddings(t_batch)
 
                 # Prepare input data and targets
-                t_inputs = [t_batch[col] for col in self.config.data_cols]
-                t_targets = t_batch["polarity"]
+                t_inputs = [t_batch[col].to(self.device) for col in self.config.data_cols]
+                t_targets = t_batch["polarity"].to(self.device)
 
                 # Inference
                 t_outputs = self.model(t_inputs)
@@ -156,10 +159,9 @@ class SenticGCNBaseTrainer:
         max_val_acc, max_val_f1 = 0, 0
         max_val_epoch = 0
         global_step = 0
-        path = None
 
         for epoch in range(self.config.epochs):
-            logging.info(f"Training epoch: {epoch + 1}")
+            logging.info(f"Training epoch: {epoch}")
             n_correct, n_total, loss_total = 0, 0, 0
             self.model.train()
             for _, batch in enumerate(train_dataloader):
@@ -167,11 +169,11 @@ class SenticGCNBaseTrainer:
                 optimizer.zero_grad()
 
                 # Generate embeddings
-                batch["text_embeddings"] = self.embed(batch["text_indices"])
+                batch["text_embeddings"] = self._generate_embeddings(batch)
 
                 # Prepare input data and targets
                 inputs = [batch[col].to(self.device) for col in self.config.data_cols]
-                targets = batch["polarity"]
+                targets = batch["polarity"].to(self.device)
 
                 # Inference
                 outputs = self.model(inputs)
@@ -271,14 +273,16 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         self.config = config
         # Create tokenizer
         tokenizer = self._create_tokenizer()
-        # Create
+        # Create embedding model
         self.embed = self._create_embedding_model()
         self.embed.to(self.device)
+        # Create model
         self.model = self._create_model()
         self.model.to(self.device)
+        # Create dataset
         data_gen = SenticGCNDatasetGenerator(config, tokenizer)
         self.train_data, self.val_data, self.test_data = data_gen.generate_datasets()
-        del data_gen
+        del data_gen  # delete unused dataset generator to free memory
 
     def _create_tokenizer(self) -> SenticGCNBertTokenizer:
         """
@@ -314,7 +318,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
             device=self.config.device,
             loss_function=self.config.loss_function,
         )
-        return SenticGCNModel(model_config)
+        return SenticGCNBertModel(model_config)
 
     def _reset_params(self):
         """
@@ -342,6 +346,11 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         val_dataloader = DataLoader(self.val_data, batch_size=self.config.batch_size, shuffle=False)
         test_dataloader = DataLoader(self.test_data, batch_size=self.config.batch_size, shuffle=False)
         return train_dataloader, val_dataloader, test_dataloader
+
+    def _generate_embeddings(self, batch: list[torch.Tensor]) -> torch.Tensor:
+        return self.embed(batch["text_bert_indices"], token_type_ids=batch["bert_segment_indices"])[
+            "last_hidden_state"
+        ]
 
     def train(self):
         # Generate data_loaders
@@ -393,7 +402,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         # Create dataset
         data_gen = SenticGCNDatasetGenerator(config, tokenizer)
         self.train_data, self.val_data, self.test_data = data_gen.generate_datasets()
-        del data_gen
+        del data_gen  # delete unused dataset generator to free memory
 
     def _create_tokenizer(self) -> SenticGCNTokenizer:
         """
@@ -479,6 +488,9 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         test_dataloader = BucketIterator(self.test_data, batch_size=self.config.batch_size, shuffle=False)
         return train_dataloader, val_dataloader, test_dataloader
 
+    def _generate_embeddings(self, batch: list[torch.Tensor]) -> torch.Tensor:
+        return self.embed(batch["text_indices"])
+
     def train(self):
         # Generate data_loaders
         train_dataloader, val_dataloader, test_dataloader = self._generate_data_loaders()
@@ -510,49 +522,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
 
 
 if __name__ == "__main__":
-    # cfg = parse_args_and_load_config()
-    args = {
-        "senticnet_word_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/senticNet/senticnet_word.txt",
-        "save_preprocessed_senticnet": True,
-        "saved_preprocessed_senticnet_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/senticnet/senticnet.pickle",
-        "spacy_pipeline": "en_core_web_sm",
-        "word_vec_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/glove/glove.840B.300d.txt",
-        "dataset_train": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/datasets/semeval14/restaurant_train.raw",
-        "dataset_test": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_gcn/datasets/semeval14/restaurant_test.raw",
-        "valset_ratio": 0,
-        "model": "senticgcnbert",
-        "save_best_model": True,
-        "save_model_path": "senticgcn_model",
-        "tokenizer": "bert-base-uncased",
-        "train_tokenizer": False,
-        "save_tokenizer": False,
-        "save_tokenizer_path": "senticgcn_tokenizer_temp",
-        "embedding_model": "bert-base-uncased",
-        "build_embedding_model": False,
-        "save_embedding_model": False,
-        "save_embedding_model_path": "senticgcn_embed_model_temp",
-        "initializer": "xavier_uniform_",
-        "optimizer": "adam",
-        "loss_function": "cross_entropy",
-        "learning_rate": 0.001,
-        "l2reg": 0.00001,
-        "epochs": 2,
-        "batch_size": 32,
-        "log_step": 5,
-        "embed_dim": 300,
-        "hidden_dim": 300,
-        "polarities_dim": 3,
-        "dropout": 0.3,
-        "save_results": True,
-        "seed": 776,
-        "device": "cpu",
-        "repeats": 2,
-        "patience": 5,
-        "max_len": 85,
-    }
-    from data_class import SenticGCNTrainArgs
-
-    cfg = SenticGCNTrainArgs(**args)
+    cfg = parse_args_and_load_config()
     if cfg.seed is not None:
         set_random_seed(cfg.seed)
     trainer = SenticGCNTrainer(cfg) if cfg.model == "senticgcn" else SenticGCNBertTrainer(cfg)

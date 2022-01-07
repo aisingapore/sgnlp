@@ -2,6 +2,8 @@ import pathlib
 import pickle
 from typing import Dict, List, Optional, Tuple
 
+import torch
+
 from transformers import PreTrainedTokenizer, BertTokenizer
 
 
@@ -153,4 +155,10 @@ class SenticGCNBertTokenizer(BertTokenizer):
             return_tensors=return_tensors,
             **kwargs,
         )
+        # Workaround for padding empty input text
+        for key in encoding.keys():
+            if len(encoding[key]) == 0 and padding == "max_length":
+                encoding[key] = [0] * max_length
+            if return_tensors == "pt":
+                encoding[key] = torch.tensor(encoding[key])
         return encoding
