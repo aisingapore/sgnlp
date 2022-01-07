@@ -7,6 +7,7 @@ import shutil
 import tempfile
 from typing import Tuple, Union
 
+import spacy
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -387,9 +388,10 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         Returns:
             torch.Tensor: return embedding tensor
         """
-        return self.embed(batch["text_bert_indices"], token_type_ids=batch["bert_segment_indices"])[
-            "last_hidden_state"
-        ]
+        text_bert_indices = batch["text_bert_indices"].to(self.device)
+        bert_segment_indices = batch["bert_segment_indices"].to(self.device)
+
+        return self.embed(text_bert_indices, token_type_ids=bert_segment_indices)["last_hidden_state"]
 
     def train(self) -> None:
         """
@@ -538,7 +540,8 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         Returns:
             torch.Tensor: return embedding tensor
         """
-        return self.embed(batch["text_indices"])
+        text_indices = batch["text_indices"].to(self.device)
+        return self.embed(text_indices)
 
     def train(self) -> None:
         """
@@ -556,6 +559,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         model_config = SenticGCNConfig.from_pretrained(config_path)
         model_path = self.global_best_model_tmpdir.joinpath("pytorch_model.bin")
         self.model = SenticGCNModel.from_pretrained(model_path, config=model_config)
+        self.model.to(self.device)
 
         # Evaluate test set
         test_acc, test_f1 = self._evaluate_acc_f1(test_dataloader)
