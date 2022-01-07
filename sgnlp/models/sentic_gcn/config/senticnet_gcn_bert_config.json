@@ -1,12 +1,12 @@
 {
-    "senticnet_word_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/senticNet/senticnet_word.txt",
+    "senticnet_word_file_path": "./senticNet/senticnet_word.txt",
     "save_preprocessed_senticnet": true,
     "saved_preprocessed_senticnet_file_path": "senticnet/senticnet.pickle",
     "spacy_pipeline": "en_core_web_sm",
-    "word_vec_file_path": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/glove/glove.840B.300d.txt",
+    "word_vec_file_path": "./glove/glove.840B.300d.txt",
 
-    "dataset_train": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_train.raw",
-    "dataset_test": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/datasets/semeval14/restaurant_test.raw",
+    "dataset_train": ["./datasets/semeval14/restaurant_train.raw"],
+    "dataset_test": ["./datasets/semeval14/restaurant_test.raw"],
     "valset_ratio": 0,
 
     "model": "senticgcnbert",
@@ -18,9 +18,9 @@
     "embedding_model": "bert-base-uncased",
 
     "save_results": true,
-    "save_results_folder": "/Users/raymond/work/aimakerspace_sgnlp/sgnlp/models/sentic_asgcn/results/",
+    "save_results_folder": "./results/",
 
-    "initializer": "xavier_uniform",
+    "initializer": "xavier_uniform_",
     "optimizer": "adam",
     "loss_function": "cross_entropy",
     "learning_rate": 0.001,

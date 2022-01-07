@@ -36,13 +36,13 @@ class SenticGCNTrainArgs:
     )
 
     # Dataset specific config
-    dataset_train: str = field(
-        default="train.raw",
-        metadata={"help": "File path to train dataset."},
+    dataset_train: list = field(
+        default_factory=list,
+        metadata={"help": "List of file path to train dataset(s)."},
     )
-    dataset_test: str = field(
-        default="test.raw",
-        metadata={"help": "File path to test dataset."},
+    dataset_test: list = field(
+        default_factory=list,
+        metadata={"help": "List of file path to test dataset(s)."},
     )
     valset_ratio: float = field(
         default=0.0,

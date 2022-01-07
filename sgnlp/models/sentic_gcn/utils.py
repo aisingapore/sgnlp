@@ -297,10 +297,13 @@ class SenticGCNDatasetGenerator:
         Returns:
             list[str]: list of str consisting of the full text, aspect and polarity index.
         """
-        file_path = self.config.dataset_train if dataset_type == "train" else self.config.dataset_test
-        with open(file_path, "r", encoding="utf-8", newline="\n", errors="ignore") as f:
-            lines = f.readlines()
-        return lines
+        files_path = self.config.dataset_train if dataset_type == "train" else self.config.dataset_test
+        all_lines = []
+        for dataset_file in files_path:
+            with open(dataset_file, "r", encoding="utf-8", newline="\n", errors="ignore") as f:
+                lines = f.readlines()
+                all_lines = all_lines + lines
+        return all_lines
 
     def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, list]:
         """
