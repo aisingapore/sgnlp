@@ -5,7 +5,7 @@ import pathlib
 import pickle
 import shutil
 import tempfile
-from typing import Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -88,7 +88,7 @@ class SenticGCNBaseTrainer:
     def _create_embedding_model(self) -> Union[SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel]:
         raise NotImplementedError("Please call from derived class only.")
 
-    def _generate_embeddings(self, batch: list[torch.Tensor]) -> torch.Tensor:
+    def _generate_embeddings(self, batch: List[torch.Tensor]) -> torch.Tensor:
         raise NotImplementedError("Please call from derived class only")
 
     def _save_model(self) -> None:
@@ -98,12 +98,12 @@ class SenticGCNBaseTrainer:
         if self.config.save_best_model:
             self.model.save_pretrained(self.config.save_model_path)
 
-    def _save_results(self, repeat_results: dict[str, dict]) -> None:
+    def _save_results(self, repeat_results: Dict[str, Dict]) -> None:
         """
         Private helper metho to save the results dictionary at the end of the training.
 
         Args:
-            repeat_results (dict[str, dict]): dictionary containing the training results
+            repeat_results (Dict[str, Dict]): dictionary containing the training results
         """
         if self.config.save_results:
             save_root_folder = pathlib.Path(self.config.save_results_folder)
@@ -114,12 +114,12 @@ class SenticGCNBaseTrainer:
             with open(save_result_file, "wb") as f:
                 pickle.dump(repeat_results, f)
 
-    def _clean_temp_dir(self, result_records: dict[str, dict[str, float]]) -> None:
+    def _clean_temp_dir(self, result_records: Dict[str, Dict[str, float]]) -> None:
         """
         Helper method to clean up temp dir and model weights from repeat train loops.
 
         Args:
-            result_records (dict[str, dict[str, float]]): dictionary of result_records after training.
+            result_records (Dict[str, Dict[str, float]]): dictionary of result_records after training.
         """
         for key, val in result_records.items():
             if key == "test":
@@ -247,7 +247,7 @@ class SenticGCNBaseTrainer:
 
     def _train(
         self, train_dataloader: Union[DataLoader, BucketIterator], val_dataloader: Union[DataLoader, BucketIterator]
-    ) -> dict[str, dict[str, Union[int, float]]]:
+    ) -> Dict[str, Dict[str, Union[int, float]]]:
         """
         Method to execute a repeat train loop. Repeat amount is dependent on config.
 
@@ -256,7 +256,7 @@ class SenticGCNBaseTrainer:
             val_dataloader (Union[DataLoader, BucketIterator]): dataloader for test dataset
 
         Returns:
-            dict[str, dict[str, Union[int, float]]]: return a dictionary containing the train results.
+            Dict[str, Dict[str, Union[int, float]]]: return a dictionary containing the train results.
         """
         criterion = nn.CrossEntropyLoss()
         _params = filter(lambda p: p.requires_grad, self.model.parameters())
@@ -377,12 +377,12 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         test_dataloader = DataLoader(self.test_data, batch_size=self.config.batch_size, shuffle=False)
         return train_dataloader, val_dataloader, test_dataloader
 
-    def _generate_embeddings(self, batch: list[torch.Tensor]) -> torch.Tensor:
+    def _generate_embeddings(self, batch: List[torch.Tensor]) -> torch.Tensor:
         """
         Private helper method to generate embeddings.
 
         Args:
-            batch (list[torch.Tensor]): a batch of sub dataset
+            batch (List[torch.Tensor]): a batch of sub dataset
 
         Returns:
             torch.Tensor: return embedding tensor
@@ -464,13 +464,13 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
                 tokenizer.save_pretrained(self.config.save_tokenizer_path)
             return tokenizer
 
-    def _create_embedding_model(self, vocab: dict[str, int]) -> SenticGCNEmbeddingModel:
+    def _create_embedding_model(self, vocab: Dict[str, int]) -> SenticGCNEmbeddingModel:
         """
         Private method to construct embedding model either via the from_pretrained method or
         building the embedding model from word vector files. (e.g. GloVe word vectors)
 
         Args:
-            vocab (dict[str, int]): dictionary of vocab from tokenizer
+            vocab (Dict[str, int]): dictionary of vocab from tokenizer
 
         Returns:
             SenticGCNEmbeddingModel: return a SenticGCNEmbeddingModel instance.
@@ -530,12 +530,12 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         test_dataloader = BucketIterator(self.test_data, batch_size=self.config.batch_size, shuffle=False)
         return train_dataloader, val_dataloader, test_dataloader
 
-    def _generate_embeddings(self, batch: list[torch.Tensor]) -> torch.Tensor:
+    def _generate_embeddings(self, batch: List[torch.Tensor]) -> torch.Tensor:
         """
         Private helper method to generate embeddings.
 
         Args:
-            batch (list[torch.Tensor]): a batch of sub dataset
+            batch (List[torch.Tensor]): a batch of sub dataset
 
         Returns:
             torch.Tensor: return embedding tensor

@@ -7,13 +7,13 @@ import pathlib
 import requests
 import urllib
 import math
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import spacy
 import torch
 from torch.utils.data import random_split, Dataset
-from transformers import PreTrainedTokenizer, PreTrainedModel
+from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 
 from data_class import SenticGCNTrainArgs
@@ -56,7 +56,7 @@ def set_random_seed(seed: int = 776) -> None:
 def download_tokenizer_files(
     base_url: str,
     save_folder: str,
-    files: list[str] = ["special_tokens_map.json", "tokenizer_config.json", "vocab.pkl"],
+    files: List[str] = ["special_tokens_map.json", "tokenizer_config.json", "vocab.pkl"],
 ) -> None:
     """
     Helper method to download files from online storage.
@@ -93,7 +93,7 @@ def download_url_file(url: str, save_folder: str) -> None:
 
 
 def pad_and_truncate(
-    sequence: list[float],
+    sequence: List[float],
     max_len: int,
     dtype: str = "int64",
     padding: str = "post",
@@ -104,7 +104,7 @@ def pad_and_truncate(
     Helper method for padding and truncating text and aspect segment.
 
     Args:
-        sequence (list[float]): input sequence of indices
+        sequence (List[float]): input sequence of indices
         max_len (int): maximum len to pad
         dtype (str, optional): data type to cast indices. Defaults to "int64".
         padding (str, optional): type of padding, 'pre' or 'post'. Defaults to "post".
@@ -262,7 +262,7 @@ class SenticGCNDataset(Dataset):
     Data class for SenticGCN dataset.
     """
 
-    def __init__(self, data: list[Dict[str, torch.Tensor]]) -> None:
+    def __init__(self, data: List[Dict[str, torch.Tensor]]) -> None:
         self.data = data
 
     def __getitem__(self, index: int) -> Dict[str, torch.Tensor]:
@@ -287,7 +287,7 @@ class SenticGCNDatasetGenerator:
         self.spacy_pipeline = spacy.load(config.spacy_pipeline)
         self.tokenizer = tokenizer
 
-    def _read_raw_dataset(self, dataset_type: str) -> list[str]:
+    def _read_raw_dataset(self, dataset_type: str) -> List[str]:
         """
         Private helper method to read raw dataset files based on requested type (e.g. Train or Test).
 
@@ -295,7 +295,7 @@ class SenticGCNDatasetGenerator:
             dataset_type (str): Type of dataset files to read. Train or Test.
 
         Returns:
-            list[str]: list of str consisting of the full text, aspect and polarity index.
+            List[str]: list of str consisting of the full text, aspect and polarity index.
         """
         files_path = self.config.dataset_train if dataset_type == "train" else self.config.dataset_test
         all_lines = []
@@ -305,15 +305,15 @@ class SenticGCNDatasetGenerator:
                 all_lines = all_lines + lines
         return all_lines
 
-    def _generate_senticgcn_dataset(self, raw_data: list[str]) -> Dict[str, list]:
+    def _generate_senticgcn_dataset(self, raw_data: List[str]) -> Dict[str, List]:
         """
         Data preprocess method to generate all indices required for SenticGCN model training.
 
         Args:
-            raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
+            raw_data (List[str]): list of text, aspect word and polarity read from raw dataset file.
 
         Returns:
-            Dict[str, list]]: return a dictionary of dataset sub-type and their list of values.
+            Dict[str, List]]: return a dictionary of dataset sub-type and their list of values.
         """
         all_data = []
         for i in range(0, len(raw_data), 3):
@@ -355,15 +355,15 @@ class SenticGCNDatasetGenerator:
             )
         return all_data
 
-    def _generate_senticgcnbert_dataset(self, raw_data: list[str]) -> Dict[str, list]:
+    def _generate_senticgcnbert_dataset(self, raw_data: List[str]) -> Dict[str, List]:
         """
         Data preprocess method to generate all indices required for SenticGCNBert model training.
 
         Args:
-            raw_data (list[str]): list of text, aspect word and polarity read from raw dataset file.
+            raw_data (List[str]): List of text, aspect word and polarity read from raw dataset file.
 
         Returns:
-            Dict[str, list]: return a dictionary of dataset sub-type and their values.
+            Dict[str, List]: return a dictionary of dataset sub-type and their values.
         """
         all_data = []
         max_len = self.config.max_len
@@ -492,7 +492,7 @@ class BucketIterator:
 
     def __init__(
         self,
-        data: list[dict[str, BatchEncoding]],
+        data: List[Dict[str, BatchEncoding]],
         batch_size: int,
         sort_key: str = "text_indices",
         shuffle=True,
@@ -504,16 +504,16 @@ class BucketIterator:
         self.batches = self._sort_and_pad(data, batch_size)
         self.batch_len = len(self.batches)
 
-    def _sort_and_pad(self, data: list[dict[str, list]], batch_size: int) -> list[dict[str, list[torch.Tensor]]]:
+    def _sort_and_pad(self, data: List[Dict[str, List]], batch_size: int) -> List[Dict[str, List[torch.Tensor]]]:
         """
         Private method to sort and pad input dataset.
 
         Args:
-            data (list[dict[str, list]]): input dataset
+            data (List[Dict[str, List]]): input dataset
             batch_size (int): batch size to split dataset
 
         Returns:
-            list[dict[str, list[torch.Tensor]]]: return list of dictionary of dataset batches
+            List[Dict[str, List[torch.Tensor]]]: return list of dictionary of dataset batches
         """
         num_batch = int(math.ceil(len(data) / batch_size))
         if self.sort:
@@ -525,15 +525,15 @@ class BucketIterator:
             batches.append(self._pad_data(sorted_data[i * batch_size : (i + 1) * batch_size]))
         return batches
 
-    def _pad_data(self, batch_data: dict[str, list]) -> dict[str, list[torch.Tensor]]:
+    def _pad_data(self, batch_data: Dict[str, List]) -> Dict[str, List[torch.Tensor]]:
         """
         Private method to each sub dataset to max length for their specific batch
 
         Args:
-            batch_data (dict[str, list]): dictionary of sub dataset and their list of values
+            batch_data (Dict[str, List]): dictionary of sub dataset and their list of values
 
         Returns:
-            dict[str, list[torch.Tensor]]: return a dictionary of list of tensor values
+            Dict[str, List[torch.Tensor]]: return a dictionary of list of tensor values
         """
         batch_text_indices = []
         batch_aspect_indices = []

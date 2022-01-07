@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
@@ -117,7 +117,7 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
         mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(self.torch_device)
         return mask * x
 
-    def forward(self, inputs: list[torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNModelOutput:
+    def forward(self, inputs: List[torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNModelOutput:
         text_indices, aspect_indices, left_indices, text_embeddings, adj = inputs
         text_len = torch.sum(text_indices != 0, dim=-1)
         aspect_len = torch.sum(aspect_indices != 0, dim=-1)
@@ -235,7 +235,7 @@ class SenticGCNBertModel(SenticGCNBertPreTrainedModel):
         mask = torch.tensor(mask).unsqueeze(2).float().to(self.torch_device)
         return mask * x
 
-    def forward(self, inputs: list[torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNBertModelOutput:
+    def forward(self, inputs: List[torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNBertModelOutput:
         text_indices, aspect_indices, left_indices, text_embeddings, adj = inputs
         # text_indices, text_
         text_len = torch.sum(text_indices != 0, dim=-1)
@@ -312,7 +312,7 @@ class SenticGCNEmbeddingModel(SenticGCNEmbeddingPreTrainedModel):
     def build_embedding_model(
         cls,
         word_vec_file_path: str,
-        vocab: dict[str, int],
+        vocab: Dict[str, int],
         embed_dim: int = 300,
     ):
         """
@@ -321,7 +321,7 @@ class SenticGCNEmbeddingModel(SenticGCNEmbeddingPreTrainedModel):
 
         Args:
             word_vec_file_path (str): file path to the word vectors
-            vocab (dict[str, int]): vocab dictionary consisting of words as key and index as values
+            vocab (Dict[str, int]): vocab dictionary consisting of words as key and index as values
             embed_dim (int, optional): the embedding dimension. Defaults to 300.
 
         Returns:

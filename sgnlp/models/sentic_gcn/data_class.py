@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
 
-from torch.cuda.memory import memory_stats_as_nested_dict
-
 
 @dataclass
 class SenticGCNTrainArgs:
