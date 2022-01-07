@@ -456,7 +456,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
             return SenticGCNTokenizer.from_pretrained(self.config.tokenizer)
         else:
             tokenizer = SenticGCNTokenizer(
-                train_files=[self.config.dataset_train, self.config.dataset_test], train_vocab=True
+                train_files=[*self.config.dataset_train, *self.config.dataset_test], train_vocab=True
             )
             if self.config.save_tokenizer:
                 tokenizer.save_pretrained(self.config.save_tokenizer_path)
