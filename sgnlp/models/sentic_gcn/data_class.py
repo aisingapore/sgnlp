@@ -143,7 +143,7 @@ class SenticGCNTrainArgs:
     learning_rate: float = field(default=0.001, metadata={"help": "Default learning rate for training."})
     l2reg: float = field(default=0.00001, metadata={"help": "Default l2reg value."})
     epochs: int = field(default=100, metadata={"help": "Number of epochs to train."})
-    batch_size: int = field(default=32, metadata={"help": "Training batch size."})
+    batch_size: int = field(default=16, metadata={"help": "Training batch size."})
     log_step: int = field(default=5, metadata={"help": "Number of train steps to log results."})
     embed_dim: int = field(default=300, metadata={"help": "Size of embedding."})
     hidden_dim: int = field(default=300, metadata={"help": "Number of neurons for hidden layer."})
