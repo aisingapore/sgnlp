@@ -206,7 +206,7 @@ def load_and_process_senticnet(
     """
     saved_senticnet_file_path = pathlib.Path(saved_preprocessed_senticnet_file_path)
     if saved_senticnet_file_path.exists() and not save_preprocessed_senticnet:
-        with open(saved_senticnet_file_path, "r") as f:
+        with open(saved_senticnet_file_path, "rb") as f:
             sentic_dict = pickle.load(f)
     else:
         senticnet_file_path = pathlib.Path(senticnet_file_path)
