@@ -65,8 +65,8 @@ class SenticGCNPreprocessor:
                 # Load from local folder
                 embed_model_name = pathlib.Path(embedding_model)
                 if embed_model_name.is_dir():
-                    config_path = embed_model_name.joinpath("config.json")
-                    model_path = embed_model_name.joinpath("pytorch_model.bin")
+                    config_path = embed_model_name.joinpath(config_filename)
+                    model_path = embed_model_name.joinpath(model_filename)
                     embed_config = SenticGCNEmbeddingConfig.from_pretrained(config_path)
                     embed_model = SenticGCNEmbeddingModel.from_pretrained(model_path, config=embed_config)
                 else:
@@ -127,8 +127,8 @@ class SenticGCNBertPreprocessor:
                 # Load from local folder
                 embed_model_name = pathlib.Path(embedding_model)
                 if embed_model_name.is_dir():
-                    config_path = embed_model_name.joinpath("config.json")
-                    model_path = embed_model_name.joinpath("pytorch_model.bin")
+                    config_path = embed_model_name.joinpath(config_filename)
+                    model_path = embed_model_name.joinpath(model_filename)
                     embed_config = SenticGCNBertEmbeddingConfig.from_pretrained(config_path)
                     embed_model = SenticGCNBertEmbeddingModel.from_pretrained(model_path, config=embed_config)
                 else:
