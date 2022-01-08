@@ -10,7 +10,6 @@ import numpy as np
 import spacy
 import torch
 from transformers import PreTrainedTokenizer, PretrainedConfig, PreTrainedModel
-from transformers.tokenization_utils_base import BatchEncoding
 
 from config import SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
 from modeling import SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
@@ -31,6 +30,11 @@ SenticGCNBertData = namedtuple("SenticGCNBertData", ["full_text", "aspect", "lef
 
 
 class SenticGCNBasePreprocessor:
+    """
+    Base preprocessor class provides initialization for spacy, senticnet, tokenizer and embedding model.
+    Class is only meant to be inherited by derived preprocessor.
+    """
+
     def __init__(
         self,
         tokenizer: Union[str, PreTrainedTokenizer],
@@ -50,6 +54,7 @@ class SenticGCNBasePreprocessor:
         )
         self.spacy_pipeline = spacy.load(spacy_pipeline)
 
+        # Load senticnet
         if senticnet.endswith(".pkl") or senticnet.endswith(".pickle"):
             self.senticnet = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=senticnet)
         elif senticnet.endswith(".txt"):
@@ -128,6 +133,11 @@ class SenticGCNBasePreprocessor:
 
 
 class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
+    """
+    Class for preprocessing sentence(s) and its aspect(s) to a batch of tensors for the SenticGCNBertModel
+    to predict on.
+    """
+
     def __init__(
         self,
         tokenizer: Union[
@@ -140,7 +150,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
         device: str = "cpu",
-    ):
+    ) -> None:
         super().__init__(
             tokenizer=tokenizer,
             embedding_model=embedding_model,
@@ -153,11 +163,122 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
             device=device,
         )
 
-    def __call__(self, data_batch: List[Dict[str, List[str]]]) -> BatchEncoding:
-        pass  # TODO
+    def _process_indices(self, data_batch: List[SenticGCNData]) -> List[torch.Tensor]:
+        """
+        Private helper method to generate all indices and embeddings from list of input data
+        required for model input.
+
+        Args:
+            data_batch (List[SenticGCNData]): list of processed inputs as SenticGCNData
+
+        Returns:
+            List[torch.Tensor]: return a list of tensors for model input
+        """
+        all_text_indices = []
+        all_aspect_indices = []
+        all_left_indices = []
+        all_sdat_graph = []
+        max_len = max([len(data["sentence"]) for data in data_batch])
+        for data in data_batch:
+            text_indices = self.tokenizer(
+                data.full_text,
+                max_length=max_len,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            aspect_indices = self.tokenizer(
+                data.aspect,
+                max_length=max_len,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            left_indices = self.tokenizer(
+                data.left_indices,
+                max_length=max_len,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            graph = generate_dependency_adj_matrix(data.full_text, data.aspect, self.senticnet, self.spacy_pipeline)
+            sdat_graph = np.pad(
+                graph,
+                ((0, max_len - graph.shape[0]), (0, max_len - graph.shape[0])),
+                "constant",
+            )
+
+            all_text_indices.append(text_indices["input_ids"])
+            all_aspect_indices.append(aspect_indices["input_ids"])
+            all_left_indices.append(left_indices["input_ids"])
+            all_sdat_graph.append(sdat_graph)
+
+        all_text_indices = torch.tensor(all_text_indices).to(self.device)
+        text_embeddings = self.embedding_model(all_text_indices)
+
+        return [
+            all_text_indices,
+            torch.tensor(all_aspect_indices).to(self.device),
+            torch.tensor(all_left_indices).to(self.device),
+            text_embeddings,
+            torch.tensor(sdat_graph).to(self.device),
+        ]
+
+    def _process_inputs(self, data_batch: List[Dict[str, Union[str, List[str]]]]) -> List[SenticGCNData]:
+        """
+        Private helper method to process input data batch.
+        Input entries are repeated for each input aspect.
+        If input aspect have multiple occurance in the sentence, each occurance is process as an entry.
+
+        Args:
+            data_batch (List[Dict[str, Union[str, List[str]]]]): list of dictionaries with 2 keys, 'sentence' and 'aspect'.
+                                            'sentence' value are strings and 'aspect' value is a list of accompanying aspect.
+
+        Returns:
+            List[SenticGCNData]: return list of processed inputs as SenticGCNData
+        """
+        processed_inputs = []
+        for batch in data_batch:
+            full_text = batch["sentence"].lower().strip()
+            for aspect in batch["aspect"]:
+                aspect = aspect.lower().strip()
+                aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
+                for aspect_index in aspect_idxs:
+                    left_text = full_text[:aspect_index].strip()
+                    processed_inputs.append(SenticGCNData(full_text=full_text, aspect=aspect, left_text=left_text))
+        return processed_inputs
+
+    def __call__(self, data_batch: List[Dict[str, Union[str, List[str]]]]) -> List[torch.Tensor]:
+        """
+        Method to generate list of input tensors from a list of sentences and their accompanying list of aspect.
+
+        Args:
+            data_batch (List[Dict[str, Union[str, List[str]]]]): list of dictionaries with 2 keys, 'sentence' and 'aspect'.
+                                            'sentence' value are strings and 'aspect' value is a list of accompanying aspect.
+
+        Returns:
+            List[torch.Tensor]: return a list of ordered tensors for 'text_indices', 'aspect_indices', 'left_indices',
+                                'text_embeddings' and 'sdat_graph'.
+        """
+        processed_inputs = self._process_inputs(data_batch)
+        return self._process_indices(processed_inputs)
 
 
 class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
+    """
+    Class for preprocessing sentence(s) and its aspect(s) to a batch of tensors for the SenticGCNBertModel
+    to predict on.
+    """
+
     def __init__(
         self,
         tokenizer: Union[str, PreTrainedTokenizer] = "bert-base-uncased",
@@ -168,7 +289,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         senticnet: str = "senticnet.pkl",
         max_len: int = 85,
         device: str = "cpu",
-    ):
+    ) -> None:
         super().__init__(
             tokenizer=tokenizer,
             embedding_model=embedding_model,
@@ -184,6 +305,16 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         self.max_len = max_len
 
     def _process_indices(self, data_batch: List[SenticGCNBertData]) -> List[torch.Tensor]:
+        """
+        Private helper method to generate all indices and embeddings from list of input data
+        required for model input.
+
+        Args:
+            data_batch (List[SenticGCNBertData]): list of processed inputs as SenticGCNBertData
+
+        Returns:
+            List[torch.Tensor]: return a list of tensors for model input
+        """
         all_text_indices = []
         all_aspect_indices = []
         all_left_indices = []
@@ -193,6 +324,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         for data in data_batch:
             text_indices = self.tokenizer(
                 data.full_text,
+                max_length=self.max_len,
                 padding="max_length",
                 truncation=True,
                 add_special_tokens=False,
@@ -202,6 +334,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             )
             aspect_indices = self.tokenizer(
                 data.aspect,
+                max_length=self.max_len,
                 padding="max_length",
                 truncation=True,
                 add_special_tokens=False,
@@ -211,6 +344,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             )
             left_indices = self.tokenizer(
                 data.left_text,
+                max_length=self.max_len,
                 padding="max_length",
                 truncation=True,
                 add_special_tokens=False,
@@ -220,6 +354,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             )
             text_bert_indices = self.tokenizer(
                 data.full_text_with_bert_tokens,
+                max_length=self.max_len,
                 padding="max_length",
                 truncation=True,
                 add_special_tokens=False,
@@ -254,15 +389,28 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         text_embeddings = self.embedding_model(all_text_bert_indices, token_type_ids=all_bert_segment_indices)[
             "last_hidden_state"
         ]
+
         return [
-            torch.tensor(all_text_indices),
-            torch.tensor(all_aspect_indices),
-            torch.tensor(all_left_indices),
+            torch.tensor(all_text_indices).to(self.device),
+            torch.tensor(all_aspect_indices).to(self.device),
+            torch.tensor(all_left_indices).to(self.device),
             text_embeddings,
-            torch.tensor(all_sdat_graph),
+            torch.tensor(all_sdat_graph).to(self.device),
         ]
 
-    def _process_inputs(self, data_batch: List[Dict[str, List[str]]]) -> List[SenticGCNBertData]:
+    def _process_inputs(self, data_batch: List[Dict[str, Union[str, List[str]]]]) -> List[SenticGCNBertData]:
+        """
+        Private helper method to process input data batch.
+        Input entries are repeated for each input aspect.
+        If input aspect have multiple occurance in the sentence, each occurance is process as an entry.
+
+        Args:
+            data_batch (List[Dict[str, Union[str, List[str]]]]): list of dictionaries with 2 keys, 'sentence' and 'aspect'.
+                                            'sentence' value are strings and 'aspect' value is a list of accompanying aspect.
+
+        Returns:
+            List[SenticGCNBertData]: return list of processed inputs as SenticGCNBertData
+        """
         processed_inputs = []
         for batch in data_batch:
             full_text = batch["sentence"].lower().strip()
@@ -282,6 +430,17 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
                     )
         return processed_inputs
 
-    def __call__(self, data_batch: List[Dict[str, List[str]]]) -> List[torch.Tensor]:
+    def __call__(self, data_batch: List[Dict[str, Union[str, List[str]]]]) -> List[torch.Tensor]:
+        """
+        Method to generate list of input tensors from a list of sentences and their accompanying list of aspect.
+
+        Args:
+            data_batch (List[Dict[str, Union[str, List[str]]]]): list of dictionaries with 2 keys, 'sentence' and 'aspect'.
+                                            'sentence' value are strings and 'aspect' value is a list of accompanying aspect.
+
+        Returns:
+            List[torch.Tensor]: return a list of ordered tensors for 'text_indices', 'aspect_indices', 'left_indices',
+                                'text_embeddings' and 'sdat_graph'.
+        """
         processed_inputs = self._process_inputs(data_batch)
         return self._process_indices(processed_inputs)

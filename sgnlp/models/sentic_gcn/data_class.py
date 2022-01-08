@@ -183,14 +183,4 @@ class SenticGCNTrainArgs:
         assert self.max_len > 0, "Max_len must be greater than 0."
 
         # Assign sub dataset columns name
-        self.data_cols = (
-            ["text_indices", "aspect_indices", "left_indices", "text_embeddings", "sdat_graph"]
-            if self.model == "senticgcn"
-            else [
-                "text_indices",
-                "aspect_indices",
-                "left_indices",
-                "text_embeddings",
-                "sdat_graph",
-            ]
-        )
+        self.data_cols = ["text_indices", "aspect_indices", "left_indices", "text_embeddings", "sdat_graph"]
