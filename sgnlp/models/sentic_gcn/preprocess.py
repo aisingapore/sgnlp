@@ -3,6 +3,7 @@ import pathlib
 import shutil
 import tempfile
 import urllib.parse
+from collections import namedtuple
 from typing import Dict, List, Union
 
 import spacy
@@ -17,6 +18,10 @@ from utils import download_tokenizer_files
 
 
 logging.basicConfig(level=logging.DEBUG)
+
+
+SenticGCNData = namedtuple("SenticGCNData", ["full_text", "aspect", "left_text"])
+SenticGCNBertData = namedtuple("SenticGCNBertData", ["full_text", "aspect", "left_text", "full_text_with_bert_tokens"])
 
 
 class SenticGCNBasePreprocessor:
@@ -152,6 +157,29 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             spacy_pipeline=spacy_pipeline,
             device=device,
         )
+
+    def _process_indices(self, data_batch: List[SenticGCNBertData]):
+        pass
+
+    def _process_inputs(self, data_batch: List[Dict[str, List[str]]]) -> List[SenticGCNBertData]:
+        processed_inputs = []
+        for batch in data_batch:
+            full_text = batch["sentence"].lower().strip()
+            for aspect in batch["aspect"]:
+                aspect = aspect.lower().strip()
+                aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
+                for aspect_index in aspect_idxs:
+                    left_text = full_text[:aspect_index].strip()
+                    full_text_with_bert_tokens = f"[CLS] {full_text} [SEP] {aspect} [SEP]"
+                    processed_inputs.append(
+                        SenticGCNBertData(
+                            full_text=full_text,
+                            aspect=aspect,
+                            left_text=left_text,
+                            full_text_with_bert_tokens=full_text_with_bert_tokens,
+                        )
+                    )
+        return processed_inputs
 
     def __call__(self, data_batch: List[Dict[str, List[str]]]) -> BatchEncoding:
         pass  # TODO
