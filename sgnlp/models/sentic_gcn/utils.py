@@ -7,7 +7,7 @@ import pathlib
 import requests
 import urllib
 import math
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import spacy
@@ -55,7 +55,7 @@ def set_random_seed(seed: int = 776) -> None:
 
 def download_tokenizer_files(
     base_url: str,
-    save_folder: str,
+    save_folder: Union[str, pathlib.Path],
     files: List[str] = ["special_tokens_map.json", "tokenizer_config.json", "vocab.pkl"],
 ) -> None:
     """
@@ -63,22 +63,23 @@ def download_tokenizer_files(
 
     Args:
         base_url (str): Url string to storage folder.
-        save_folder (str): Local folder to save downloaded files. Folder will be created if it does not exists.
+        save_folder (Union[str, pathlib.Path]):
+            Local folder to save downloaded files. Folder will be created if it does not exists.
     """
     file_paths = [urllib.parse.urljoin(base_url, file_name) for file_name in files]
     for file_path in file_paths:
         download_url_file(file_path, save_folder)
 
 
-def download_url_file(url: str, save_folder: str) -> None:
+def download_url_file(url: str, save_folder: Union[str, pathlib.Path]) -> None:
     """
     Helper method to download and save url file.
 
     Args:
         url (str): Url of file to download.
-        save_folder (str): Folder to save downloaded file. Will be created if it does not exists.
+        save_folder (Union[str, pathlib.Path]): Folder to save downloaded file. Will be created if it does not exists.
     """
-    save_folder_path = pathlib.Path(save_folder)
+    save_folder_path = pathlib.Path(save_folder) if not isinstance(save_folder, pathlib.Path) else save_folder
     save_folder_path.mkdir(exist_ok=True)
     fn_start_pos = url.rfind("/") + 1
     file_name = url[fn_start_pos:]

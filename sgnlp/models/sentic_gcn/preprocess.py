@@ -1,24 +1,28 @@
 import pathlib
+import shutil
+import tempfile
 import urllib.parse
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import torch
-from transformers import PreTrainedTokenizer
+from transformers import PreTrainedTokenizer, PreTrainedModel
 from transformers.tokenization_utils_base import BatchEncoding
-from transformers.utils.dummy_pt_objects import PreTrainedModel
 
 from config import SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
 from modeling import SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
 from tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
+from utils import download_tokenizer_files
 
 
 class SenticGCNPreprocessor:
     def __init__(
         self,
-        tokenizer: PreTrainedTokenizer = None,
-        embedding_model: PreTrainedModel = None,
-        tokenizer_name: str = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_tokenizer/",
-        embedding_model_name: str = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/",
+        tokenizer: Union[
+            str, PreTrainedTokenizer
+        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_tokenizer/",
+        embedding_model: Union[
+            str, PreTrainedModel
+        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/",
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         device: str = "cpu",
@@ -27,26 +31,39 @@ class SenticGCNPreprocessor:
         self.device = (
             torch.device("cuda" if torch.cuda.is_available() else "cpu") if not device else torch.device(device)
         )
+
         # Init Tokenizer
-        if tokenizer is not None:
-            self.tokenizer = tokenizer
-        else:
-            self.tokenizer = SenticGCNTokenizer.from_pretrained(tokenizer_name)
-        # Init Embedding model
-        if embedding_model is not None:
+        if isinstance(tokenizer, PreTrainedTokenizer):
             # Load from external instance
-            self.embedding_model = embedding_model
-            self.embedding_model.to(self.device)
+            tokenizer_ = tokenizer
         else:
-            if embedding_model_name.startswith("https://") or embedding_model_name.startswith("http://"):
+            if tokenizer.startswith("https://") or tokenizer.startswith("http://"):
                 # Load from cloud
-                config_url = urllib.parse.urljoin(embedding_model_name, config_filename)
-                model_url = urllib.parse.urljoin(embedding_model_name, model_filename)
+                # Download tokenizer files to temp dir
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    temp_dir = pathlib.Path(tmpdir)
+                download_tokenizer_files(tokenizer, temp_dir)
+                tokenizer_ = SenticGCNTokenizer.from_pretrained(temp_dir)
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            else:
+                # Load from local directory or from HuggingFace model repository
+                tokenizer_ = SenticGCNTokenizer.from_pretrained(tokenizer)
+        self.tokenizer = tokenizer_
+
+        # Init Embedding model
+        if isinstance(embedding_model, PreTrainedModel):
+            # Load from external instance
+            embed_model = embedding_model
+        else:
+            if embedding_model.startswith("https://") or embedding_model.startswith("http://"):
+                # Load from cloud
+                config_url = urllib.parse.urljoin(embedding_model, config_filename)
+                model_url = urllib.parse.urljoin(embedding_model, model_filename)
                 embed_config = SenticGCNEmbeddingConfig.from_pretrained(config_url)
                 embed_model = SenticGCNEmbeddingModel.from_pretrained(model_url, config=embed_config)
             else:
                 # Load from local folder
-                embed_model_name = pathlib.Path(embedding_model_name)
+                embed_model_name = pathlib.Path(embedding_model)
                 if embed_model_name.is_dir():
                     config_path = embed_model_name.joinpath("config.json")
                     model_path = embed_model_name.joinpath("pytorch_model.bin")
@@ -54,10 +71,10 @@ class SenticGCNPreprocessor:
                     embed_model = SenticGCNEmbeddingModel.from_pretrained(model_path, config=embed_config)
                 else:
                     # Load from HuggingFace model repository
-                    embed_config = SenticGCNEmbeddingConfig.from_pretrained(embedding_model_name)
-                    embed_model = SenticGCNEmbeddingModel.from_pretrained(embedding_model_name, config=embed_config)
-            self.embedding_model = embed_model
-            self.embedding_model.to(self.device)
+                    embed_config = SenticGCNEmbeddingConfig.from_pretrained(embedding_model)
+                    embed_model = SenticGCNEmbeddingModel.from_pretrained(embedding_model, config=embed_config)
+        self.embedding_model = embed_model
+        self.embedding_model.to(self.device)
 
     def __call__(self, data_batch: List[Dict[str, List[str]]]) -> BatchEncoding:
         pass  # TODO
@@ -66,10 +83,8 @@ class SenticGCNPreprocessor:
 class SenticGCNBertPreprocessor:
     def __init__(
         self,
-        tokenizer: PreTrainedTokenizer = None,
-        embedding_model: PreTrainedModel = None,
-        tokenizer_name: str = "bert-base-uncased",
-        embedding_model_name: str = "bert-base-uncased",
+        tokenizer: Union[str, PreTrainedTokenizer] = "bert-base-uncased",
+        embedding_model: Union[str, PreTrainedModel] = "bert-base-uncased",
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         device: str = "cpu",
@@ -78,26 +93,39 @@ class SenticGCNBertPreprocessor:
         self.device = (
             torch.device("cuda" if torch.cuda.is_available() else "cpu") if not device else torch.device(device)
         )
+
         # Init Tokenizer
-        if tokenizer is not None:
-            self.tokenizer = tokenizer
-        else:
-            self.tokenizer = SenticGCNBertTokenizer.from_pretrained(tokenizer_name)
-        # Init Embedding model
-        if embedding_model is not None:
+        if isinstance(tokenizer, PreTrainedTokenizer):
             # Load from external instance
-            self.embedding_model = embedding_model
-            self.embedding_model.to(self.device)
+            tokenizer_ = tokenizer
         else:
-            if embedding_model_name.startswith("https://") or embedding_model_name.startswith("http://"):
+            if tokenizer.startswith("https://") or tokenizer.startswith("http://"):
                 # Load from cloud
-                config_url = urllib.parse.urljoin(embedding_model_name, config_filename)
-                model_url = urllib.parse.urljoin(embedding_model_name, model_filename)
+                # Download tokenizer files to temp dir
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    temp_dir = pathlib.Path(tmpdir)
+                download_tokenizer_files(tokenizer, temp_dir)
+                tokenizer_ = SenticGCNBertTokenizer.from_pretrained(temp_dir)
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            else:
+                # Load from local directory or from HuggingFace model repository
+                tokenizer_ = SenticGCNBertTokenizer.from_pretrained(tokenizer)
+        self.tokenizer = tokenizer_
+
+        # Init Embedding model
+        if isinstance(embedding_model, PreTrainedModel):
+            # Load from external instance
+            embed_model = embedding_model
+        else:
+            if embedding_model.startswith("https://") or embedding_model.startswith("http://"):
+                # Load from cloud
+                config_url = urllib.parse.urljoin(embedding_model, config_filename)
+                model_url = urllib.parse.urljoin(embedding_model, model_filename)
                 embed_config = SenticGCNBertEmbeddingConfig.from_pretrained(config_url)
                 embed_model = SenticGCNBertEmbeddingModel.from_pretrained(model_url, config=embed_config)
             else:
                 # Load from local folder
-                embed_model_name = pathlib.Path(embedding_model_name)
+                embed_model_name = pathlib.Path(embedding_model)
                 if embed_model_name.is_dir():
                     config_path = embed_model_name.joinpath("config.json")
                     model_path = embed_model_name.joinpath("pytorch_model.bin")
@@ -105,10 +133,8 @@ class SenticGCNBertPreprocessor:
                     embed_model = SenticGCNBertEmbeddingModel.from_pretrained(model_path, config=embed_config)
                 else:
                     # Load from HuggingFace model repository
-                    embed_config = SenticGCNBertEmbeddingConfig.from_pretrained(embedding_model_name)
-                    embed_model = SenticGCNBertEmbeddingModel.from_pretrained(
-                        embedding_model_name, config=embed_config
-                    )
+                    embed_config = SenticGCNBertEmbeddingConfig.from_pretrained(embedding_model)
+                    embed_model = SenticGCNBertEmbeddingModel.from_pretrained(embedding_model, config=embed_config)
             self.embedding_model = embed_model
             self.embedding_model.to(self.device)
 
