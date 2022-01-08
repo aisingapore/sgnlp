@@ -438,13 +438,6 @@ class SenticGCNDatasetGenerator:
                 "constant",
             )
 
-            assert len(text_indices["input_ids"]) == max_len
-            assert len(aspect_indices["input_ids"]) == max_len
-            assert len(left_indices["input_ids"]) == max_len
-            assert len(text_bert_indices["input_ids"]) == max_len
-            assert len(concat_segment_indices) == max_len
-            assert len(sdat_graph) == max_len
-
             all_data.append(
                 {
                     "text_indices": torch.tensor(text_indices["input_ids"]),

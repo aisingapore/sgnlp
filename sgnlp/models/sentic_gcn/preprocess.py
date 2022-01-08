@@ -6,6 +6,7 @@ import urllib.parse
 from collections import namedtuple
 from typing import Dict, List, Union
 
+import numpy as np
 import spacy
 import torch
 from transformers import PreTrainedTokenizer, PretrainedConfig, PreTrainedModel
@@ -14,7 +15,12 @@ from transformers.tokenization_utils_base import BatchEncoding
 from config import SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
 from modeling import SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
 from tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
-from utils import download_tokenizer_files
+from utils import (
+    load_and_process_senticnet,
+    download_tokenizer_files,
+    pad_and_truncate,
+    generate_dependency_adj_matrix,
+)
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -35,6 +41,7 @@ class SenticGCNBasePreprocessor:
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
+        senticnet: str = "senticnet.pickle",
         device: str = "cpu",
     ) -> None:
         # Set device
@@ -42,6 +49,20 @@ class SenticGCNBasePreprocessor:
             torch.device("cuda" if torch.cuda.is_available() else "cpu") if not device else torch.device(device)
         )
         self.spacy_pipeline = spacy.load(spacy_pipeline)
+
+        if senticnet.endswith(".pkl") or senticnet.endswith(".pickle"):
+            self.senticnet = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=senticnet)
+        elif senticnet.endswith(".txt"):
+            self.senticnet = load_and_process_senticnet(senticnet_file_path=senticnet)
+        else:
+            raise ValueError(
+                f"""
+                Invalid SenticNet file!
+                For processed SenticNet dictionary, please provide pickle file location
+                (i.e. file with .pkl or .pickle extension).
+                For raw SenticNet-5.0 file, please provide text file path (i.e. file with .txt extension)
+                """
+            )
 
         try:
             # Init Tokenizer
@@ -144,6 +165,8 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
+        senticnet: str = "senticnet.pkl",
+        max_len: int = 85,
         device: str = "cpu",
     ):
         super().__init__(
@@ -155,11 +178,89 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             config_filename=config_filename,
             model_filename=model_filename,
             spacy_pipeline=spacy_pipeline,
+            senticnet=senticnet,
             device=device,
         )
+        self.max_len = max_len
 
-    def _process_indices(self, data_batch: List[SenticGCNBertData]):
-        pass
+    def _process_indices(self, data_batch: List[SenticGCNBertData]) -> List[torch.Tensor]:
+        all_text_indices = []
+        all_aspect_indices = []
+        all_left_indices = []
+        all_text_bert_indices = []
+        all_bert_segment_indices = []
+        all_sdat_graph = []
+        for data in data_batch:
+            text_indices = self.tokenizer(
+                data.full_text,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            aspect_indices = self.tokenizer(
+                data.aspect,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            left_indices = self.tokenizer(
+                data.left_text,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            text_bert_indices = self.tokenizer(
+                data.full_text_with_bert_tokens,
+                padding="max_length",
+                truncation=True,
+                add_special_tokens=False,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
+            text_len = np.sum(text_indices["input_ids"] != 0)
+            aspect_len = np.sum(aspect_indices["input_ids"] != 0)
+            concat_segment_indices = [0] * (text_len + 2) + [1] * (aspect_len + 1)
+            concat_segment_indices = pad_and_truncate(concat_segment_indices, self.max_len)
+
+            graph = generate_dependency_adj_matrix(data.full_text, data.aspect, self.senticnet, self.spacy_pipeline)
+            sdat_graph = np.pad(
+                graph,
+                (
+                    (0, self.max_len - graph.shape[0]),
+                    (0, self.max_len - graph.shape[0]),
+                ),
+                "constant",
+            )
+
+            all_text_indices.append(text_indices["input_ids"])
+            all_aspect_indices.append(aspect_indices["input_ids"])
+            all_left_indices.append(left_indices["input_ids"])
+            all_text_bert_indices.append(text_bert_indices["input_ids"])
+            all_bert_segment_indices.append(concat_segment_indices)
+            all_sdat_graph.append(sdat_graph)
+
+        all_text_bert_indices = torch.tensor(all_text_bert_indices).to(self.device)
+        all_bert_segment_indices = torch.tensor(np.array(all_bert_segment_indices)).to(self.device)
+        text_embeddings = self.embedding_model(all_text_bert_indices, token_type_ids=all_bert_segment_indices)[
+            "last_hidden_state"
+        ]
+        return [
+            torch.tensor(all_text_indices),
+            torch.tensor(all_aspect_indices),
+            torch.tensor(all_left_indices),
+            text_embeddings,
+            torch.tensor(all_sdat_graph),
+        ]
 
     def _process_inputs(self, data_batch: List[Dict[str, List[str]]]) -> List[SenticGCNBertData]:
         processed_inputs = []
@@ -181,5 +282,6 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
                     )
         return processed_inputs
 
-    def __call__(self, data_batch: List[Dict[str, List[str]]]) -> BatchEncoding:
-        pass  # TODO
+    def __call__(self, data_batch: List[Dict[str, List[str]]]) -> List[torch.Tensor]:
+        processed_inputs = self._process_inputs(data_batch)
+        return self._process_indices(processed_inputs)
