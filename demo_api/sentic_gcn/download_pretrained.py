@@ -1,12 +1,20 @@
-# from sgnlp.models.sentic_gcn import ()
+"""Run this script during build time to download the pretrained models and relevant files first"""
 
-config = .from_pretrained(
-    # google storage .json file
+from sgnlp.models.sentic_gcn import (
+    SenticGCNConfig,
+    SenticGCNBertTokenizer,
+    SenticGCNBertModel,
+    SenticGCNBertPreprocessor
 )
 
-model = .from_pretrained(
-    # google storage, .bin file
-    , config=config
+config = SenticGCNConfig.from_pretrained(
+    "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
 )
 
-# Download tokenizer files
+tokenizer = SenticGCNBertTokenizer.from_pretrained("bert-base-uncased")
+
+
+model = SenticGCNBertModel.from_pretrained(
+    "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin", 
+    config=config
+)
