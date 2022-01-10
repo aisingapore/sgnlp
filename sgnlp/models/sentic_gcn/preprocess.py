@@ -186,7 +186,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
         all_aspect_indices = []
         all_left_indices = []
         all_sdat_graph = []
-        max_len = max([len(data["sentence"]) for data in data_batch])
+        max_len = max([len(data.full_text) for data in data_batch])
         for data in data_batch:
             text_indices = self.tokenizer(
                 data.full_text,
@@ -208,16 +208,21 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
                 return_attention_mask=False,
                 return_token_type_ids=False,
             )
-            left_indices = self.tokenizer(
-                data.left_indices,
-                max_length=max_len,
-                padding="max_length",
-                truncation=True,
-                add_special_tokens=False,
-                return_tensors=None,
-                return_attention_mask=False,
-                return_token_type_ids=False,
-            )
+            if data.left_text:
+                left_indices = self.tokenizer(
+                    data.left_text,
+                    max_length=max_len,
+                    padding="max_length",
+                    truncation=True,
+                    add_special_tokens=False,
+                    return_tensors=None,
+                    return_attention_mask=False,
+                    return_token_type_ids=False,
+                )
+            else:
+                # Workaround for handling empty string.
+                # This happens when the aspect is also the first word in the full text.
+                left_indices = {"input_ids": [0] * max_len}
             graph = generate_dependency_adj_matrix(data.full_text, data.aspect, self.senticnet, self.spacy_pipeline)
             sdat_graph = np.pad(
                 graph,
@@ -238,7 +243,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
             torch.tensor(all_aspect_indices).to(self.device),
             torch.tensor(all_left_indices).to(self.device),
             text_embeddings,
-            torch.tensor(sdat_graph).to(self.device),
+            torch.tensor(all_sdat_graph).to(self.device),
         ]
 
     def _process_inputs(self, data_batch: List[Dict[str, Union[str, List[str]]]]) -> List[SenticGCNData]:
