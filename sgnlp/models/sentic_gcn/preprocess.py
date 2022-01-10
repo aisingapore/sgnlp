@@ -155,6 +155,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
+        senticnet: str = "senticnet.pkl",
         device: str = "cpu",
     ) -> None:
         super().__init__(
@@ -166,6 +167,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
             config_filename=config_filename,
             model_filename=model_filename,
             spacy_pipeline=spacy_pipeline,
+            senticnet=senticnet,
             device=device,
         )
 
