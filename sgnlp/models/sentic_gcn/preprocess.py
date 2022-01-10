@@ -4,7 +4,7 @@ import shutil
 import tempfile
 import urllib.parse
 from collections import namedtuple
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import spacy
@@ -257,7 +257,9 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
                     processed_inputs.append(SenticGCNData(full_text=full_text, aspect=aspect, left_text=left_text))
         return processed_inputs
 
-    def __call__(self, data_batch: List[Dict[str, Union[str, List[str]]]]) -> List[torch.Tensor]:
+    def __call__(
+        self, data_batch: List[Dict[str, Union[str, List[str]]]]
+    ) -> Tuple[List[SenticGCNData, List[torch.Tensor]]]:
         """
         Method to generate list of input tensors from a list of sentences and their accompanying list of aspect.
 
@@ -266,11 +268,11 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
                                             'sentence' value are strings and 'aspect' value is a list of accompanying aspect.
 
         Returns:
-            List[torch.Tensor]: return a list of ordered tensors for 'text_indices', 'aspect_indices', 'left_indices',
-                                'text_embeddings' and 'sdat_graph'.
+            Tuple[List[SenticGCNData, List[torch.Tensor]]]: return a list of ordered tensors for 'text_indices',
+                'aspect_indices', 'left_indices', 'text_embeddings' and 'sdat_graph'.
         """
         processed_inputs = self._process_inputs(data_batch)
-        return self._process_indices(processed_inputs)
+        return processed_inputs, self._process_indices(processed_inputs)
 
 
 class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
@@ -430,7 +432,9 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
                     )
         return processed_inputs
 
-    def __call__(self, data_batch: List[Dict[str, Union[str, List[str]]]]) -> List[torch.Tensor]:
+    def __call__(
+        self, data_batch: List[Dict[str, Union[str, List[str]]]]
+    ) -> Tuple[List[SenticGCNData, List[torch.Tensor]]]:
         """
         Method to generate list of input tensors from a list of sentences and their accompanying list of aspect.
 
@@ -439,8 +443,8 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
                                             'sentence' value are strings and 'aspect' value is a list of accompanying aspect.
 
         Returns:
-            List[torch.Tensor]: return a list of ordered tensors for 'text_indices', 'aspect_indices', 'left_indices',
-                                'text_embeddings' and 'sdat_graph'.
+            Tuple[List[SenticGCNData, List[torch.Tensor]]]: return a list of ordered tensors for 'text_indices',
+                'aspect_indices', 'left_indices', 'text_embeddings' and 'sdat_graph'.
         """
         processed_inputs = self._process_inputs(data_batch)
-        return self._process_indices(processed_inputs)
+        return processed_inputs, self._process_indices(processed_inputs)
