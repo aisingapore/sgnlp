@@ -2,19 +2,13 @@ from typing import Dict, List, Union
 
 import torch.nn.functional as F
 
-from preprocess import SenticGCNBertData
-from modeling import SenticGCNBertModelOutput
+from preprocess import SenticGCNData, SenticGCNBertData
+from modeling import SenticGCNModelOutput, SenticGCNBertModelOutput
 
 
-class SenticGCNBertPostprocessor:
+class SenticGCNBasePostprocessor:
     """
-    Class to initialise the Postprocessor for SenticGCNBertModel.
-    Class to postprocess SenticGCNBertModel output to get a list of input text tokens,
-    aspect token index and prediction labels.
-
-    Args:
-        return_full_text (bool): Flag to indicate if the full text should be included in the output.
-        return_aspects_text (bool): Flag to indicate if the list of aspects text should be included in the output.
+    Base postprocessor class providing common post processing functions.
     """
 
     def __init__(self, return_full_text: bool = False, return_aspects_text: bool = False) -> None:
@@ -22,7 +16,9 @@ class SenticGCNBertPostprocessor:
         self.return_aspects_text = return_aspects_text
 
     def __call__(
-        self, processed_inputs: List[SenticGCNBertData], model_outputs: SenticGCNBertModelOutput
+        self,
+        processed_inputs: List[Union[SenticGCNData, SenticGCNBertData]],
+        model_outputs: Union[SenticGCNModelOutput, SenticGCNBertModelOutput],
     ) -> List[Dict[str, Union[List[str], List[int], float]]]:
         # Get predictions
         probabilities = F.softmax(model_outputs.logits, dim=-1).detach().numpy()
@@ -53,3 +49,33 @@ class SenticGCNBertPostprocessor:
                 processed_dict["aspects_text"] = [processed_input.aspect]
             outputs.append(processed_dict)
         return outputs
+
+
+class SenticGCNPostprocessor(SenticGCNBasePostprocessor):
+    """
+    Class to initialise the Postprocessor for SenticGCNModel.
+    Class to postprocess SenticGCNModel output to get a list of input text tokens,
+    aspect token index and prediction labels.
+
+    Args:
+        return_full_text (bool): Flag to indicate if the full text should be included in the output.
+        return_aspects_text (bool): Flag to indicate if the list of aspects text should be included in the output.
+    """
+
+    def __init__(self, return_full_text: bool = False, return_aspects_text: bool = False) -> None:
+        super().__init__(return_full_text=return_full_text, return_aspects_text=return_aspects_text)
+
+
+class SenticGCNBertPostprocessor(SenticGCNBasePostprocessor):
+    """
+    Class to initialise the Postprocessor for SenticGCNBertModel.
+    Class to postprocess SenticGCNBertModel output to get a list of input text tokens,
+    aspect token index and prediction labels.
+
+    Args:
+        return_full_text (bool): Flag to indicate if the full text should be included in the output.
+        return_aspects_text (bool): Flag to indicate if the list of aspects text should be included in the output.
+    """
+
+    def __init__(self, return_full_text: bool = False, return_aspects_text: bool = False) -> None:
+        super().__init__(return_full_text=return_full_text, return_aspects_text=return_aspects_text)
