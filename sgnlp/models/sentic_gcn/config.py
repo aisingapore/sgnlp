@@ -12,7 +12,6 @@ class SenticGCNConfig(PretrainedConfig):
         hidden_dim (:obj:`int`, defaults to 300): Size of hidden dimension.
         dropout (:obj:`float`, defaults to 0.3): Droput percentage.
         polarities_dim (:obj:`int`, defaults to 3): Size of output dimension representing available polarities (e.g. Positive, Negative, Neutral).
-        device (:obj:`str`, defaults to 'cuda`): Type of torch device.
         loss_function (:obj:`str`, defaults to 'cross_entropy'): Loss function for training/eval.
 
     Example:
@@ -29,7 +28,6 @@ class SenticGCNConfig(PretrainedConfig):
         hidden_dim: int = 300,
         polarities_dim: int = 3,
         dropout: float = 0.3,
-        device: str = "cuda",
         loss_function: str = "cross_entropy",
         **kwargs
     ) -> None:
@@ -38,7 +36,6 @@ class SenticGCNConfig(PretrainedConfig):
         self.hidden_dim = hidden_dim
         self.dropout = dropout
         self.polarities_dim = polarities_dim
-        self.device = device
         self.loss_function = loss_function
 
 
@@ -53,7 +50,6 @@ class SenticGCNBertConfig(PretrainedConfig):
         max_seq_len (:obj:`int`, defaults to 85): The max sequence length to pad and truncate.
         dropout (:obj:`float`, defaults to 0.3): Dropout percentage.
         polarities_dim (:ob:`int`, defaults to 3): Size of output dimension representing available polarities (e.g. Positive, Negative, Neutral).
-        device (:obj:`str`, defaults to 'cuda'): Type of torch device.
         loss_function (:obj:`str`, defaults to 'cross_entropy'): Loss function for training/eval.
     Example:
 
@@ -70,7 +66,6 @@ class SenticGCNBertConfig(PretrainedConfig):
         max_seq_len: int = 85,
         polarities_dim: int = 3,
         dropout: float = 0.3,
-        device: str = "cuda",
         loss_function: str = "cross_entropy",
         **kwargs
     ) -> None:
@@ -80,7 +75,6 @@ class SenticGCNBertConfig(PretrainedConfig):
         self.max_seq_len = max_seq_len
         self.dropout = dropout
         self.polarities_dim = polarities_dim
-        self.device = device
         self.loss_function = loss_function
 
 
