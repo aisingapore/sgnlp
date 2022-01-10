@@ -258,13 +258,13 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
             full_text_tokens = batch["sentence"].split()
             for aspect in batch["aspect"]:
                 aspect = aspect.lower().strip()
-                aspect_token_index = [
+                aspect_token_indexes = [
                     idx
                     for idx, val in enumerate(full_text_tokens)
                     if val.lower().translate(str.maketrans("", "", string.punctuation)) == aspect
                 ]
                 aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
-                for aspect_index in aspect_idxs:
+                for aspect_index, aspect_token_index in zip(aspect_idxs, aspect_token_indexes):
                     left_text = full_text[:aspect_index].strip()
                     processed_inputs.append(
                         SenticGCNData(
@@ -439,13 +439,13 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             full_text_tokens = batch["sentence"].split()
             for aspect in batch["aspect"]:
                 aspect = aspect.lower().strip()
-                aspect_token_index = [
+                aspect_token_indexes = [
                     idx
                     for idx, val in enumerate(full_text_tokens)
                     if val.lower().translate(str.maketrans("", "", string.punctuation)) == aspect
                 ]
                 aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
-                for aspect_index in aspect_idxs:
+                for aspect_index, aspect_token_index in zip(aspect_idxs, aspect_token_indexes):
                     left_text = full_text[:aspect_index].strip()
                     full_text_with_bert_tokens = f"[CLS] {full_text} [SEP] {aspect} [SEP]"
                     processed_inputs.append(
