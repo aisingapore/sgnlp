@@ -1,8 +1,9 @@
+import re
 from transformers import cached_path
 
 import torch.nn.functional as F
 
-from flask import request
+from flask import request, jsonify
 
 from demo_api.common import create_api
 from sgnlp.models.sentic_gcn import (
@@ -20,6 +21,7 @@ import os
 
 app = create_api(app_name=__name__, model_card_path="model_card/sentic_gcn.json")
 
+# path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'senticnet5.pickle')
 preprocessor = SenticGCNBertPreprocessor(senticnet='https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle', device='cpu')
 
 # Load model
@@ -35,11 +37,18 @@ app.logger.info("Preprocessing pipeline and model initialization complete.")
 @app.route("/predict", methods=["POST"])
 def predict():
     req_body = request.get_json()
-    # aspect = req_body["aspect"]
-    # sentence = req_body["sentence"]
+    print(req_body)
+    aspect = req_body["aspect"]
+    sentence = req_body["sentence"]
+    
+    print('aspect: ',aspect)
+    print('sentence: ',sentence)
+    
+    inputs = list()
+    inputs.append(req_body)
     
     # Perform preprocessing from the imported pipeline
-    processed_inputs, processed_indices = preprocessor(req_body)
+    processed_inputs, processed_indices = preprocessor(inputs)
     outputs = model(processed_indices)
     t_probs = F.softmax(outputs.logits)
     t_probs = t_probs.detach().numpy()
@@ -49,7 +58,9 @@ def predict():
     # Postprocessing
     postprocessor = SenticGCNBertPostprocessor()
     post_outputs = postprocessor(processed_inputs=processed_inputs, model_outputs=outputs)
-    return post_outputs
+    
+    print('post_outputs: ',post_outputs)
+    return jsonify(post_outputs) # to fix the output
     
 
 if __name__ == "__main__":
