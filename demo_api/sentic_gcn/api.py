@@ -55,6 +55,9 @@ def predict():
     
     # Convert labels into int, currently it is a numpy.int which has issues with json
     # post_outputs[0]['labels'] = [int(x) for x in post_outputs[0]['labels']]
+    
+    # To update for conversion in postprocessing for multiple outputs
+    
     return post_outputs[0]
     
 
