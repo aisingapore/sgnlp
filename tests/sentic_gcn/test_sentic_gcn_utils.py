@@ -1,5 +1,4 @@
 import pathlib
-import pytest
 import shutil
 import tempfile
 import unittest
@@ -21,7 +20,7 @@ from sgnlp.models.sentic_gcn.utils import (
 PARENT_DIR = str(pathlib.Path(__file__).parent)
 
 
-class TestPadandTruncate(unittest.TestCase):
+class TestPadandTruncateTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.test_input = [1.0, 2.0, 3.0, 4.0, 5.0]
         self.max_len = 50
@@ -32,7 +31,7 @@ class TestPadandTruncate(unittest.TestCase):
         self.assertEqual(len(output), self.max_len)
 
 
-class TestLoadandProcessSenticNet(unittest.TestCase):
+class TestLoadandProcessSenticNetTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.test_file = pathlib.Path(PARENT_DIR).joinpath("test_data").joinpath("senticnet.txt")
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -72,7 +71,7 @@ class TestLoadandProcessSenticNet(unittest.TestCase):
         self.assertEqual(len(senticnet), 12)
 
 
-class TestGenerateDependencyAdjMatrix(unittest.TestCase):
+class TestGenerateDependencyAdjMatrixTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.test_file = pathlib.Path(PARENT_DIR).joinpath("test_data").joinpath("senticnet.txt")
         self.senticnet = load_and_process_senticnet(self.test_file)
@@ -86,7 +85,7 @@ class TestGenerateDependencyAdjMatrix(unittest.TestCase):
         self.assertEqual(matrix.shape, (9, 9))
 
 
-class TestSenticGCNDatasetGenerator(unittest.TestCase):
+class TestSenticGCNDatasetGeneratorTestCase(unittest.TestCase):
     def setUp(self) -> None:
         cfg = {
             "senticnet_word_file_path": PARENT_DIR + "/test_data/senticnet.txt",
