@@ -100,7 +100,7 @@ def pad_and_truncate(
     padding: str = "post",
     truncating: str = "post",
     value: int = 0,
-):
+) -> np.ndarray:
     """
     Helper method for padding and truncating text and aspect segment.
 
@@ -113,7 +113,7 @@ def pad_and_truncate(
         value (int, optional): value used for padding. Defaults to 0.
 
     Returns:
-        [type]: [description]
+        np.ndarray: return a ndarray padded to the max_len
     """
     seq_arr = (np.ones(max_len) * value).astype(dtype)
     trunc = sequence[-max_len:] if truncating == "pre" else sequence[:max_len]
@@ -217,7 +217,7 @@ def load_and_process_senticnet(
                 if not line:
                     continue
                 items = line.split("\t")
-                if "_" in items[0]:
+                if "_" in items[0] or "CONCEPT" == items[0]:
                     continue  # skip words with '_'
                 sentic_dict[items[0]] = items[-1]
         if save_preprocessed_senticnet:

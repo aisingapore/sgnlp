@@ -18,6 +18,7 @@ from tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
 from utils import (
     load_and_process_senticnet,
     download_tokenizer_files,
+    download_url_file,
     pad_and_truncate,
     generate_dependency_adj_matrix,
 )
@@ -51,7 +52,7 @@ class SenticGCNBasePreprocessor:
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
-        senticnet: str = "senticnet.pickle",
+        senticnet: str = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
         device: str = "cpu",
     ) -> None:
         # Set device
@@ -61,7 +62,14 @@ class SenticGCNBasePreprocessor:
         self.spacy_pipeline = spacy.load(spacy_pipeline)
 
         # Load senticnet
-        if senticnet.endswith(".pkl") or senticnet.endswith(".pickle"):
+        if senticnet.startswith("https://") or senticnet.startswith("http://"):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                temp_dir = pathlib.Path(tmpdir)
+            download_url_file(senticnet, temp_dir)
+            saved_path = temp_dir.joinpath("senticnet.pickle")
+            self.senticnet = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=saved_path)
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        elif senticnet.endswith(".pkl") or senticnet.endswith(".pickle"):
             self.senticnet = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=senticnet)
         elif senticnet.endswith(".txt"):
             self.senticnet = load_and_process_senticnet(senticnet_file_path=senticnet)
@@ -69,6 +77,8 @@ class SenticGCNBasePreprocessor:
             raise ValueError(
                 f"""
                 Invalid SenticNet file!
+                For downloading from cloud storage, please provide url to pickle file location
+                (i.e. string url starting with https:// or http://).
                 For processed SenticNet dictionary, please provide pickle file location
                 (i.e. file with .pkl or .pickle extension).
                 For raw SenticNet-5.0 file, please provide text file path (i.e. file with .txt extension)
