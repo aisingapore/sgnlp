@@ -137,7 +137,7 @@ class SenticGCNTrainArgs:
     save_results: bool = field(default=True, metadata={"help": "Flag to indicate if results should be saved."})
     save_results_folder: str = field(default="results", metadata={"help": "Folder location to save results pickle."})
 
-    initializer: str = field(default="xavier_uniform", metadata={"help": "Type of initalizer to use."})
+    initializer: str = field(default="xavier_uniform_", metadata={"help": "Type of initalizer to use."})
     optimizer: str = field(default="adam", metadata={"help": "Type of optimizer to use."})
     loss_function: str = field(default="cross_entropy", metadata={"help": "Loss function for training/eval."})
     learning_rate: float = field(default=0.001, metadata={"help": "Default learning rate for training."})
