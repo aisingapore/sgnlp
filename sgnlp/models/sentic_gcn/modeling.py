@@ -99,7 +99,7 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
                 weight[i].append(1 - (j - aspect_double_idx[i, 1] / context_len))
             for j in range(text_len[i], seq_len):
                 weight[i].append(0)
-        weight = torch.tensor(weight, dtype=torch.float).unsqueeze(2)
+        weight = torch.tensor(weight, dtype=torch.float).unsqueeze(2).to(x.device)
         return weight * x
 
     def mask(self, x: torch.Tensor, aspect_double_idx: torch.Tensor) -> torch.Tensor:
@@ -113,7 +113,7 @@ class SenticGCNModel(SenticGCNPreTrainedModel):
                 mask[i].append(1)
             for j in range(aspect_double_idx[i, 1] + 1, seq_len):
                 mask[i].append(0)
-        mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2)
+        mask = torch.tensor(mask, dtype=torch.float).unsqueeze(2).to(x.device)
         return mask * x
 
     def forward(self, inputs: List[torch.Tensor], labels: Optional[torch.Tensor] = None) -> SenticGCNModelOutput:
