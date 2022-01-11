@@ -561,7 +561,7 @@ class BucketIterator:
             "aspect_indices": torch.tensor(batch_aspect_indices),
             "left_indices": torch.tensor(batch_left_indices),
             "polarity": torch.tensor(batch_polarity),
-            "sdat_graph": torch.tensor(batch_sdat_graph),
+            "sdat_graph": torch.tensor(np.array(batch_sdat_graph)),
         }
 
     def __iter__(self):
