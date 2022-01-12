@@ -1,6 +1,6 @@
-python==3.6
-torch==1.0.0
-spacy==2.0.18
-numpy==1.15.4
+torch==1.10.1
+spacy==3.2.1
+numpy==1.22.0
 flask
 gunicorn
+sgnlp==0.2.0
