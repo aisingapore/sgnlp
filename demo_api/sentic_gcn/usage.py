@@ -1,10 +1,9 @@
 from sgnlp.models.sentic_gcn import (
     SenticGCNBertModel, 
     SenticGCNBertPreprocessor, 
-    SenticGCNBertConfig
+    SenticGCNBertConfig,
+    SenticGCNBertPostprocessor
     )
-
-from sgnlp.models.sentic_gcn.postprocess import SenticGCNBertPostprocessor
 
 preprocessor = SenticGCNBertPreprocessor(
     senticnet='https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle', 
