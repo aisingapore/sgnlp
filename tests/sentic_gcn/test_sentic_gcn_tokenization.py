@@ -3,7 +3,6 @@ import pytest
 import unittest
 
 from transformers import PreTrainedTokenizer
-from transformers.file_utils import to_numpy
 
 from sgnlp.models.sentic_gcn.tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
 
