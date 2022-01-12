@@ -74,41 +74,51 @@ class TestSenticGCNBertEmbeddingConfigTestCase(unittest.TestCase):
         self.assertTrue(issubclass(self.config.__class__, BertConfig))
 
 
-# TODO: Investigate shape mismatch
-# class TestSenticGCNModel(unittest.TestCase):
-#     def setUp(self) -> None:
-#         config = SenticGCNConfig()
-#         self.model = SenticGCNModel(config=config)
+class TestSenticGCNModel(unittest.TestCase):
+    def setUp(self) -> None:
+        config = SenticGCNConfig()
+        self.model = SenticGCNModel(config=config)
 
-#     def test_pretrained_model_base_class(self):
-#         self.assertTrue(issubclass(self.model.__class__, PreTrainedModel))
+    def test_pretrained_model_base_class(self):
+        self.assertTrue(issubclass(self.model.__class__, PreTrainedModel))
 
-#     def test_config_class(self):
-#         self.assertEqual(self.model.config_class, SenticGCNConfig)
+    def test_config_class(self):
+        self.assertEqual(self.model.config_class, SenticGCNConfig)
 
-#     def test_base_model_prefix(self):
-#         self.assertEqual(self.model.base_model_prefix, "senticgcn")
+    def test_base_model_prefix(self):
+        self.assertEqual(self.model.base_model_prefix, "senticgcn")
 
-#     def test_forward_pass(self):
-#         input_tensors = [
-#             torch.ones(
-#                 [1, 100],
-#                 dtype=torch.float32,
-#                 device=DEVICE,
-#             ),
-#             torch.ones([1, 100], dtype=torch.float32, device=DEVICE),
-#             torch.ones([1, 100], dtype=torch.float32, device=DEVICE),
-#             torch.ones([1, 100, 300], dtype=torch.float32, device=DEVICE),
-#             torch.ones([1, 100, 100], dtype=torch.float32, device=DEVICE),
-#         ]
+    def test_forward_pass(self):
+        text_indices = torch.zeros(
+            [1, 10],
+            dtype=torch.float32,
+            device=DEVICE,
+        )
+        for i in range(0, 3):
+            text_indices[0][i] = 1
 
-#         self.model.to(DEVICE)
-#         self.model.eval()
-#         result = self.model(input_tensors)
+        aspect_indices = torch.zeros([1, 10], dtype=torch.float32, device=DEVICE)
+        aspect_indices[0][0] = 1
 
-#         self.assertEqual(type(result), SenticGCNModelOutput)
-#         self.assertEqual(type(result.logits), torch.Tensor)
-#         self.assertEqual(result.logits.shape, torch.Size([1, 3]))
+        left_indices = torch.zeros([1, 10], dtype=torch.float32, device=DEVICE)
+        left_indices[0][0] = 1
+        left_indices[0][1] = 1
+
+        input_tensors = [
+            text_indices,
+            aspect_indices,
+            left_indices,
+            torch.zeros([1, 10, 300], dtype=torch.float32, device=DEVICE),
+            torch.zeros([1, 3, 3], dtype=torch.float32, device=DEVICE),
+        ]
+
+        self.model.to(DEVICE)
+        self.model.eval()
+        result = self.model(input_tensors)
+
+        self.assertEqual(type(result), SenticGCNModelOutput)
+        self.assertEqual(type(result.logits), torch.Tensor)
+        self.assertEqual(result.logits.shape, torch.Size([1, 3]))
 
 
 class TestSenticGCNBertModel(unittest.TestCase):

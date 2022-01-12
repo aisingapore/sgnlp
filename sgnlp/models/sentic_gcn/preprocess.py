@@ -254,7 +254,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
             graph = generate_dependency_adj_matrix(data.full_text, data.aspect, self.senticnet, self.spacy_pipeline)
             sdat_graph = np.pad(
                 graph,
-                ((0, max_len - graph.shape[0]), (0, max_len - graph.shape[0])),
+                ((0, max_len - len(data.full_text)), (0, max_len - len(data.full_text))),
                 "constant",
             )
 
