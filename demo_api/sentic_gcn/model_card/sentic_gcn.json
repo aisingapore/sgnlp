@@ -1,36 +1,36 @@
 {
     "name": "Sentic GCN",
     "languages": "English",
-    "description": "",
+    "description": "This is a neural network that utilises LSTM and GCN to detect the sentiment polarities of different aspects in the same sentence. The models used corresponds to the associated models described in the paper.",
     "paper": {
-      "text": "Bin Liang, Hang Su, Lin Gui, Erik Cambria, Ruifeng Xu. Knowledge-Based Systems, 2021: 107643.",
+      "text": "Bin Liang, Hang Su, Lin Gui, Erik Cambria, Ruifeng Xu. (2021). Aspect-based sentiment analysis via affective knowledge enhanced graph convolutional networks, 2021: 107643.",
       "url": "https://github.com/BinLiang-NLP/Sentic-GCN"
     },
     "trainingDataset": {
-      "text": "semeval15",
+      "text": "acl-14-short-data, semeval14, semeval15, semeval16",
       "url": "https://github.com/BinLiang-NLP/Sentic-GCN/tree/main/datasets"
     },
     "evaluationDataset": {
-      "text": "semeval15",
+      "text": "acl-14-short-data, semeval14, semeval15, semeval16",
       "url": "https://github.com/BinLiang-NLP/Sentic-GCN/tree/main/datasets"
     },
-    "evaluationScores": "",
+    "evaluationScores": "Sentic-GCN: 94.36% Acc, 94.43% F1 (SemEval14-Laptop), 94.55% Acc, 91.99% F1 (SemEval14-Restaurant), 95.02% Acc, 93.22% F1 (SemEval15-Restaurant), 96.75% Acc, 93.55% F1 (SemEval16-Restaurant). Sentic-GCN Bert: 99.22% Acc, 99.15% F1 (SemEval14-Laptop), 97.39% Acc, 96.53% F1 (SemEval14-Restaurant), 99.17% Acc, 98.78% F1 (SemEval15-Restaurant), 99.37% Acc, 98.79% F1 (SemEval16-Restaurant).",
     "trainingConfig": {
-      "text": ""
+      "text": "Refer to documentation for details."
     },
-    "trainingTime": "",
+    "trainingTime": "Sentic-GCN:  ~10 mins for ~35 epochs (early stopped),  Sentic-GCN Bert:  ~1 hr for ~40 epochs (early stopped) for SemEval14-Laptop/SemEval14-Restaurant/SemEval15-Restaurant/SemEval16-Restaurant datasets.",
     "modelWeights": {
-      "text": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin",
+      "text": "Refer to documentation for details.",
       "url": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin"
     },
     "modelConfig": {
-      "text": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json",
+      "text": "Refer to documentation for details.",
       "url": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
     },
     "modelInput": "Aspect (word), sentence containing the aspect",
     "modelOutput": "Sentiment of aspect, -1 (negative), 0 (neutral), 1 (postive)",
-    "modelSize": "",
-    "inferenceInfo": "",
+    "modelSize": "Sentic-GCN: ~8.7MB, Sentic-GCN Bert: ~7.1MB",
+    "inferenceInfo": "< 1 sec on Intel(R) i7 Quad-Core @ 1.7GHz.",
     "usageScenarios": "Sentiment analysis of aspects in sentences",
     "originalCode": {
       "text": "https://github.com/BinLiang-NLP/Sentic-GCN",
@@ -40,6 +40,5 @@
       "text": "MIT License",
       "url": "https://choosealicense.com/licenses/mit"
     },
-    "contact": "sg-nlp@aisingapore.org",
-    "additionalInfo": "CAVEATS: The model trained in this paper alone is not sufficient to do extract relations from a document. It requires other models to perform entity recognition and coreference between the entities. For this demo, two other pretrained models from AllenNLP is used: Fine Grained Name Entity Recognition and Coreference SpanBERT."
+    "contact": "sg-nlp@aisingapore.org"
   }
