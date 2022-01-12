@@ -165,7 +165,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
-        senticnet: str = "senticnet.pkl",
+        senticnet: str = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
         device: str = "cpu",
     ) -> None:
         super().__init__(
@@ -325,7 +325,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
-        senticnet: str = "senticnet.pkl",
+        senticnet: str = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
         max_len: int = 85,
         device: str = "cpu",
     ) -> None:
