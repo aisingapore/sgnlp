@@ -52,7 +52,9 @@ class SenticGCNBasePreprocessor:
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
-        senticnet: str = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        senticnet: Union[
+            str, Dict[str, float]
+        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
         device: str = "cpu",
     ) -> None:
         # Set device
@@ -61,27 +63,41 @@ class SenticGCNBasePreprocessor:
         )
         self.spacy_pipeline = spacy.load(spacy_pipeline)
 
-        # Load senticnet
-        if senticnet.startswith("https://") or senticnet.startswith("http://"):
-            with tempfile.TemporaryDirectory() as tmpdir:
-                temp_dir = pathlib.Path(tmpdir)
-            download_url_file(senticnet, temp_dir)
-            saved_path = temp_dir.joinpath("senticnet.pickle")
-            self.senticnet = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=saved_path)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-        elif senticnet.endswith(".pkl") or senticnet.endswith(".pickle"):
-            self.senticnet = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=senticnet)
-        elif senticnet.endswith(".txt"):
-            self.senticnet = load_and_process_senticnet(senticnet_file_path=senticnet)
-        else:
-            raise ValueError(
-                f"""
-                Invalid SenticNet file!
-                For downloading from cloud storage, please provide url to pickle file location
-                (i.e. string url starting with https:// or http://).
-                For processed SenticNet dictionary, please provide pickle file location
-                (i.e. file with .pkl or .pickle extension).
-                For raw SenticNet-5.0 file, please provide text file path (i.e. file with .txt extension)
+        try:
+            # Load senticnet
+            if isinstance(senticnet, dict):
+                senticnet_ = senticnet
+            elif senticnet.startswith("https://") or senticnet.startswith("http://"):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    temp_dir = pathlib.Path(tmpdir)
+                download_url_file(senticnet, temp_dir)
+                saved_path = temp_dir.joinpath("senticnet.pickle")
+                senticnet_ = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=saved_path)
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            elif senticnet.endswith(".pkl") or senticnet.endswith(".pickle"):
+                senticnet_ = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=senticnet)
+            elif senticnet.endswith(".txt"):
+                senticnet_ = load_and_process_senticnet(senticnet_file_path=senticnet)
+            else:
+                raise ValueError(
+                    """
+                    Error initializing SenticNet!
+                    For downloading from cloud storage, please provide url to pickle file location
+                    (i.e. string url starting with https:// or http://).
+                    For processed SenticNet dictionary, please provide pickle file location
+                    (i.e. file with .pkl or .pickle extension).
+                    For raw SenticNet-5.0 file, please provide text file path (i.e. file with .txt extension).
+                    For externally created SenticNet dictionary, please provide a dictionary with words as key
+                    and sentic score as values.
+                    """
+                )
+            self.senticnet = senticnet_
+        except Exception as e:
+            logging.error(e)
+            raise Exception(
+                """
+                    Error initializing SenticNet! Please ensure that input is either a dictionary, a str path to
+                    a saved pickle file, an url to cloud storage or str path to the raw senticnet file.
                 """
             )
 
@@ -165,7 +181,9 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
-        senticnet: str = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        senticnet: Union[
+            str, Dict[str, float]
+        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
         device: str = "cpu",
     ) -> None:
         super().__init__(
@@ -325,7 +343,9 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
-        senticnet: str = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        senticnet: Union[
+            str, Dict[str, float]
+        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
         max_len: int = 85,
         device: str = "cpu",
     ) -> None:
