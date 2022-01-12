@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Any, Dict
 
 
 @dataclass
@@ -157,6 +158,20 @@ class SenticGCNTrainArgs:
         default=5, metadata={"help": "Number of train epoch without improvements prior to early stopping."}
     )
     max_len: int = field(default=85, metadata={"help": "Max length to pad for bert tokenizer."})
+    eval_args: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "model": "senticgcn",
+            "tokenizer": "senticgcn",
+            "embedding_model": "senticgcn",
+            "config_filename": "config.json",
+            "model_filename": "pytorch_model.bin",
+            "test_filename": "",
+            "result_folder": "",
+            "eval_batch_size": 16,
+            "seed": 776,
+            "device": "cpu",
+        }
+    )
 
     def __post_init__(self):
         # Model

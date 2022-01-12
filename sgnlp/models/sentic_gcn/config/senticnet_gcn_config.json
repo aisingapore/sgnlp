@@ -42,5 +42,18 @@
     "device": "cuda",
     "repeats": 10,
     "patience": 5,
-    "max_len": 85
+    "max_len": 85,
+
+    "eval_args": {
+        "model": "senticgcn",
+        "tokenizer": "senticgcn",
+        "embedding_model": "senticgcn",
+        "config_filename": "config.json",
+        "model_filename": "pytorch_model.bin",
+        "test_filename": "./datasets/semeval14/restaurant_test.raw",
+        "result_folder": "./eval_result/",
+        "eval_batch_size": 16,
+        "seed": 776,
+        "device": "cpu"
+    }
 }
