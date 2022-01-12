@@ -8,8 +8,6 @@ from sgnlp.models.sentic_gcn import (
     SenticGCNBertPostprocessor
     )
 
-from flask import request
-
 app = create_api(app_name=__name__, model_card_path="model_card/sentic_gcn.json")
 
 preprocessor = SenticGCNBertPreprocessor(
