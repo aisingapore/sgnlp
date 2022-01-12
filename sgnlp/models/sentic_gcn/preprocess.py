@@ -12,10 +12,10 @@ import spacy
 import torch
 from transformers import PreTrainedTokenizer, PretrainedConfig, PreTrainedModel
 
-from config import SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
-from modeling import SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
-from tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
-from utils import (
+from .config import SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
+from .modeling import SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
+from .tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
+from .utils import (
     load_and_process_senticnet,
     download_tokenizer_files,
     download_url_file,

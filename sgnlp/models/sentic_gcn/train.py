@@ -13,17 +13,17 @@ import torch.optim as optim
 from sklearn.metrics import f1_score
 from torch.utils.data.dataloader import DataLoader
 
-from config import SenticGCNConfig, SenticGCNBertConfig, SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
-from data_class import SenticGCNTrainArgs
-from modeling import (
+from .config import SenticGCNConfig, SenticGCNBertConfig, SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
+from .data_class import SenticGCNTrainArgs
+from .modeling import (
     SenticGCNBertPreTrainedModel,
     SenticGCNModel,
     SenticGCNBertModel,
     SenticGCNEmbeddingModel,
     SenticGCNBertEmbeddingModel,
 )
-from tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
-from utils import parse_args_and_load_config, set_random_seed, SenticGCNDatasetGenerator, BucketIterator
+from .tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
+from .utils import parse_args_and_load_config, set_random_seed, SenticGCNDatasetGenerator, BucketIterator
 
 
 logging.basicConfig(level=logging.DEBUG)

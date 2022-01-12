@@ -16,7 +16,7 @@ from torch.utils.data import random_split, Dataset
 from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 
-from data_class import SenticGCNTrainArgs
+from .data_class import SenticGCNTrainArgs
 
 
 def parse_args_and_load_config(

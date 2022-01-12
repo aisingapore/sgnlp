@@ -2,8 +2,8 @@ from typing import Dict, List, Union
 
 import torch.nn.functional as F
 
-from preprocess import SenticGCNData, SenticGCNBertData
-from modeling import SenticGCNModelOutput, SenticGCNBertModelOutput
+from .preprocess import SenticGCNData, SenticGCNBertData
+from .modeling import SenticGCNModelOutput, SenticGCNBertModelOutput
 
 
 class SenticGCNBasePostprocessor:
@@ -33,7 +33,7 @@ class SenticGCNBasePostprocessor:
                 if proc_output["sentence"] == processed_input.full_text_tokens:
                     exists = True
                     outputs[idx]["aspects"].append(processed_input.aspect_token_index)
-                    outputs[idx]["labels"].append(prediction)
+                    outputs[idx]["labels"].append(int(prediction))
                     if self.return_aspects_text:
                         outputs[idx]["aspects_text"].append(processed_input.aspect)
                     break
@@ -42,7 +42,7 @@ class SenticGCNBasePostprocessor:
             processed_dict = {}
             processed_dict["sentence"] = processed_input.full_text_tokens
             processed_dict["aspects"] = [processed_input.aspect_token_index]
-            processed_dict["labels"] = [prediction]
+            processed_dict["labels"] = [int(prediction)]
             if self.return_full_text:
                 processed_dict["full_text"] = processed_input.full_text
             if self.return_aspects_text:

@@ -7,15 +7,15 @@ import torch.nn.functional as F
 from transformers import PreTrainedModel, BertModel
 from transformers.file_utils import ModelOutput
 
-from modules.dynamic_rnn import DynamicLSTM
-from modules.gcn import GraphConvolution
-from config import (
+from .modules.dynamic_rnn import DynamicLSTM
+from .modules.gcn import GraphConvolution
+from .config import (
     SenticGCNConfig,
     SenticGCNBertConfig,
     SenticGCNEmbeddingConfig,
     SenticGCNBertEmbeddingConfig,
 )
-from utils import build_embedding_matrix
+from .utils import build_embedding_matrix
 
 
 @dataclass
