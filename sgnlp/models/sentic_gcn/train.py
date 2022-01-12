@@ -5,6 +5,7 @@ import pathlib
 import pickle
 import shutil
 import tempfile
+import urllib
 from typing import Dict, List, Tuple, Union
 
 import torch
@@ -476,10 +477,21 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
             SenticGCNEmbeddingModel: return a SenticGCNEmbeddingModel instance.
         """
         if not self.config.build_embedding_model:
-            config_path = pathlib.Path(self.config.embedding_model).joinpath("config.json")
-            embed_config = SenticGCNEmbeddingConfig.from_pretrained(config_path)
-            embed_path = pathlib.Path(self.config.embedding_model).joinpath("pytorch_model.bin")
-            return SenticGCNEmbeddingModel.from_pretrained(embed_path, config=embed_config)
+            config_filename = "config.json"
+            model_filename = "pytorch_model.bin"
+            if self.config.embedding_model.startswith("https://") or self.config.embedding_model.startswith("http://"):
+                # Load from cloud
+                config_url = urllib.parse.urljoin(self.config.embedding_model, config_filename)
+                model_url = urllib.parse.urljoin(self.config.embedding_model, model_filename)
+                embedding_config = SenticGCNEmbeddingConfig.from_pretrained(config_url)
+                embedding_model = SenticGCNEmbeddingModel.from_pretrained(model_url, config=embedding_config)
+            else:
+                # Load from local folder
+                config_path = pathlib.Path(self.config.embedding_model).joinpath(config_filename)
+                embedding_config = SenticGCNEmbeddingConfig.from_pretrained(config_path)
+                embed_path = pathlib.Path(self.config.embedding_model).joinpath(model_filename)
+                embedding_model = SenticGCNEmbeddingModel.from_pretrained(embed_path, config=embedding_config)
+            return embedding_model
         else:
             embedding_model = SenticGCNEmbeddingModel.build_embedding_model(
                 self.config.word_vec_file_path, vocab, self.config.embed_dim
