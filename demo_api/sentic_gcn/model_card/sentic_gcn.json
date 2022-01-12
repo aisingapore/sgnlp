@@ -7,12 +7,12 @@
       "url": "https://github.com/BinLiang-NLP/Sentic-GCN"
     },
     "trainingDataset": {
-      "text": "",
-      "url": ""
+      "text": "semeval15",
+      "url": "https://github.com/BinLiang-NLP/Sentic-GCN/tree/main/datasets"
     },
     "evaluationDataset": {
-      "text": "",
-      "url": ""
+      "text": "semeval15",
+      "url": "https://github.com/BinLiang-NLP/Sentic-GCN/tree/main/datasets"
     },
     "evaluationScores": "",
     "trainingConfig": {
@@ -20,18 +20,18 @@
     },
     "trainingTime": "",
     "modelWeights": {
-      "text": "",
-      "url": ""
+      "text": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin",
+      "url": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin"
     },
     "modelConfig": {
-      "text": "",
-      "url": ""
+      "text": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json",
+      "url": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
     },
-    "modelInput": "",
-    "modelOutput": "",
+    "modelInput": "Aspect (word), sentence containing the aspect",
+    "modelOutput": "Sentiment of aspect, -1 (negative), 0 (neutral), 1 (postive)",
     "modelSize": "",
     "inferenceInfo": "",
-    "usageScenarios": "",
+    "usageScenarios": "Sentiment analysis of aspects in sentences",
     "originalCode": {
       "text": "https://github.com/BinLiang-NLP/Sentic-GCN",
       "url": "https://github.com/BinLiang-NLP/Sentic-GCN"
