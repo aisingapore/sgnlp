@@ -101,7 +101,7 @@ class TestSenticGCNDatasetGeneratorTestCase(unittest.TestCase):
         with mock.patch("sgnlp.models.sentic_gcn.tokenization.SenticGCNTokenizer") as MockClass:
             fake_tokenizer = MockClass()
         dataset_gen = SenticGCNDatasetGenerator(self.cfg, fake_tokenizer)
-        data = dataset_gen._read_raw_dataset("train")
+        data = dataset_gen._read_raw_dataset(self.cfg.dataset_train)
         self.assertEqual(len(data), 15)
 
     def test_generate_senticgcn_dataset(self):
