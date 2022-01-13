@@ -161,12 +161,15 @@ class SenticGCNTrainArgs:
     eval_args: Dict[str, Any] = field(
         default_factory=lambda: {
             "model": "senticgcn",
+            "model_path": "",
             "tokenizer": "senticgcn",
             "embedding_model": "senticgcn",
             "config_filename": "config.json",
             "model_filename": "pytorch_model.bin",
             "test_filename": "",
-            "result_folder": "",
+            "senticnet": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+            "spacy_pipeline": "en_core_web_sm",
+            "result_folder": "./eval_result/",
             "eval_batch_size": 16,
             "seed": 776,
             "device": "cpu",

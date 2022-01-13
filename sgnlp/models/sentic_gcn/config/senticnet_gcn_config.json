@@ -45,12 +45,15 @@
     "max_len": 85,
 
     "eval_args": {
-        "model": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn/",
+        "model": "senticgcn",
+        "model_path": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn/",
         "tokenizer": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_tokenizer/",
         "embedding_model": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/",
         "config_filename": "config.json",
         "model_filename": "pytorch_model.bin",
         "test_filename": "./datasets/semeval14/restaurant_test.raw",
+        "senticnet": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        "spacy_pipeline": "en_core_web_sm",
         "result_folder": "./eval_result/",
         "eval_batch_size": 16,
         "seed": 776,

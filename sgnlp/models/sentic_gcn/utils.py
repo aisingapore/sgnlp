@@ -7,6 +7,8 @@ import pathlib
 import requests
 import urllib
 import math
+import tempfile
+import shutil
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -276,17 +278,49 @@ class SenticGCNDataset(Dataset):
 class SenticGCNDatasetGenerator:
     """
     Main dataset generator class to preprocess raw dataset file.
+    Set mode to 'train' to generate dataset for training.
+    Set mode to 'test' to generate dataset for training from eval_args.
     """
 
-    def __init__(self, config: SenticGCNTrainArgs, tokenizer: PreTrainedTokenizer) -> None:
+    def __init__(self, config: SenticGCNTrainArgs, tokenizer: PreTrainedTokenizer, mode: str = "train") -> None:
         self.config = config
-        self.senticnet = load_and_process_senticnet(
-            config.senticnet_word_file_path,
-            config.save_preprocessed_senticnet,
-            config.saved_preprocessed_senticnet_file_path,
+        self.senticnet = self._load_senticnet(mode)
+        self.spacy_pipeline = spacy.load(
+            config.spacy_pipeline if mode == "train" else config.eval_args["spacy_pipeline"]
         )
-        self.spacy_pipeline = spacy.load(config.spacy_pipeline)
         self.tokenizer = tokenizer
+
+    def _load_senticnet(self, mode: str) -> Dict[str, float]:
+        if mode == "train":
+            senticnet_ = load_and_process_senticnet(
+                self.config.senticnet_word_file_path,
+                self.config.save_preprocessed_senticnet,
+                self.config.saved_preprocessed_senticnet_file_path,
+            )
+        else:
+            if self.config.eval_args["senticnet"].startswith("https://") or self.config.eval_args[
+                "senticnet"
+            ].startswith("http://"):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    temp_dir = pathlib.Path(tmpdir)
+                download_url_file(self.config.eval_args["senticnet"], temp_dir)
+                saved_path = temp_dir.joinpath("senticnet.pickle")
+                senticnet_ = load_and_process_senticnet(saved_preprocessed_senticnet_file_path=saved_path)
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            elif self.config.eval_args["senticnet"].endswith(".pkl") or self.config.eval_args["senticnet"].endswith(
+                ".pickle"
+            ):
+                senticnet_ = load_and_process_senticnet(
+                    saved_preprocessed_senticnet_file_path=self.config.eval_args["senticnet"]
+                )
+            else:
+                raise ValueError(
+                    """
+                    Error initializing SenticNet!
+                    Please only provide url to pickle file cloud storage location or local file path.
+                    """
+                )
+        return senticnet_
 
     def _read_raw_dataset(self, dataset_type: str) -> List[str]:
         """
@@ -477,6 +511,20 @@ class SenticGCNDatasetGenerator:
         else:
             val_data = test_data
         return SenticGCNDataset(train_data), SenticGCNDataset(val_data), SenticGCNDataset(test_data)
+
+    def generate_test_datasets(self) -> SenticGCNDataset:
+        """
+        Main wrapper method to generate test datasets for both SenticGCN and SenticGCNBert based on eval config.
+
+        Returns:
+            SenticGCNDataset: return SenticGCNDataset instance for test datasets
+        """
+        raw_data = self._read_raw_dataset(self.config.eval_args["test_filename"])
+        if self.config.eval_args["model"] == "senticgcn":
+            test_data = self._generate_senticgcn_dataset(raw_data)
+        else:
+            test_data = self._generate_senticgcnbert_dataset(raw_data)
+        return SenticGCNDataset(test_data)
 
 
 class BucketIterator:
