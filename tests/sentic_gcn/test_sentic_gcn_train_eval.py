@@ -6,14 +6,15 @@ import tempfile
 import unittest
 
 from sgnlp.models.sentic_gcn.data_class import SenticGCNTrainArgs
+from sgnlp.models.sentic_gcn.eval import SenticGCNEvaluator, SenticGCNBertEvaluator
 from sgnlp.models.sentic_gcn.train import SenticGCNTrainer, SenticGCNBertTrainer
 
 PARENT_DIR = str(pathlib.Path(__file__).parent)
 
 
-def find_result_file(path):
+def find_result_file(path: str, extension: str):
     for p in pathlib.Path(path).iterdir():
-        if p.is_file() and p.suffix == ".pkl":
+        if p.is_file() and p.suffix == extension:
             yield p.resolve()
 
 
@@ -75,7 +76,7 @@ class TestSenticGCNTrainTestCase(unittest.TestCase):
         trainer = SenticGCNTrainer(self.cfg)
         trainer.train()
 
-        result_file = list(find_result_file(self.results_save_folder))[0]
+        result_file = list(find_result_file(self.results_save_folder, ".pkl"))[0]
 
         with open(result_file, "rb") as f:
             results = pickle.load(f)
@@ -147,7 +148,7 @@ class TestSenticGCNBertTrainTestCase(unittest.TestCase):
         trainer = SenticGCNBertTrainer(self.cfg)
         trainer.train()
 
-        result_file = list(find_result_file(self.results_save_folder))[0]
+        result_file = list(find_result_file(self.results_save_folder, ".pkl"))[0]
 
         with open(result_file, "rb") as f:
             results = pickle.load(f)
@@ -165,3 +166,91 @@ class TestSenticGCNBertTrainTestCase(unittest.TestCase):
         model_filepath = self.model_save_folder.joinpath("pytorch_model.bin")
         self.assertTrue(config_filepath.is_file())
         self.assertTrue(model_filepath.is_file())
+
+
+class TestSenticGCNEvaluateTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.results_save_folder = pathlib.Path(tmpdir)
+
+        cfg = {
+            "eval_args": {
+                "model": "senticgcn",
+                "model_path": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn/",
+                "tokenizer": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_tokenizer/",
+                "embedding_model": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/",
+                "config_filename": "config.json",
+                "model_filename": "pytorch_model.bin",
+                "test_filename": PARENT_DIR + "/test_data/test_test.raw",
+                "senticnet": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+                "spacy_pipeline": "en_core_web_sm",
+                "result_folder": str(self.results_save_folder),
+                "eval_batch_size": 16,
+                "seed": 776,
+                "device": "cpu",
+            }
+        }
+        self.cfg = SenticGCNTrainArgs(**cfg)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.results_save_folder, ignore_errors=True)
+
+    @pytest.mark.slow
+    def test_evaluate(self):
+        evaluator = SenticGCNEvaluator(self.cfg)
+        evaluator.evaluate()
+
+        result_file = list(find_result_file(self.results_save_folder, ".txt"))[0]
+        with open(result_file, "r") as f:
+            results = f.readlines()
+
+        self.assertEqual(len(results), 5)
+        self.assertTrue(results[0].startswith("Model:"))
+        self.assertTrue(results[1].startswith("Batch Size:"))
+        self.assertTrue(results[2].startswith("Random Seed:"))
+        self.assertTrue(results[3].startswith("Acc:"))
+        self.assertTrue(results[4].startswith("F1:"))
+
+
+class TestSenticGCNBertEvaluateTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.results_save_folder = pathlib.Path(tmpdir)
+
+        cfg = {
+            "eval_args": {
+                "model": "senticgcnbert",
+                "model_path": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/",
+                "tokenizer": "bert-base-uncased",
+                "embedding_model": "bert-base-uncased",
+                "config_filename": "config.json",
+                "model_filename": "pytorch_model.bin",
+                "test_filename": PARENT_DIR + "/test_data/test_test.raw",
+                "senticnet": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+                "spacy_pipeline": "en_core_web_sm",
+                "result_folder": str(self.results_save_folder),
+                "eval_batch_size": 16,
+                "seed": 776,
+                "device": "cpu",
+            }
+        }
+        self.cfg = SenticGCNTrainArgs(**cfg)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.results_save_folder, ignore_errors=True)
+
+    @pytest.mark.slow
+    def test_evaluate(self):
+        evaluator = SenticGCNBertEvaluator(self.cfg)
+        evaluator.evaluate()
+
+        result_file = list(find_result_file(self.results_save_folder, ".txt"))[0]
+        with open(result_file, "r") as f:
+            results = f.readlines()
+
+        self.assertEqual(len(results), 5)
+        self.assertTrue(results[0].startswith("Model:"))
+        self.assertTrue(results[1].startswith("Batch Size:"))
+        self.assertTrue(results[2].startswith("Random Seed:"))
+        self.assertTrue(results[3].startswith("Acc:"))
+        self.assertTrue(results[4].startswith("F1:"))
