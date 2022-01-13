@@ -214,53 +214,60 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
         all_aspect_indices = []
         all_left_indices = []
         all_sdat_graph = []
-        max_len = max([len(data.full_text) for data in data_batch])
+        all_data = []
+        max_len = 0
         for data in data_batch:
             text_indices = self.tokenizer(
                 data.full_text,
-                max_length=max_len,
-                padding="max_length",
-                truncation=True,
-                add_special_tokens=False,
                 return_tensors=None,
                 return_attention_mask=False,
                 return_token_type_ids=False,
             )
             aspect_indices = self.tokenizer(
                 data.aspect,
-                max_length=max_len,
-                padding="max_length",
-                truncation=True,
-                add_special_tokens=False,
                 return_tensors=None,
                 return_attention_mask=False,
                 return_token_type_ids=False,
             )
-            if data.left_text:
-                left_indices = self.tokenizer(
-                    data.left_text,
-                    max_length=max_len,
-                    padding="max_length",
-                    truncation=True,
-                    add_special_tokens=False,
-                    return_tensors=None,
-                    return_attention_mask=False,
-                    return_token_type_ids=False,
-                )
-            else:
-                # Workaround for handling empty string.
-                # This happens when the aspect is also the first word in the full text.
-                left_indices = {"input_ids": [0] * max_len}
+            left_indices = self.tokenizer(
+                data.left_text,
+                return_tensors=None,
+                return_attention_mask=False,
+                return_token_type_ids=False,
+            )
             graph = generate_dependency_adj_matrix(data.full_text, data.aspect, self.senticnet, self.spacy_pipeline)
+            all_data.append(
+                {
+                    "text_indices": text_indices["input_ids"],
+                    "aspect_indices": aspect_indices["input_ids"],
+                    "left_indices": left_indices["input_ids"],
+                    "sdat_graph": graph,
+                }
+            )
+            if max_len < len(text_indices["input_ids"]):
+                max_len = len(text_indices["input_ids"])
+
+        for item in all_data:
+            (text_indices, aspect_indices, left_indices, sdat_graph,) = (
+                item["text_indices"],
+                item["aspect_indices"],
+                item["left_indices"],
+                item["sdat_graph"],
+            )
+
+            text_padding = [0] * (max_len - len(text_indices))
+            aspect_padding = [0] * (max_len - len(aspect_indices))
+            left_padding = [0] * (max_len - len(left_indices))
+
             sdat_graph = np.pad(
-                graph,
-                ((0, max_len - len(data.full_text)), (0, max_len - len(data.full_text))),
+                sdat_graph,
+                ((0, max_len - len(text_indices)), (0, max_len - len(text_indices))),
                 "constant",
             )
 
-            all_text_indices.append(text_indices["input_ids"])
-            all_aspect_indices.append(aspect_indices["input_ids"])
-            all_left_indices.append(left_indices["input_ids"])
+            all_text_indices.append(text_indices + text_padding)
+            all_aspect_indices.append(aspect_indices + aspect_padding)
+            all_left_indices.append(left_indices + left_padding)
             all_sdat_graph.append(sdat_graph)
 
         all_text_indices = torch.tensor(all_text_indices).to(self.device)
