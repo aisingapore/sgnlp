@@ -62,11 +62,11 @@ class TestSenticGCNPreprocessorTestCase(unittest.TestCase):
 
         for proc_index in processed_indices:
             self.assertTrue(isinstance(proc_index, torch.Tensor))
-        self.assertEqual(processed_indices[0].shape, torch.Size([5, 128]))
-        self.assertEqual(processed_indices[1].shape, torch.Size([5, 128]))
-        self.assertEqual(processed_indices[2].shape, torch.Size([5, 128]))
-        self.assertEqual(processed_indices[3].shape, torch.Size([5, 128, 300]))
-        self.assertEqual(processed_indices[4].shape, torch.Size([5, 128, 128]))
+        self.assertEqual(processed_indices[0].shape, torch.Size([5, 27]))
+        self.assertEqual(processed_indices[1].shape, torch.Size([5, 27]))
+        self.assertEqual(processed_indices[2].shape, torch.Size([5, 27]))
+        self.assertEqual(processed_indices[3].shape, torch.Size([5, 27, 300]))
+        self.assertEqual(processed_indices[4].shape, torch.Size([5, 27, 27]))
 
     def test_senticgcn_preprocessor_from_external(self):
         """
