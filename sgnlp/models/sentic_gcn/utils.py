@@ -322,17 +322,15 @@ class SenticGCNDatasetGenerator:
                 )
         return senticnet_
 
-    def _read_raw_dataset(self, dataset_type: str) -> List[str]:
+    def _read_raw_dataset(self, files_path: List[str]) -> List[str]:
         """
         Private helper method to read raw dataset files based on requested type (e.g. Train or Test).
 
         Args:
-            dataset_type (str): Type of dataset files to read. Train or Test.
-
+            file_path (str): file path to the dataset
         Returns:
             List[str]: list of str consisting of the full text, aspect and polarity index.
         """
-        files_path = self.config.dataset_train if dataset_type == "train" else self.config.dataset_test
         all_lines = []
         for dataset_file in files_path:
             with open(dataset_file, "r", encoding="utf-8", newline="\n", errors="ignore") as f:
