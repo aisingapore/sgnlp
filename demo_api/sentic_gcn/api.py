@@ -38,7 +38,7 @@ def predict():
     # Postprocessing
     post_outputs = postprocessor(processed_inputs=processed_inputs, model_outputs=outputs)
 
-    return jsonify(post_outputs)
+    return jsonify(post_outputs[0])
 
 
 if __name__ == "__main__":
