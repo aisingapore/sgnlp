@@ -49,7 +49,7 @@ class SenticGCNBertConfig(PretrainedConfig):
         hidden_dim (:obj:`int`, defaults to 768): The embedding dimension size for the Bert model as well as GCN dimension.
         max_seq_len (:obj:`int`, defaults to 85): The max sequence length to pad and truncate.
         dropout (:obj:`float`, defaults to 0.3): Dropout percentage.
-        polarities_dim (:ob:`int`, defaults to 3): Size of output dimension representing available polarities (e.g. Positive, Negative, Neutral).
+        polarities_dim (:obj:`int`, defaults to 3): Size of output dimension representing available polarities (e.g. Positive, Negative, Neutral).
         loss_function (:obj:`str`, defaults to 'cross_entropy'): Loss function for training/eval.
     Example:
 
