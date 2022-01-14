@@ -1,6 +1,6 @@
 from .config import SenticGCNConfig, SenticGCNBertConfig, SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
 from .data_class import SenticGCNTrainArgs
-from .eval import SenticGCNEvaluator, SenticGCNBaseEvaluator
+from .eval import SenticGCNEvaluator, SenticGCNBertEvaluator
 from .modeling import SenticGCNModel, SenticGCNBertModel, SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
 from .preprocess import SenticGCNPreprocessor, SenticGCNBertPreprocessor
 from .postprocess import SenticGCNPostprocessor, SenticGCNBertPostprocessor
