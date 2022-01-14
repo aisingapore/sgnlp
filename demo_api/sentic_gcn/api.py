@@ -31,16 +31,17 @@ app.logger.info("Preprocessing pipeline and model initialization complete.")
 def predict():
     req_body = request.get_json()
     
+    print('req_body: ',req_body)
+    
     # Preprocessing
-    processed_inputs, processed_indices = preprocessor([req_body])
+    processed_inputs, processed_indices = preprocessor(req_body)
     outputs = model(processed_indices)
     
     # Postprocessing
     post_outputs = postprocessor(processed_inputs=processed_inputs, model_outputs=outputs)
 
-    return jsonify(post_outputs[0])
+    return jsonify(post_outputs)
 
 
 if __name__ == "__main__":
-    # app.run()
-    app.run(host="0.0.0.0", debug=True, port=8000)
+    app.run()
