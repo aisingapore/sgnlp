@@ -42,6 +42,11 @@ local api_names = {
     image_name: "lif-3way-ap",
     deployment_name: "lif-3way-ap"
   },
+  "sentic_gcn": {
+    module_name: "sentic_gcn",
+    image_name: "sentic-gcn",
+    deployment_name: "sentic-gcn
+  },
   "ufd": {
     module_name: "ufd",
     image_name: "ufd",
