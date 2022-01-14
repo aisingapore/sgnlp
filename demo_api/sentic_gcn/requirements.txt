@@ -3,4 +3,4 @@ spacy==3.2.1
 numpy==1.22.0
 flask
 gunicorn
-sgnlp==0.2.0
+sgnlp
