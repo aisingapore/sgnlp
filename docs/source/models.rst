@@ -7,3 +7,4 @@ Models
    model/ufd
    model/emotion_entailment
    model/span_extraction
+   model/senticgcn
