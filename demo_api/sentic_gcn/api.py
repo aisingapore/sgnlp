@@ -33,7 +33,7 @@ def predict():
     req_body = request.get_json()
 
     # Preprocessing
-    processed_inputs, processed_indices = preprocessor(req_body)
+    processed_inputs, processed_indices = preprocessor([req_body])
     outputs = model(processed_indices)
 
     # Postprocessing

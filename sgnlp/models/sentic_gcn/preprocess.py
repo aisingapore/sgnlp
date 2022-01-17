@@ -298,7 +298,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
         for batch in data_batch:
             full_text = batch["sentence"].lower().strip()
             full_text_tokens = batch["sentence"].split()
-            for aspect in batch["aspect"]:
+            for aspect in batch["aspects"]:
                 aspect = aspect.lower().strip()
                 aspect_token_indexes = [
                     idx
@@ -481,7 +481,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         for batch in data_batch:
             full_text = batch["sentence"].lower().strip()
             full_text_tokens = batch["sentence"].split()
-            for aspect in batch["aspect"]:
+            for aspect in batch["aspects"]:
                 aspect = aspect.lower().strip()
                 aspect_token_indexes = [
                     idx

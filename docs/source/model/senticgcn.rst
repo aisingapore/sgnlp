@@ -78,16 +78,16 @@ following code:
 
     inputs = [
         {
-            "aspect": ["Soup"],
+            "aspects": ["Soup"],
             "sentence": "The soup is a little salty."
         },
         {
-            "aspect": ["service"],
+            "aspects": ["service"],
             "sentence": """Everyone that sat in the back outside agreed that it was the worst service we
                            had ever received."""
         },
         {
-            "aspect": ["location", "food"],
+            "aspects": ["location", "food"],
             "sentence": """it 's located in a strip mall near the beverly center , not the greatest
                            location , but the food keeps me coming back for more ."""
         }
@@ -152,16 +152,16 @@ with the following code:
 
     inputs = [
         {
-            "aspect": ["Soup"],
+            "aspects": ["Soup"],
             "sentence": "The soup is a little salty."
         },
         {
-            "aspect": ["service"],
+            "aspects": ["service"],
             "sentence": """Everyone that sat in the back outside agreed that it was the worst service we
                            had ever received."""
         },
         {
-            "aspect": ["location", "food"],
+            "aspects": ["location", "food"],
             "sentence": """it 's located in a strip mall near the beverly center , not the greatest
                            location , but the food keeps me coming back for more ."""
         }
