@@ -1,7 +1,6 @@
 local build_and_push_staging(module_name, image_name) = {
   image: "registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest",
   stage: "build_and_push_staging",
-  tags: "on-prem",
   when: "manual",
   script: [
     "echo 'Logging in to AISG Docker Registry...'",
@@ -17,7 +16,6 @@ local build_and_push_staging(module_name, image_name) = {
 local restart_kubernetes_staging(module_name, deployment_name) = {
   image: "registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest",
   stage: "restart_kubernetes_staging",
-  tags: "on-prem",
   when: "manual",
   needs: ["%s_build_and_push_staging" % module_name],
   script: [
