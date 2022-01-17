@@ -70,8 +70,6 @@ generate_dev_demo_api_yaml:
 
 build_and_push_demo_api:
   stage: build
-  tags:
-    - on-prem
   allow_failure: true
   needs:
     - generate_demo_api_yaml
@@ -82,8 +80,6 @@ build_and_push_demo_api:
 
 build_and_push_dev_demo_api:
   stage: build
-  tags:
-    - on-prem
   allow_failure: true
   needs:
     - generate_dev_demo_api_yaml
