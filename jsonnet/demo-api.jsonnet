@@ -3,6 +3,7 @@ local build_and_push_staging(module_name, image_name) = {
   stage: "build_and_push_staging",
   tags: [
     "on-prem",
+    "dind",
   ],
   when: "manual",
   script: [
@@ -20,6 +21,7 @@ local build_and_push_docs_staging() = {
   stage: "build_and_push_staging",
   tags: [
     "on-prem",
+    "dind",
   ],
   when: "manual",
   script: [
@@ -50,6 +52,7 @@ local retag_and_push_production(module_name, image_name) = {
   stage: "retag_and_push_production",
   tags: [
     "on-prem",
+    "dind",
   ],
   only: {
     refs: ["main"]
@@ -73,6 +76,7 @@ local restart_kubernetes_staging(module_name, deployment_name) = {
   stage: "restart_kubernetes_staging",
   tags: [
     "on-prem",
+    "dind",
   ],
   when: "manual",
   needs: ["%s_build_and_push_staging" % module_name],
@@ -88,6 +92,7 @@ local restart_kubernetes_production(module_name, deployment_name) = {
   stage: "restart_kubernetes_production",
   tags: [
     "on-prem",
+    "dind",
   ],
   only: {
     refs: ["main"]

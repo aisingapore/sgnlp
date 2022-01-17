@@ -3,6 +3,7 @@ local build_and_push_staging(module_name, image_name) = {
   stage: "build_and_push_staging",
   tags: [
     "on-prem",
+    "dind",
   ],
   when: "manual",
   script: [
@@ -21,6 +22,7 @@ local restart_kubernetes_staging(module_name, deployment_name) = {
   stage: "restart_kubernetes_staging",
   tags: [
     "on-prem",
+    "dind",
   ],
   when: "manual",
   needs: ["%s_build_and_push_staging" % module_name],
