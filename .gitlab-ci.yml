@@ -45,8 +45,6 @@ run_slow_unit_tests:
 
 generate_demo_api_yaml:
   stage: pre
-  tags:
-    - on-prem
   image: alpine:latest
   script:
     - apk add -U jsonnet
@@ -57,8 +55,6 @@ generate_demo_api_yaml:
 
 generate_dev_demo_api_yaml:
   stage: pre
-  tags:
-    - on-prem
   image: alpine:latest
   script:
     - apk add -U jsonnet
