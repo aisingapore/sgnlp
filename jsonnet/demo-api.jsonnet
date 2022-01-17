@@ -2,6 +2,7 @@ local build_and_push_staging(module_name, image_name) = {
   image: "registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest",
   stage: "build_and_push_staging",
   tags: [
+    "on-prem",
     "dind",
   ],
   when: "manual",
@@ -19,6 +20,7 @@ local build_and_push_docs_staging() = {
   image: "python:3.8.11-slim",
   stage: "build_and_push_staging",
   tags: [
+    "on-prem",
     "dind",
   ],
   when: "manual",
@@ -49,6 +51,7 @@ local retag_and_push_production(module_name, image_name) = {
   image: "registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest",
   stage: "retag_and_push_production",
   tags: [
+    "on-prem",
     "dind",
   ],
   only: {
@@ -72,6 +75,7 @@ local restart_kubernetes_staging(module_name, deployment_name) = {
   image: "registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest",
   stage: "restart_kubernetes_staging",
   tags: [
+    "on-prem",
     "dind",
   ],
   when: "manual",
@@ -87,6 +91,7 @@ local restart_kubernetes_production(module_name, deployment_name) = {
   image: "registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest",
   stage: "restart_kubernetes_production",
   tags: [
+    "on-prem",
     "dind",
   ],
   only: {
