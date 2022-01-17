@@ -45,7 +45,7 @@ local api_names = {
   "sentic_gcn": {
     module_name: "sentic_gcn",
     image_name: "sentic-gcn",
-    deployment_name: "sentic-gcn
+    deployment_name: "sentic-gcn"
   },
   "ufd": {
     module_name: "ufd",

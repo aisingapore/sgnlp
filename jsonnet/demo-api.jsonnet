@@ -126,6 +126,11 @@ local api_names = {
     module_name: "ufd",
     image_name: "ufd",
     deployment_name: "ufd"
+  },
+  "sentic_gcn": {
+    module_name: "sentic_gcn",
+    image_name: "sentic-gcn",
+    deployment_name: "sentic-gcn"
   }
 };
 
