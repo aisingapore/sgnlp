@@ -1,0 +1,56 @@
+{
+    "senticnet_word_file_path": "./senticNet/senticnet_word.txt",
+    "save_preprocessed_senticnet": true,
+    "saved_preprocessed_senticnet_file_path": "senticnet/senticnet.pickle",
+    "spacy_pipeline": "en_core_web_sm",
+    "word_vec_file_path": "./glove/glove.840B.300d.txt",
+
+    "dataset_train": ["./datasets/semeval14/restaurant_train.raw"],
+    "dataset_test": ["./datasets/semeval14/restaurant_test.raw"],
+    "valset_ratio": 0,
+
+    "model": "senticgcnbert",
+    "save_best_model": true,
+    "save_model_path": "senticgcnbert",
+
+    "tokenizer": "bert-base-uncased",
+
+    "embedding_model": "bert-base-uncased",
+
+    "save_results": true,
+    "save_results_folder": "./results/",
+
+    "initializer": "xavier_uniform_",
+    "optimizer": "adam",
+    "loss_function": "cross_entropy",
+    "learning_rate": 0.001,
+    "l2reg": 0.00001,
+    "epochs": 100,
+    "batch_size": 16,
+    "log_step": 5,
+    "embed_dim": 300,
+    "hidden_dim": 768,
+    "polarities_dim": 3,
+    "dropout": 0.3,
+    "seed": 776,
+    "device": "cuda",
+    "repeats": 10,
+    "patience": 5,
+    "max_len": 85,
+
+    "eval_args": {
+        "model": "senticgcnbert",
+        "model_path": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/",
+        "tokenizer": "bert-base-uncased",
+        "embedding_model": "bert-base-uncased",
+        "config_filename": "config.json",
+        "model_filename": "pytorch_model.bin",
+        "test_filename": "./datasets/semeval14/restaurant_test.raw",
+        "senticnet": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        "spacy_pipeline": "en_core_web_sm",
+        "result_folder": "./eval_result/",
+        "eval_batch_size": 16,
+        "seed": 776,
+        "device": "cpu"
+    }
+}

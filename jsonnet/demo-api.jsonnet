@@ -1,6 +1,10 @@
 local build_and_push_staging(module_name, image_name) = {
   image: "registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest",
   stage: "build_and_push_staging",
+  tags: [
+    "on-prem",
+    "dind",
+  ],
   when: "manual",
   script: [
     "echo 'Logging in to AISG Docker Registry...'",
@@ -15,6 +19,10 @@ local build_and_push_staging(module_name, image_name) = {
 local build_and_push_docs_staging() = {
   image: "python:3.8.11-slim",
   stage: "build_and_push_staging",
+  tags: [
+    "on-prem",
+    "dind",
+  ],
   when: "manual",
   script: [
     "echo 'Building Sphinx docs'",
@@ -42,6 +50,10 @@ local build_and_push_docs_staging() = {
 local retag_and_push_production(module_name, image_name) = {
   image: "registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest",
   stage: "retag_and_push_production",
+  tags: [
+    "on-prem",
+    "dind",
+  ],
   only: {
     refs: ["main"]
   },
@@ -62,6 +74,10 @@ local retag_and_push_production(module_name, image_name) = {
 local restart_kubernetes_staging(module_name, deployment_name) = {
   image: "registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest",
   stage: "restart_kubernetes_staging",
+  tags: [
+    "on-prem",
+    "dind",
+  ],
   when: "manual",
   needs: ["%s_build_and_push_staging" % module_name],
   script: [
@@ -74,6 +90,10 @@ local restart_kubernetes_staging(module_name, deployment_name) = {
 local restart_kubernetes_production(module_name, deployment_name) = {
   image: "registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest",
   stage: "restart_kubernetes_production",
+  tags: [
+    "on-prem",
+    "dind",
+  ],
   only: {
     refs: ["main"]
   },
@@ -126,6 +146,11 @@ local api_names = {
     module_name: "ufd",
     image_name: "ufd",
     deployment_name: "ufd"
+  },
+  "sentic_gcn": {
+    module_name: "sentic_gcn",
+    image_name: "sentic-gcn",
+    deployment_name: "sentic-gcn"
   }
 };
 
