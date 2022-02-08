@@ -1,0 +1,20 @@
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - pip=21.0.1
+  - cudatoolkit=10.2 # comment out for local install
+  - pip:
+    - numpy
+    - boto3
+    - requests
+    - tqdm
+    - numpy
+    - sklearn
+    - pytest
+    - sentencepiece
+    - spacy>=3
+    - tokenizers
+    - torch>=1.8,<2
+    - torchtext
+    - transformers
