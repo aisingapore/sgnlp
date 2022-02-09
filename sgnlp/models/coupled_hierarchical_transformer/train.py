@@ -27,10 +27,12 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 import torch.nn.functional as F
+
+from sgnlp.models.coupled_hierarchical_transformer.config import DualBertConfig
 from .utils import classification_report
 
 from transformers import BertTokenizer
-from .modeling import DualBert
+from .new_modeling import DualBert
 from transformers import AdamW
 from .utils import PYTORCH_PRETRAINED_BERT_CACHE
 from .preprocess import prepare_data_for_training, convert_examples_to_features
@@ -316,16 +318,25 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
     # Prepare model
     print("The current multi-task learning model is our Dual Bert model...")
-    model = DualBert.from_pretrained(
-        train_config.bert_model,
-        cache_dir=PYTORCH_PRETRAINED_BERT_CACHE
-        / "distributed_{}".format(train_config.local_rank),
+    config = DualBertConfig(
         rumor_num_labels=train_config.rumor_num_labels,
         stance_num_labels=train_config.stance_num_labels,
         max_tweet_num=train_config.max_tweet_num,
         max_tweet_length=train_config.max_tweet_length,
         convert_size=train_config.convert_size,
     )
+    model = DualBert(config)
+
+    # model = DualBert.from_pretrained(
+    #     train_config.bert_model,
+    #     # cache_dir=PYTORCH_PRETRAINED_BERT_CACHE
+    #     # / "distributed_{}".format(train_config.local_rank),
+    #     # rumor_num_labels=train_config.rumor_num_labels,
+    #     # stance_num_labels=train_config.stance_num_labels,
+    #     # max_tweet_num=train_config.max_tweet_num,
+    #     # max_tweet_length=train_config.max_tweet_length,
+    #     # convert_size=train_config.convert_size,
+    # )
 
     if train_config.fp16:
         model.half()
@@ -735,7 +746,8 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                     model.module if hasattr(model, "module") else model
                 )  # Only save the model it-self
                 if train_config.do_train:
-                    torch.save(model_to_save.state_dict(), output_model_file)
+                    # torch.save(model_to_save.state_dict(), output_model_file)
+                    model.save_pretrained(train_config.output_dir)
                 max_acc_f1 = eval_accuracy + F_score
                 # max_acc_f1 = eval_accuracy+F_score+stance_F_score
 
@@ -939,6 +951,13 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
     model_state_dict = torch.load(output_model_file)
 
+    # config = DualBertConfig(rumor_num_labels=train_config.rumor_num_labels,
+    #     stance_num_labels=train_config.stance_num_labels,
+    #     max_tweet_num=train_config.max_tweet_num,
+    #     max_tweet_length=train_config.max_tweet_length,
+    #     convert_size=train_config.convert_size,)
+    # model = DualBert(config)
+
     model = DualBert.from_pretrained(
         train_config.bert_model,
         state_dict=model_state_dict,
@@ -1015,7 +1034,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
             [f.input_mask for f in eval_features], dtype=torch.int32
         )
         all_label_ids = torch.tensor(
-            [f.label_id for f in eval_features], dtype=torch.int32
+            [f.label_id for f in eval_features], dtype=torch.long
         )
         all_label_mask = torch.tensor(
             [f.label_mask for f in eval_features], dtype=torch.int32
@@ -1393,6 +1412,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
 
 if __name__ == "__main__":
-    #train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/coupled_hierarchical_transformer/train_config_local.json")
-    train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
+    train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/coupled_hierarchical_transformer/train_config_local.json")
+    # train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
     train_custom_cht(train_config)

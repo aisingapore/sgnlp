@@ -27,6 +27,8 @@ import shutil
 import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss
+from transformers import PreTrainedModel
+
 
 from .utils import cached_path
 
@@ -752,7 +754,7 @@ class BertPreTrainingHeads(nn.Module):
         return prediction_scores, seq_relationship_score
 
 
-class PreTrainedBertModel(nn.Module):
+class PreTrainedBertModel(PreTrainedModel):
     """ An abstract class to handle weights initialization and
         a simple interface for dowloading and loading pretrained models.
     """

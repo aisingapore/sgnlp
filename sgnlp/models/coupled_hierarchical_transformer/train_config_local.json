@@ -14,7 +14,7 @@
     "train_batch_size": 1,
     "eval_batch_size": 1,
     "learning_rate": 5e-5,
-    "num_train_epochs": 30.0,
+    "num_train_epochs": 1,
     "warmup_proportion": 0.1,
     "no_cuda": false,
     "local_rank":-1,
