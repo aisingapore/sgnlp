@@ -3,6 +3,8 @@ from transformers import BertConfig
 
 from sgnlp.models.coupled_hierarchical_transformer import (
     DualBert,
+    DualBertPreprocessor,
+    DualBertConfig,
     prepare_data_for_training
 )
 
@@ -21,7 +23,7 @@ from sgnlp.models.coupled_hierarchical_transformer import (
 
 preprocessor = DualBertPreprocessor()
 
-config = DualBertConfig.from_pretrained("path to config")
+config = DualBertConfig.from_pretrained("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/output/config.json")
 model = DualBert.from_pretrained("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/output/pytorch_model.bin", config=config)
 
 model.eval()

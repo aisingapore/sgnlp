@@ -232,12 +232,7 @@ def load_train_config(trainConfigPath):
 
 def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConfig):
 
-    if train_config.task_name.lower() == "semeval17":
-        train_config.num_train_epochs = 30  # 25,30
-
-    if train_config.task_name.lower() == "pheme":
-        train_config.seed = 16  # 42: very good, 2: good, 64, relatively good
-        train_config.num_train_epochs = 7
+    train_config.seed = 16  # 42: very good, 2: good, 64, relatively good
 
     processors = {
         "semeval17": RumorProcessor,
@@ -326,6 +321,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
         convert_size=train_config.convert_size,
     )
     model = DualBert(config)
+    model.init_bert()
 
     # model = DualBert.from_pretrained(
     #     train_config.bert_model,
@@ -949,7 +945,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
     # Load a trained model that you have fine-tuned
 
-    model_state_dict = torch.load(output_model_file)
+    # model_state_dict = torch.load(output_model_file)
 
     # config = DualBertConfig(rumor_num_labels=train_config.rumor_num_labels,
     #     stance_num_labels=train_config.stance_num_labels,
@@ -958,15 +954,19 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
     #     convert_size=train_config.convert_size,)
     # model = DualBert(config)
 
-    model = DualBert.from_pretrained(
-        train_config.bert_model,
-        state_dict=model_state_dict,
-        rumor_num_labels=train_config.rumor_num_labels,
-        stance_num_labels=train_config.stance_num_labels,
-        max_tweet_num=train_config.max_tweet_num,
-        max_tweet_length=train_config.max_tweet_length,
-        convert_size=train_config.convert_size,
-    )
+    # model = DualBert.from_pretrained(
+    #     train_config.bert_model,
+    #     state_dict=model_state_dict,
+    #     rumor_num_labels=train_config.rumor_num_labels,
+    #     stance_num_labels=train_config.stance_num_labels,
+    #     max_tweet_num=train_config.max_tweet_num,
+    #     max_tweet_length=train_config.max_tweet_length,
+    #     convert_size=train_config.convert_size,
+    # )
+
+    config = DualBertConfig.from_pretrained(os.path.join(train_config.output_dir, "config.json"))
+    model = DualBert.from_pretrained(output_model_file, config=config)
+
     model.to(device)
 
     if train_config.do_eval and (
@@ -1412,6 +1412,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
 
 if __name__ == "__main__":
-    train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/coupled_hierarchical_transformer/train_config_local.json")
-    # train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
+    #train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/coupled_hierarchical_transformer/train_config_local.json")
+    train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
     train_custom_cht(train_config)

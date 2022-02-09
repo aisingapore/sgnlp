@@ -1,12 +1,24 @@
+from dataclasses import dataclass
+
 import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss
 from transformers import BertModel, PreTrainedModel, BertPreTrainedModel
+from transformers.file_utils import ModelOutput
 from transformers.models.bert.modeling_bert import BertPooler
 
 from sgnlp.models.coupled_hierarchical_transformer.config import DualBertConfig
 from sgnlp.models.coupled_hierarchical_transformer.modeling import BertCrossEncoder, ADDBertReturnEncoder, \
     MTBertStancePooler, BertPooler_v2, BertSelfLabelAttention
+
+
+@dataclass
+class DualBertOutput (ModelOutput):
+    rumour_loss: float = None
+    rumour_logits: torch.Tensor = None
+    stance_loss: float = None
+    stance_logits: torch.Tensor = None
+
 
 
 class DualBertPreTrainedModel(PreTrainedModel):
@@ -44,6 +56,7 @@ class DualBert(DualBertPreTrainedModel):
         self.rumor_num_labels = config.rumor_num_labels
         self.stance_num_labels = config.stance_num_labels
         self.bert = BertModel(config)
+        # self.bert = BertModel.from_pretrained("bert-base-uncased")
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.add_rumor_bert_attention = BertCrossEncoder(config)
         self.add_stance_bert_attention = ADDBertReturnEncoder(config)
@@ -74,6 +87,9 @@ class DualBert(DualBertPreTrainedModel):
         #### self.cos_sim = nn.CosineSimilarity(dim=-1, eps=1e-6)
         # self.apply(self.init_bert_weights)
         self.init_weights()
+
+    def init_bert(self):
+        self.bert = BertModel.from_pretrained("bert-base-uncased")
 
     def forward(self, input_ids1, token_type_ids1, attention_mask1, input_ids2, token_type_ids2, attention_mask2,
                 input_ids3, token_type_ids3, attention_mask3, input_ids4, token_type_ids4, attention_mask4,
