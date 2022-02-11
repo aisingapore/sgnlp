@@ -32,7 +32,7 @@ from sgnlp.models.coupled_hierarchical_transformer.config import DualBertConfig
 from .utils import classification_report
 
 from transformers import BertTokenizer
-from .new_modeling import DualBert
+from .modeling import DualBert
 from transformers import AdamW
 from .utils import PYTORCH_PRETRAINED_BERT_CACHE
 from .preprocess import prepare_data_for_training, convert_examples_to_features
@@ -51,21 +51,16 @@ logger = logging.getLogger(__name__)
 class InputExample(object):
     """A single training/test example for simple sequence classification."""
 
-    def __init__(self, guid, text_a, text_b=None, label=None):
+    def __init__(self, text, label=None):
         """Constructs a InputExample.
 
         Args:
-            guid: Unique id for the example.
-            text_a: string. The untokenized text of the first sequence. For single
+            text: string. The untokenized text of the first sequence. For single
             sequence tasks, only this sequence must be specified.
-            text_b: (Optional) string. The untokenized text of the second sequence.
-            Only must be specified for sequence pair tasks.
             label: (Optional) string. The label of the example. This should be
             specified for train and dev examples, but not for test examples.
         """
-        self.guid = guid
-        self.text_a = text_a
-        self.text_b = text_b
+        self.text = text
         self.label = label
 
 
@@ -131,12 +126,10 @@ class RumorProcessor(DataProcessor):
         for (i, line) in enumerate(lines):
             if i == 0:
                 continue
-            guid = "%s-%s" % (set_type, i)
-            text_a = line[2].lower().split("|||||")
-            text_b = None
+            text = line[2].lower().split("|||||")
             label = line[1]
             examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label)
+                InputExample(text=text, label=label)
             )
         return examples
 
@@ -175,12 +168,10 @@ class StanceProcessor(DataProcessor):
         for (i, line) in enumerate(lines):
             if i == 0:
                 continue
-            guid = "%s-%s" % (set_type, i)
-            text_a = line[2].lower().split("|||||")
-            text_b = None
+            text = line[2].lower().split("|||||")
             label = line[1].split(",")
             examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label)
+                InputExample(text=text, label=label)
             )
         return examples
 
@@ -455,7 +446,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                 ) = batch
 
                 # optimize rumor detection task
-                loss = model(
+                tmp_model_output = model(
                     input_ids1,
                     segment_ids1,
                     input_mask1,
@@ -472,6 +463,8 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                     rumor_labels=label_ids,
                     stance_label_mask=label_mask,
                 )
+                loss = tmp_model_output.rumour_loss
+
                 if n_gpu > 1:
                     loss = loss.mean()  # mean() to average on multi-gpu.
                 if train_config.gradient_accumulation_steps > 1:
@@ -497,7 +490,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                     global_step += 1
 
                 # optimize stance classification task
-                stance_loss = model(
+                tmp_model_output = model(
                     stance_input_ids1,
                     stance_segment_ids1,
                     stance_input_mask1,
@@ -515,6 +508,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                     stance_labels=stance_label_ids,
                     stance_label_mask=stance_label_mask,
                 )
+                stance_loss = tmp_model_output.stance_loss
                 if n_gpu > 1:
                     stance_loss = stance_loss.mean()  # mean() to average on multi-gpu.
                 if train_config.gradient_accumulation_steps > 1:
@@ -624,7 +618,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                 stance_label_mask = stance_label_mask.to(device)
 
                 with torch.no_grad():
-                    tmp_eval_loss = model(
+                    tmp_model_output = model(
                         input_ids1,
                         segment_ids1,
                         input_mask1,
@@ -641,39 +635,9 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                         label_ids,
                         stance_label_mask=label_mask,
                     )
-                    logits, _ = model(
-                        input_ids1,
-                        segment_ids1,
-                        input_mask1,
-                        input_ids2,
-                        segment_ids2,
-                        input_mask2,
-                        input_ids3,
-                        segment_ids3,
-                        input_mask3,
-                        input_ids4,
-                        segment_ids4,
-                        input_mask4,
-                        input_mask,
-                        stance_label_mask=label_mask,
-                    )
-                    stance_logits = model(
-                        stance_input_ids1,
-                        stance_segment_ids1,
-                        stance_input_mask1,
-                        stance_input_ids2,
-                        stance_segment_ids2,
-                        stance_input_mask2,
-                        stance_input_ids3,
-                        stance_segment_ids3,
-                        stance_input_mask3,
-                        stance_input_ids4,
-                        stance_segment_ids4,
-                        stance_input_mask4,
-                        stance_input_mask,
-                        task="stance",
-                        stance_label_mask=stance_label_mask,
-                    )
+                    tmp_eval_loss = tmp_model_output.rumour_loss
+                    logits = tmp_model_output.rumour_logits
+                    stance_logits = tmp_model_output.stance_logits
 
                 logits = logits.detach().cpu().numpy()
                 label_ids = label_ids.to("cpu").numpy()
@@ -833,7 +797,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                 stance_label_mask = stance_label_mask.to(device)
 
                 with torch.no_grad():
-                    tmp_eval_loss = model(
+                    tmp_model_output = model(
                         input_ids1,
                         segment_ids1,
                         input_mask1,
@@ -850,23 +814,10 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                         label_ids,
                         stance_label_mask=label_mask,
                     )
-                    logits, _ = model(
-                        input_ids1,
-                        segment_ids1,
-                        input_mask1,
-                        input_ids2,
-                        segment_ids2,
-                        input_mask2,
-                        input_ids3,
-                        segment_ids3,
-                        input_mask3,
-                        input_ids4,
-                        segment_ids4,
-                        input_mask4,
-                        input_mask,
-                        stance_label_mask=label_mask,
-                    )
-                    stance_logits = model(
+                    tmp_eval_loss = tmp_model_output.rumour_loss
+                    logits = tmp_model_output.rumour_logits
+
+                    tmp_model_output = model(
                         stance_input_ids1,
                         stance_segment_ids1,
                         stance_input_mask1,
@@ -883,6 +834,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                         task="stance",
                         stance_label_mask=stance_label_mask,
                     )
+                    stance_logits = tmp_model_output.stance_logits
 
                 logits = logits.detach().cpu().numpy()
                 label_ids = label_ids.to("cpu").numpy()
@@ -979,7 +931,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
         tweets_list = []
         stances_list = []
         for (ex_index, example) in enumerate(eval_examples):
-            tweets_list.append(example.text_a)
+            tweets_list.append(example.text)
         for (ex_index, example) in enumerate(stance_eval_examples):
             stances_list.append(example.label)
 
@@ -1069,7 +1021,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
         true_label_list = []
         pred_label_list = []
-        attention_probs_list = []
         stance_pred_label_list = []
         stance_label_map = {i: label for i, label in enumerate(stance_label_list, 1)}
         stance_label_map[0] = "PAD"
@@ -1109,7 +1060,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
             label_mask = label_mask.to(device)
 
             with torch.no_grad():
-                tmp_eval_loss = model(
+                tmp_model_output = model(
                     input_ids1,
                     segment_ids1,
                     input_mask1,
@@ -1126,43 +1077,12 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                     label_ids,
                     stance_label_mask=label_mask,
                 )
-                logits, attention_probs = model(
-                    input_ids1,
-                    segment_ids1,
-                    input_mask1,
-                    input_ids2,
-                    segment_ids2,
-                    input_mask2,
-                    input_ids3,
-                    segment_ids3,
-                    input_mask3,
-                    input_ids4,
-                    segment_ids4,
-                    input_mask4,
-                    input_mask,
-                    stance_label_mask=label_mask,
-                )
-                stance_logits = model(
-                    input_ids1,
-                    segment_ids1,
-                    input_mask1,
-                    input_ids2,
-                    segment_ids2,
-                    input_mask2,
-                    input_ids3,
-                    segment_ids3,
-                    input_mask3,
-                    input_ids4,
-                    segment_ids4,
-                    input_mask4,
-                    input_mask,
-                    task="stance",
-                    stance_label_mask=label_mask,
-                )
+
+                tmp_eval_loss = tmp_model_output.rumour_loss
+                logits = tmp_model_output.rumour_logits
+                stance_logits = tmp_model_output.stance_logits
 
             logits = logits.detach().cpu().numpy()
-            if train_config.mt_model == "DB":
-                attention_probs = attention_probs.detach().cpu().numpy()
             label_ids = label_ids.to("cpu").numpy()
             true_label_list.append(label_ids)
             pred_label_list.append(logits)
@@ -1172,18 +1092,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                 stance_logits = torch.argmax(F.log_softmax(stance_logits, dim=2), dim=2)
                 stance_logits = stance_logits.detach().cpu().numpy()
                 stance_label_mask = label_mask.to("cpu").numpy()
-                for i, mask in enumerate(stance_label_mask):
-                    temp_1 = []
-                    attention_probs_temp_1 = []
-                    for j, m in enumerate(mask):
-                        if m:
-                            temp_1.append(str(stance_logits[i][j] - 1))
-                            attention_probs_temp_1.append(str(attention_probs[i][j]))
-                            # 4 to 3, 3 to 2, 2 to 1, 1 to 0, same as original
-                        else:
-                            break
-                    stance_pred_label_list.append(temp_1)
-                    attention_probs_list.append(attention_probs_temp_1)
 
             eval_loss += tmp_eval_loss.mean().item()
             eval_accuracy += tmp_eval_accuracy
@@ -1251,10 +1159,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                 fout_analysis.write("Test Sample: " + str(i) + "\n")
                 tweets = tweets_list[i]
                 fout_analysis.write("|||||".join(tweets) + "\n")
-                pred_probs = attention_probs_list[i]
-                fout_analysis.write(
-                    "attention stance probs: " + ",".join(pred_probs) + "\n"
-                )
                 pred_stances = stance_pred_label_list[i]
                 fout_analysis.write(
                     "predicted stance label: " + ",".join(pred_stances) + "\n"
@@ -1333,10 +1237,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                 fout_analysis.write("Test Sample: " + str(i) + "\n")
                 tweets = tweets_list[i]
                 fout_analysis.write("|||||".join(tweets) + "\n")
-                pred_probs = attention_probs_list[i]
-                fout_analysis.write(
-                    "attention stance probs: " + ",".join(pred_probs) + "\n"
-                )
                 pred_stances = stance_pred_label_list[i]
                 fout_analysis.write(
                     "predicted stance label: " + ",".join(pred_stances) + "\n"
@@ -1412,6 +1312,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
 
 if __name__ == "__main__":
-    #train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/coupled_hierarchical_transformer/train_config_local.json")
-    train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
+    train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/coupled_hierarchical_transformer/train_config_local.json")
+    # train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
     train_custom_cht(train_config)

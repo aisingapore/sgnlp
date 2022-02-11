@@ -1,14 +1,32 @@
-import os
-import csv
+import math
 import logging
+from typing import List
+
 import torch
 from torch.utils.data import TensorDataset
+from transformers import PreTrainedTokenizer
+
 from .tokenization import BertTokenizer
+from .train import InputExample
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class PreprocessedFeatures:
+
+    def __init__(self, input_ids_buckets, input_mask_buckets, segment_ids_buckets, input_mask, label_ids,
+                 stance_position, label_mask):
+        self.input_ids_buckets = input_ids_buckets
+        self.input_mask_buckets = input_mask_buckets
+        self.segment_ids_buckets = segment_ids_buckets
+
+        self.input_mask = input_mask
+        self.label_ids = label_ids
+        self.stance_position = stance_position
+        self.label_mask = label_mask
 
 
 class InputFeatures(object):
@@ -71,7 +89,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
 
     features = []
     for (ex_index, example) in enumerate(examples):
-        tweetlist = example.text_a
+        tweetlist = example.text
         # tweetlist = tweetlist[:max_tweet_num]
         # labellist = example.label[:max_tweet_num]
         label = example.label
@@ -133,12 +151,13 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         label_mask.extend(label_mask2)
         label_mask.extend(label_mask3)
         label_mask.extend(label_mask4)
-
-        label_id = label_map[example.label]
+        if len(label_list) != 0:
+            label_id = label_map[example.label]
+        else:
+            label_id = None
 
         if ex_index < 1:
             logger.info("*** Example ***")
-            logger.info("guid: %s" % (example.guid))
             logger.info("tokens: %s" % " ".join(
                 [str(x) for x in input_tokens1]))
             logger.info("input_ids: %s" % " ".join([str(x) for x in input_ids1]))
@@ -218,7 +237,7 @@ def bucket_rumor_conversion(tweets_tokens, tokenizer, max_tweet_num, max_tweet_l
     return input_tokens, input_ids, input_mask, segment_ids, stance_position, label_mask
 
 
-def bucket_conversion(tweets_tokens, labels, label_map, tokenizer, max_tweet_num, max_tweet_len, max_seq_length):
+def bucket_stance_conversion(tweets_tokens, labels, label_map, tokenizer, max_tweet_num, max_tweet_len, max_seq_length):
     ntokens = []
     input_tokens = []
     input_ids = []
@@ -295,7 +314,7 @@ def convert_stance_examples_to_features(examples, label_list, max_seq_length, to
 
     features = []
     for (ex_index, example) in enumerate(examples):
-        tweetlist = example.text_a
+        tweetlist = example.text
         # tweetlist = tweetlist[:max_tweet_num]
         # labellist = example.label[:max_tweet_num]
         labellist = example.label[:max_tweet_num * max_bucket_num]
@@ -351,17 +370,17 @@ def convert_stance_examples_to_features(examples, label_list, max_seq_length, to
             labels4 = labels[max_tweet_num * 3:max_tweet_num * 4]
 
         input_tokens1, input_ids1, input_mask1, segment_ids1, label_ids1, stance_position1, label_mask1 = \
-            bucket_conversion(tweets_tokens1, labels1, label_map, tokenizer, max_tweet_num, max_tweet_len,
-                              max_seq_length)
+            bucket_stance_conversion(tweets_tokens1, labels1, label_map, tokenizer, max_tweet_num, max_tweet_len,
+                                     max_seq_length)
         input_tokens2, input_ids2, input_mask2, segment_ids2, label_ids2, stance_position2, label_mask2 = \
-            bucket_conversion(tweets_tokens2, labels2, label_map, tokenizer, max_tweet_num, max_tweet_len,
-                              max_seq_length)
+            bucket_stance_conversion(tweets_tokens2, labels2, label_map, tokenizer, max_tweet_num, max_tweet_len,
+                                     max_seq_length)
         input_tokens3, input_ids3, input_mask3, segment_ids3, label_ids3, stance_position3, label_mask3 = \
-            bucket_conversion(tweets_tokens3, labels3, label_map, tokenizer, max_tweet_num, max_tweet_len,
-                              max_seq_length)
+            bucket_stance_conversion(tweets_tokens3, labels3, label_map, tokenizer, max_tweet_num, max_tweet_len,
+                                     max_seq_length)
         input_tokens4, input_ids4, input_mask4, segment_ids4, label_ids4, stance_position4, label_mask4 = \
-            bucket_conversion(tweets_tokens4, labels4, label_map, tokenizer, max_tweet_num, max_tweet_len,
-                              max_seq_length)
+            bucket_stance_conversion(tweets_tokens4, labels4, label_map, tokenizer, max_tweet_num, max_tweet_len,
+                                     max_seq_length)
 
         label_ids = []
         label_ids.extend(label_ids1)
@@ -386,7 +405,6 @@ def convert_stance_examples_to_features(examples, label_list, max_seq_length, to
 
         if ex_index < 1:
             logger.info("*** Example ***")
-            logger.info("guid: %s" % (example.guid))
             logger.info("tokens: %s" % " ".join(
                 [str(x) for x in input_tokens1]))
             logger.info("input_ids: %s" % " ".join([str(x) for x in input_ids1]))
@@ -405,8 +423,198 @@ def convert_stance_examples_to_features(examples, label_list, max_seq_length, to
     return features
 
 
-def prepare_data_for_training(processor, stance_processor, tokenizer, train_config):
+def bucket_conversion(tweets_tokens_buckets,
+                      tokenizer, max_tweet_num, max_tweet_len,
+                      max_seq_length, labels_buckets=None, label_map=None):
+    labels_provided = labels_buckets is not None and label_map is not None
 
+    if labels_provided:
+        items = zip(tweets_tokens_buckets, labels_buckets)
+    else:
+        items = tweets_tokens_buckets
+
+    input_ids_buckets = []
+    input_mask_buckets = []
+    segment_ids_buckets = []
+    label_ids_buckets = []
+    stance_position_buckets = []
+    label_mask_buckets = []
+    for n, item in enumerate(items):
+        if labels_provided:
+            tweets_tokens, labels = item
+        else:
+            tweets_tokens = item
+
+        ntokens = []
+        # input_tokens = []
+        input_ids = []
+        input_mask = []
+        segment_ids = []
+        label_ids = []
+        label_mask = []
+        stance_position = []
+        if labels_provided:
+            ntokens.append("[CLS]")
+            # input_tokens.extend(ntokens) # avoid having two [CLS] at the begining
+            # segment_ids.append(0) #########no need to add this line
+            label_ids.append(label_map[labels[0]])
+            stance_position.append(0)
+            label_mask.append(1)
+        for i, tweet_token in enumerate(tweets_tokens):
+            if i != 0:
+                ntokens = []
+                ntokens.append("[CLS]")
+                label_ids.append(label_map[labels[i]])
+                stance_position.append(len(input_ids))
+                label_mask.append(1)
+            ntokens.extend(tweet_token)
+            ntokens.append("[SEP]")
+            # input_tokens.extend(ntokens)  # just for printing out
+            # input_tokens.extend("[padpadpad]")  # just for printing out
+            tweet_input_ids = tokenizer.convert_tokens_to_ids(ntokens)
+            tweet_input_mask = [1] * len(tweet_input_ids)
+            while len(tweet_input_ids) < max_tweet_len:
+                tweet_input_ids.append(0)
+                tweet_input_mask.append(0)
+            input_ids.extend(tweet_input_ids)
+            input_mask.extend(tweet_input_mask)
+            segment_ids = segment_ids + [i % 2] * len(tweet_input_ids)
+
+        cur_tweet_num = len(tweets_tokens)
+        pad_tweet_length = max_tweet_num - cur_tweet_num
+        for j in range(pad_tweet_length):
+            ntokens = []
+            ntokens.append("[CLS]")
+            ntokens.append("[SEP]")
+            label_ids.append(0)
+            stance_position.append(len(input_ids))
+            label_mask.append(0)
+            tweet_input_ids = tokenizer.convert_tokens_to_ids(ntokens)
+            tweet_input_mask = [1] * len(tweet_input_ids)
+            tweet_input_ids = tweet_input_ids + [0] * (max_tweet_len - 2)
+            tweet_input_mask = tweet_input_mask + [0] * (max_tweet_len - 2)
+            input_ids.extend(tweet_input_ids)
+            input_mask.extend(tweet_input_mask)
+            segment_ids = segment_ids + [(cur_tweet_num + j) % 2] * max_tweet_len
+
+        while len(input_ids) < max_seq_length:
+            input_ids.append(0)
+            input_mask.append(0)
+            segment_ids.append(0)
+
+        assert len(input_ids) == max_seq_length
+        assert len(input_mask) == max_seq_length
+        assert len(segment_ids) == max_seq_length
+
+        input_ids_buckets.append(input_ids)
+        input_mask_buckets.append(input_mask)
+        segment_ids_buckets.append(segment_ids)
+        label_ids_buckets.append(label_ids)
+        stance_position_buckets.append(stance_position)
+        label_mask_buckets.append(label_mask)
+
+    return input_ids_buckets, input_mask_buckets, segment_ids_buckets, label_ids_buckets, \
+           stance_position_buckets, label_mask_buckets
+
+
+def examples_to_features(examples: List[InputExample], max_seq_length, tokenizer, max_tweet_num, max_tweet_len, type,
+                         label_names=None):
+    max_bucket_num = 4  # the number of buckets in each thread
+
+    label_map = None
+    if label_names is not None:
+        if type == "stance":
+            label_map_dict = {'0': 'B-DENY', '1': 'B-SUPPORT', '2': 'B-QUERY',
+                              '3': 'B-COMMENT'}  # Original data labels map
+            label_map = {label: i for i, label in enumerate(label_names, 1)}
+        elif type == "rumor":
+            label_map = {label: i for i, label in enumerate(label_names)}
+
+    features = []
+    for (ex_index, example) in enumerate(examples):
+        tweetlist = example.text
+        # tweetlist = tweetlist[:max_tweet_num]
+        # labellist = example.label[:max_tweet_num]
+        example_labels = example.label
+
+        tweets_tokens = []
+        example_label_names = []
+        for i, label in enumerate(tweetlist):
+            tweet = tweetlist[i]
+            if tweet == '':
+                break
+            tweet_token = tokenizer.tokenize(tweet)
+            if len(tweet_token) >= max_tweet_len - 1:
+                tweet_token = tweet_token[:(max_tweet_len - 2)]
+            tweets_tokens.append(tweet_token)
+
+            if label_names is not None and type == "stance":
+                label = example_labels[i]
+                example_label_names.append(label_map_dict[label])
+
+        tweets_tokens_buckets = []
+        labels_buckets = []
+
+        num_buckets = min(math.ceil(len(example_label_names) / max_tweet_num), max_bucket_num)
+
+        for n in range(num_buckets):
+            tweets_tokens_buckets.append(tweets_tokens[n * max_tweet_num: (n + 1) * max_tweet_num])
+
+            if label_names is not None and type == "stance":
+                labels_buckets.append(example_label_names[n * max_tweet_num: (n + 1) * max_tweet_num])
+
+        input_ids_buckets, input_mask_buckets, segment_ids_buckets, label_ids_buckets, \
+        stance_position_buckets, label_mask_buckets = bucket_conversion(tweets_tokens_buckets, labels_buckets,
+                                                                        tokenizer, max_tweet_num, max_tweet_len,
+                                                                        max_seq_length, label_map=label_map)
+
+        # input_tokens1, input_ids1, input_mask1, segment_ids1, label_ids1, stance_position1, label_mask1 = \
+        #     bucket_conversion(tweets_tokens1, labels1, label_map, tokenizer, max_tweet_num, max_tweet_len,
+        #                       max_seq_length)
+        # input_tokens2, input_ids2, input_mask2, segment_ids2, label_ids2, stance_position2, label_mask2 = \
+        #     bucket_conversion(tweets_tokens2, labels2, label_map, tokenizer, max_tweet_num, max_tweet_len,
+        #                       max_seq_length)
+        # input_tokens3, input_ids3, input_mask3, segment_ids3, label_ids3, stance_position3, label_mask3 = \
+        #     bucket_conversion(tweets_tokens3, labels3, label_map, tokenizer, max_tweet_num, max_tweet_len,
+        #                       max_seq_length)
+        # input_tokens4, input_ids4, input_mask4, segment_ids4, label_ids4, stance_position4, label_mask4 = \
+        #     bucket_conversion(tweets_tokens4, labels4, label_map, tokenizer, max_tweet_num, max_tweet_len,
+        #                       max_seq_length)
+
+        label_ids = [item for sublist in label_ids_buckets for item in sublist]
+        stance_position = [item for sublist in stance_position_buckets for item in sublist]
+        label_mask = [item for sublist in label_mask_buckets for item in sublist]
+        input_mask = [item for sublist in input_mask_buckets for item in sublist]
+
+        # if ex_index < 1:
+        #     logger.info("*** Example ***")
+        #     logger.info("guid: %s" % (example.guid))
+        #     logger.info("tokens: %s" % " ".join(
+        #         [str(x) for x in input_tokens1]))
+        #     logger.info("input_ids: %s" % " ".join([str(x) for x in input_ids1]))
+        #     logger.info("input_mask: %s" % " ".join([str(x) for x in input_mask1]))
+        #     logger.info(
+        #         "segment_ids: %s" % " ".join([str(x) for x in segment_ids1]))
+        #     logger.info("label: %s" % " ".join([str(x) for x in label_ids1]))
+
+        features.append(PreprocessedFeatures(
+            input_ids_buckets=input_ids_buckets,
+            input_mask_buckets=input_mask_buckets,
+            segment_ids_buckets=segment_ids_buckets,
+            input_mask=input_mask, label_ids=label_ids,
+            stance_position=stance_position, label_mask=label_mask
+        ))
+        # features.append(
+        #     InputFeatures(input_ids1=input_ids1, input_mask1=input_mask1, segment_ids1=segment_ids1,
+        #                   input_ids2=input_ids2, input_mask2=input_mask2, segment_ids2=segment_ids2,
+        #                   input_ids3=input_ids3, input_mask3=input_mask3, segment_ids3=segment_ids3,
+        #                   input_ids4=input_ids4, input_mask4=input_mask4, segment_ids4=segment_ids4,
+        #                   input_mask=input_mask, label_id=label_ids, stance_position=stance_position,
+        #                   label_mask=label_mask))
+    return features
+
+
+def prepare_data_for_training(processor, stance_processor, tokenizer, train_config):
     label_list = processor.get_labels()
     num_labels = 3  # label 0 corresponds to padding, label in label_list starts from 1
 
@@ -424,6 +632,11 @@ def prepare_data_for_training(processor, stance_processor, tokenizer, train_conf
     extended_stance_train_examples.extend(stance_train_examples[:remaining_samp_len])
 
     assert len(train_examples) == len(extended_stance_train_examples)
+
+    ## Test
+    new_features = examples_to_features(train_examples, train_config.max_seq_length, tokenizer, train_config.max_tweet_num,
+        train_config.max_tweet_length, type="rumor", label_names=label_list)
+
 
     # rumor detection task
     train_features = convert_examples_to_features(
@@ -610,3 +823,57 @@ def prepare_data_for_training(processor, stance_processor, tokenizer, train_conf
                               stance_all_input_mask, stance_all_label_ids, stance_all_label_mask
                               )
     return train_data, eval_data, test_data, num_train_steps
+
+
+class DualBertPreprocessor():
+    """
+        Class for preprocessing a list of raw texts to a batch of tensors.
+    """
+
+    def __init__(self, config, tokenizer: PreTrainedTokenizer = None):
+        if tokenizer is not None:
+            self.tokenizer = tokenizer
+        else:
+            self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        self.max_seq_length = config.max_position_embeddings
+        self.max_tweet_num = config.max_tweet_num
+        self.max_tweet_len = config.max_tweet_length
+
+    def __call__(self, examples):
+        test_features = convert_examples_to_features(examples, [], self.max_seq_length, self.tokenizer,
+                                                     self.max_tweet_num,
+                                                     self.max_tweet_len)
+
+        input_ids1 = torch.tensor([f.input_ids1 for f in test_features], dtype=torch.int32)
+        input_mask1 = torch.tensor([f.input_mask1 for f in test_features], dtype=torch.int32)
+        segment_ids1 = torch.tensor([f.segment_ids1 for f in test_features], dtype=torch.int32)
+        input_ids2 = torch.tensor([f.input_ids2 for f in test_features], dtype=torch.int32)
+        input_mask2 = torch.tensor([f.input_mask2 for f in test_features], dtype=torch.int32)
+        segment_ids2 = torch.tensor([f.segment_ids2 for f in test_features], dtype=torch.int32)
+        input_ids3 = torch.tensor([f.input_ids3 for f in test_features], dtype=torch.int32)
+        input_mask3 = torch.tensor([f.input_mask3 for f in test_features], dtype=torch.int32)
+        segment_ids3 = torch.tensor([f.segment_ids3 for f in test_features], dtype=torch.int32)
+        input_ids4 = torch.tensor([f.input_ids4 for f in test_features], dtype=torch.int32)
+        input_mask4 = torch.tensor([f.input_mask4 for f in test_features], dtype=torch.int32)
+        segment_ids4 = torch.tensor([f.segment_ids4 for f in test_features], dtype=torch.int32)
+        input_mask = torch.tensor([f.input_mask for f in test_features], dtype=torch.int32)
+        label_ids = None
+        label_mask = torch.tensor([f.label_mask for f in test_features], dtype=torch.int32)
+
+        return {
+            "input_ids1": input_ids1,
+            "token_type_ids1": segment_ids1,
+            "attention_mask1": input_mask1,
+            "input_ids2": input_ids2,
+            "token_type_ids2": segment_ids2,
+            "attention_mask2": input_mask2,
+            "input_ids3": input_ids3,
+            "token_type_ids3": segment_ids3,
+            "attention_mask3": input_mask3,
+            "input_ids4": input_ids4,
+            "token_type_ids4": segment_ids4,
+            "attention_mask4": input_mask4,
+            "attention_mask": input_mask,
+            "rumor_labels": label_ids,
+            "stance_label_mask": label_mask,
+        }

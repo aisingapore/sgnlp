@@ -1,11 +1,11 @@
 import torch
-from transformers import BertConfig
+from transformers import BertConfig, BertTokenizer
 
 from sgnlp.models.coupled_hierarchical_transformer import (
     DualBert,
-    DualBertPreprocessor,
     DualBertConfig,
-    prepare_data_for_training
+    DualBertPreprocessor,
+    DualBertPostprocessor
 )
 
 # model_state_dict = torch.load("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/output/pytorch_model.bin")
@@ -20,22 +20,34 @@ from sgnlp.models.coupled_hierarchical_transformer import (
 #     )
 #
 # print("x")
+from sgnlp.models.coupled_hierarchical_transformer.train import InputExample
 
-preprocessor = DualBertPreprocessor()
+config = DualBertConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/dual_bert/config.json")
 
-config = DualBertConfig.from_pretrained("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/output/config.json")
-model = DualBert.from_pretrained("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/output/pytorch_model.bin", config=config)
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+preprocessor = DualBertPreprocessor(config, tokenizer)
+model = DualBert.from_pretrained("https://storage.googleapis.com/sgnlp/models/dual_bert/pytorch_model.bin",
+                                 config=config)
+postprocessor = DualBertPostprocessor()
 
 model.eval()
 
-example = [
-    "Claim",
-    "Response 1",
-    "Response 2"
+# example = [
+#     "#4U9525: Robin names Andreas Lubitz as the copilot in the flight deck who crashed the aircraft.",
+#     "@thatjohn @mschenk",
+#     "@thatjohn Have they named the pilot?",
+# ]
+
+examples = [
+    InputExample(text=[
+        "#4U9525: Robin names Andreas Lubitz as the copilot in the flight deck who crashed the aircraft.",
+        "@thatjohn @mschenk",
+        "@thatjohn Have they named the pilot?",
+    ])
 ]
 
-model_inputs = preprocessor([example])
+model_inputs = preprocessor(examples)
 # { model_param_1: ..., model_param2: ..., ...}
 
-model(**model_inputs)
-
+model_output = model(**model_inputs)
+output = postprocessor(model_output, model_inputs["stance_label_mask"])
