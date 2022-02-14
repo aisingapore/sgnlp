@@ -35,7 +35,7 @@ from transformers import BertTokenizer
 from .modeling import DualBert
 from transformers import AdamW
 from .utils import PYTORCH_PRETRAINED_BERT_CACHE
-from .preprocess import prepare_data_for_training, convert_examples_to_features
+from .preprocess import prepare_data_for_training, convert_examples_to_features, InputExample
 from sklearn.metrics import precision_recall_fscore_support
 
 from .train_args import CustomCoupledHierarchicalTransformerTrainConfig
@@ -48,20 +48,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class InputExample(object):
-    """A single training/test example for simple sequence classification."""
-
-    def __init__(self, text, label=None):
-        """Constructs a InputExample.
-
-        Args:
-            text: string. The untokenized text of the first sequence. For single
-            sequence tasks, only this sequence must be specified.
-            label: (Optional) string. The label of the example. This should be
-            specified for train and dev examples, but not for test examples.
-        """
-        self.text = text
-        self.label = label
 
 
 class DataProcessor(object):

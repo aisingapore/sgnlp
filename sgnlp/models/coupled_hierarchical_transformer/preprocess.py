@@ -1,18 +1,30 @@
-import math
 import logging
-from typing import List
+import math
 
 import torch
 from torch.utils.data import TensorDataset
-from transformers import PreTrainedTokenizer
-
-from .tokenization import BertTokenizer
-from .train import InputExample
+from transformers import PreTrainedTokenizer, BertTokenizer
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class InputExample(object):
+    """A single training/test example for simple sequence classification."""
+
+    def __init__(self, text, label=None):
+        """Constructs a InputExample.
+
+        Args:
+            text: string. The untokenized text of the first sequence. For single
+            sequence tasks, only this sequence must be specified.
+            label: (Optional) string. The label of the example. This should be
+            specified for train and dev examples, but not for test examples.
+        """
+        self.text = text
+        self.label = label
 
 
 class PreprocessedFeatures:
@@ -517,7 +529,7 @@ def bucket_conversion(tweets_tokens_buckets,
            stance_position_buckets, label_mask_buckets
 
 
-def examples_to_features(examples: List[InputExample], max_seq_length, tokenizer, max_tweet_num, max_tweet_len, type,
+def examples_to_features(examples, max_seq_length, tokenizer, max_tweet_num, max_tweet_len, type,
                          label_names=None):
     max_bucket_num = 4  # the number of buckets in each thread
 
@@ -634,9 +646,9 @@ def prepare_data_for_training(processor, stance_processor, tokenizer, train_conf
     assert len(train_examples) == len(extended_stance_train_examples)
 
     ## Test
-    new_features = examples_to_features(train_examples, train_config.max_seq_length, tokenizer, train_config.max_tweet_num,
-        train_config.max_tweet_length, type="rumor", label_names=label_list)
-
+    new_features = examples_to_features(train_examples, train_config.max_seq_length, tokenizer,
+                                        train_config.max_tweet_num,
+                                        train_config.max_tweet_length, type="rumor", label_names=label_list)
 
     # rumor detection task
     train_features = convert_examples_to_features(
@@ -825,7 +837,7 @@ def prepare_data_for_training(processor, stance_processor, tokenizer, train_conf
     return train_data, eval_data, test_data, num_train_steps
 
 
-class DualBertPreprocessor():
+class DualBertPreprocessor:
     """
         Class for preprocessing a list of raw texts to a batch of tensors.
     """
