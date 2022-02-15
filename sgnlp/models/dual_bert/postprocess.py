@@ -27,7 +27,7 @@ class DualBertPostprocessor:
                     temp_2.append(self.stance_labels[stance_label_idx[i][j]])
                 else:
                     break
-            stance_labels.append(temp_2)
+            stance_labels.append(temp_2[1:]) #first post should not have a stance label
 
         return {
             "rumor_labels": rumor_labels,
