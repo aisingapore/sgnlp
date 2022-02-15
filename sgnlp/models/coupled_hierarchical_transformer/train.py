@@ -490,7 +490,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                     stance_segment_ids4,
                     stance_input_mask4,
                     stance_input_mask,
-                    task="stance",
                     stance_labels=stance_label_ids,
                     stance_label_mask=stance_label_mask,
                 )
@@ -817,7 +816,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                         stance_segment_ids4,
                         stance_input_mask4,
                         stance_input_mask,
-                        task="stance",
                         stance_label_mask=stance_label_mask,
                     )
                     stance_logits = tmp_model_output.stance_logits
@@ -901,9 +899,9 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
     #     max_tweet_length=train_config.max_tweet_length,
     #     convert_size=train_config.convert_size,
     # )
-
-    config = DualBertConfig.from_pretrained(os.path.join(train_config.output_dir, "config.json"))
-    model = DualBert.from_pretrained(output_model_file, config=config)
+    if os.listdir(train_config.output_dir):
+        config = DualBertConfig.from_pretrained(os.path.join(train_config.output_dir, "config.json"))
+        model = DualBert.from_pretrained(output_model_file, config=config)
 
     model.to(device)
 
@@ -1007,6 +1005,7 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
         true_label_list = []
         pred_label_list = []
+        attention_probs_list = []
         stance_pred_label_list = []
         stance_label_map = {i: label for i, label in enumerate(stance_label_list, 1)}
         stance_label_map[0] = "PAD"
@@ -1067,8 +1066,10 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                 tmp_eval_loss = tmp_model_output.rumour_loss
                 logits = tmp_model_output.rumour_logits
                 stance_logits = tmp_model_output.stance_logits
+                attention_probs = tmp_model_output.attention_probs
 
             logits = logits.detach().cpu().numpy()
+            attention_probs = attention_probs.detach().cpu().numpy()
             label_ids = label_ids.to("cpu").numpy()
             true_label_list.append(label_ids)
             pred_label_list.append(logits)
@@ -1078,6 +1079,18 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
                 stance_logits = torch.argmax(F.log_softmax(stance_logits, dim=2), dim=2)
                 stance_logits = stance_logits.detach().cpu().numpy()
                 stance_label_mask = label_mask.to("cpu").numpy()
+                for i, mask in enumerate(stance_label_mask):
+                    temp_1 = []
+                    attention_probs_temp_1 = []
+                    for j, m in enumerate(mask):
+                        if m:
+                            temp_1.append(str(stance_logits[i][j] - 1))
+                            attention_probs_temp_1.append(str(attention_probs[i][j]))
+                            # 4 to 3, 3 to 2, 2 to 1, 1 to 0, same as original
+                        else:
+                            break
+                    stance_pred_label_list.append(temp_1)
+                    attention_probs_list.append(attention_probs_temp_1)
 
             eval_loss += tmp_eval_loss.mean().item()
             eval_accuracy += tmp_eval_accuracy
@@ -1178,37 +1191,37 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
             fout_analysis.write(
                 "\n\n\nFalse Rumor------"
                 + "deny: "
-                + str(FR_stance_dict["0"] / fr_total)
+                + str(FR_stance_dict["0"] / fr_total if fr_total > 0 else 0)
                 + "\t"
                 + "support: "
-                + str(FR_stance_dict["1"] / fr_total)
+                + str(FR_stance_dict["1"] / fr_total if fr_total > 0 else 0)
                 + "\t"
                 + "query: "
-                + str(FR_stance_dict["2"] / fr_total)
+                + str(FR_stance_dict["2"] / fr_total if fr_total > 0 else 0)
                 + "\n"
             )
             fout_analysis.write(
                 "True Rumor------"
                 + "deny: "
-                + str(TR_stance_dict["0"] / tr_total)
+                + str(TR_stance_dict["0"] / tr_total if tr_total > 0 else 0)
                 + "\t"
                 + "support: "
-                + str(TR_stance_dict["1"] / tr_total)
+                + str(TR_stance_dict["1"] / tr_total if tr_total > 0 else 0)
                 + "\t"
                 + "query: "
-                + str(TR_stance_dict["2"] / tr_total)
+                + str(TR_stance_dict["2"] / tr_total if tr_total > 0 else 0)
                 + "\n"
             )
             fout_analysis.write(
                 "Unverified Rumor------"
                 + "deny: "
-                + str(UR_stance_dict["0"] / ur_total)
+                + str(UR_stance_dict["0"] / ur_total if ur_total > 0 else 0)
                 + "\t"
                 + "support: "
-                + str(UR_stance_dict["1"] / ur_total)
+                + str(UR_stance_dict["1"] / ur_total if ur_total > 0 else 0)
                 + "\t"
                 + "query: "
-                + str(UR_stance_dict["2"] / ur_total)
+                + str(UR_stance_dict["2"] / ur_total if ur_total > 0 else 0)
                 + "\n"
             )
 
@@ -1253,37 +1266,37 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
             fout_analysis.write(
                 "\n\n\nFalse Rumor------"
                 + "deny: "
-                + str(FR_stance_dict["0"] / fr_total)
+                + str(FR_stance_dict["0"] / fr_total if fr_total > 0 else 0)
                 + "\t"
                 + "support: "
-                + str(FR_stance_dict["1"] / fr_total)
+                + str(FR_stance_dict["1"] / fr_total if fr_total > 0 else 0)
                 + "\t"
                 + "query: "
-                + str(FR_stance_dict["2"] / fr_total)
+                + str(FR_stance_dict["2"] / fr_total if fr_total > 0 else 0)
                 + "\n"
             )
             fout_analysis.write(
                 "True Rumor------"
                 + "deny: "
-                + str(TR_stance_dict["0"] / tr_total)
+                + str(TR_stance_dict["0"] / tr_total if tr_total > 0 else 0)
                 + "\t"
                 + "support: "
-                + str(TR_stance_dict["1"] / tr_total)
+                + str(TR_stance_dict["1"] / tr_total if tr_total > 0 else 0)
                 + "\t"
                 + "query: "
-                + str(TR_stance_dict["2"] / tr_total)
+                + str(TR_stance_dict["2"] / tr_total if tr_total > 0 else 0)
                 + "\n"
             )
             fout_analysis.write(
                 "Unverified Rumor------"
                 + "deny: "
-                + str(UR_stance_dict["0"] / ur_total)
+                + str(UR_stance_dict["0"] / ur_total if ur_total > 0 else 0)
                 + "\t"
                 + "support: "
-                + str(UR_stance_dict["1"] / ur_total)
+                + str(UR_stance_dict["1"] / ur_total if ur_total > 0 else 0)
                 + "\t"
                 + "query: "
-                + str(UR_stance_dict["2"] / ur_total)
+                + str(UR_stance_dict["2"] / ur_total if ur_total > 0 else 0)
                 + "\n"
             )
 
@@ -1299,5 +1312,5 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
 if __name__ == "__main__":
     train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/coupled_hierarchical_transformer/train_config_local.json")
-    # train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
+    #train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
     train_custom_cht(train_config)

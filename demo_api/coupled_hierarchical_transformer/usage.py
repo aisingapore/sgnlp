@@ -39,11 +39,11 @@ model.eval()
 # ]
 
 examples = [
-    InputExample(text=[
+    [
         "#4U9525: Robin names Andreas Lubitz as the copilot in the flight deck who crashed the aircraft.",
         "@thatjohn @mschenk",
         "@thatjohn Have they named the pilot?",
-    ])
+    ]
 ]
 
 model_inputs = preprocessor(examples)

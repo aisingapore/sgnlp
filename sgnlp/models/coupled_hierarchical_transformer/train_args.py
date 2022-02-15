@@ -30,7 +30,7 @@ class CustomCoupledHierarchicalTransformerTrainConfig:
         default=5,
         metadata={"help": "num of labels for Stance detection"})
     output_dir: str = field(
-        default='/polyaxon-data/workspace/atenzer/SD_baseline/output_release/semeval17_multitask_output_DB_0/',
+        default='/polyaxon-data/workspace/atenzer/SD_baseline/output_release/semeval17_multitask_output_DB_9/',
         metadata={"help": "The output directory where the model predictions and checkpoints will be written."})
 
     ## Other parameters

@@ -18,6 +18,7 @@ class DualBertModelOutput(ModelOutput):
     rumour_logits: torch.Tensor = None
     stance_loss: float = None
     stance_logits: torch.Tensor = None
+    attention_probs: nn.Softmax = None
 
 
 class BertCrossAttentionLayer(nn.Module):
@@ -377,27 +378,27 @@ class DualBert(DualBertPreTrainedModel):
     def init_bert(self):
         self.bert = BertModel.from_pretrained("bert-base-uncased")
 
-    def forward(self, input_ids1, token_type_ids1, attention_mask1, input_ids2, token_type_ids2, attention_mask2,
-                input_ids3, token_type_ids3, attention_mask3, input_ids4, token_type_ids4, attention_mask4,
-                attention_mask, rumor_labels=None, stance_labels=None, stance_label_mask=None):
+    def forward(self, input_ids_buckets, input_mask_buckets, segment_ids_buckets, input_mask, stance_label_ids,
+                rumor_label_id, stance_position, stance_label_mask, rumor_labels=None, stance_labels=None):
+        # def forward(self, input_ids1, token_type_ids1, attention_mask1, input_ids2, token_type_ids2, attention_mask2,
+        #           input_ids3, token_type_ids3, attention_mask3, input_ids4, token_type_ids4, attention_mask4,
+        #          attention_mask, rumor_labels=None, stance_labels=None, stance_label_mask=None):
 
         output = DualBertModelOutput()
 
-        output1 = self.bert(input_ids1, token_type_ids1, attention_mask1, output_hidden_states=False)
-        output2 = self.bert(input_ids2, token_type_ids2, attention_mask2, output_hidden_states=False)
-        output3 = self.bert(input_ids3, token_type_ids3, attention_mask3, output_hidden_states=False)
-        output4 = self.bert(input_ids4, token_type_ids4, attention_mask4, output_hidden_states=False)
+        output_sequence = torch.tensor([], dtype=torch.int32)
+        # for input_ids, token_type_ids, attention_mask in zip(processed_input["input_ids_buckets"], processed_input[
+        #     "segment_ids_buckets"], processed_input["input_mask_buckets"]):
+        num_buckets = 4
+        for i in range(num_buckets):
+            input_ids = input_ids_buckets[:, i]
+            token_type_ids = segment_ids_buckets[:, i]
+            attention_mask = input_mask_buckets[:, i]
 
-        sequence_output1 = output1.last_hidden_state
-        sequence_output2 = output2.last_hidden_state
-        sequence_output3 = output3.last_hidden_state
-        sequence_output4 = output4.last_hidden_state
+            tmp_model_output = self.bert(input_ids, token_type_ids, attention_mask, output_hidden_states=False)
+            output_sequence = torch.cat((output_sequence, tmp_model_output.last_hidden_state), dim=1)
 
-        tmp_sequence = torch.cat((sequence_output1, sequence_output2), dim=1)
-        tmp_sequence = torch.cat((tmp_sequence, sequence_output3), dim=1)
-        sequence_output = torch.cat((tmp_sequence, sequence_output4), dim=1)
-
-        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
+        extended_attention_mask = input_mask.unsqueeze(1).unsqueeze(2)
         extended_attention_mask = extended_attention_mask.to(
             dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
@@ -405,7 +406,7 @@ class DualBert(DualBertPreTrainedModel):
         # for stance classification task
         # '''
         # ##add_output_layer = self.add_self_attention(sequence_output, extended_attention_mask)
-        add_stance_bert_encoder, stance_attention_probs = self.add_stance_bert_attention(sequence_output,
+        add_stance_bert_encoder, stance_attention_probs = self.add_stance_bert_attention(output_sequence,
                                                                                          extended_attention_mask)
         final_stance_text_output = add_stance_bert_encoder[-1]
         stance_attention = stance_attention_probs[-1]
@@ -415,7 +416,7 @@ class DualBert(DualBertPreTrainedModel):
         # '''
 
         add_rumor_bert_encoder, rumor_attention_probs = self.add_rumor_bert_attention(final_stance_text_output,
-                                                                                      sequence_output,
+                                                                                      output_sequence,
                                                                                       extended_attention_mask)
         add_rumor_bert_text_output_layer = add_rumor_bert_encoder[-1]
         rumor_attention = rumor_attention_probs[-1]
@@ -442,6 +443,7 @@ class DualBert(DualBertPreTrainedModel):
             # alpha = 0.1
             loss_fct = CrossEntropyLoss()
             output.rumour_loss = loss_fct(output.rumour_logits.view(-1, self.rumor_num_labels), rumor_labels.view(-1))
+            output.attention_probs = attention_probs[:, 0, 0, :]
             # sim_loss = self.cos_sim(stance_attention, rumor_attention)
             # return loss + alpha*sim_loss
 

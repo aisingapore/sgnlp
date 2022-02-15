@@ -29,16 +29,18 @@ class InputExample(object):
 
 class PreprocessedFeatures:
 
-    def __init__(self, input_ids_buckets, input_mask_buckets, segment_ids_buckets, input_mask, label_ids,
-                 stance_position, label_mask):
+    def __init__(self, input_ids_buckets, input_mask_buckets, segment_ids_buckets, input_mask, stance_position,
+                 stance_label_mask, stance_label_ids=None, rumor_label_id=None,
+                 ):
         self.input_ids_buckets = input_ids_buckets
         self.input_mask_buckets = input_mask_buckets
         self.segment_ids_buckets = segment_ids_buckets
 
         self.input_mask = input_mask
-        self.label_ids = label_ids
+        self.stance_label_ids = stance_label_ids
+        self.rumor_label_id = rumor_label_id
         self.stance_position = stance_position
-        self.label_mask = label_mask
+        self.stance_label_mask = stance_label_mask
 
 
 class InputFeatures(object):
@@ -437,11 +439,11 @@ def convert_stance_examples_to_features(examples, label_list, max_seq_length, to
 
 def bucket_conversion(tweets_tokens_buckets,
                       tokenizer, max_tweet_num, max_tweet_len,
-                      max_seq_length, labels_buckets=None, label_map=None):
-    labels_provided = labels_buckets is not None and label_map is not None
+                      max_seq_length, stance_labels_buckets=None, label_map=None):
+    labels_provided = stance_labels_buckets is not None and label_map is not None
 
     if labels_provided:
-        items = zip(tweets_tokens_buckets, labels_buckets)
+        items = zip(tweets_tokens_buckets, stance_labels_buckets)
     else:
         items = tweets_tokens_buckets
 
@@ -450,35 +452,34 @@ def bucket_conversion(tweets_tokens_buckets,
     segment_ids_buckets = []
     label_ids_buckets = []
     stance_position_buckets = []
-    label_mask_buckets = []
+    stance_label_mask_buckets = []
     for n, item in enumerate(items):
         if labels_provided:
             tweets_tokens, labels = item
         else:
             tweets_tokens = item
 
-        ntokens = []
-        # input_tokens = []
         input_ids = []
         input_mask = []
         segment_ids = []
         label_ids = []
-        label_mask = []
+        stance_label_mask = []
         stance_position = []
-        if labels_provided:
-            ntokens.append("[CLS]")
-            # input_tokens.extend(ntokens) # avoid having two [CLS] at the begining
-            # segment_ids.append(0) #########no need to add this line
-            label_ids.append(label_map[labels[0]])
-            stance_position.append(0)
-            label_mask.append(1)
+        # if labels_provided:
+        #     ntokens.append("[CLS]")
+        #     # input_tokens.extend(ntokens) # avoid having two [CLS] at the begining
+        #     # segment_ids.append(0) #########no need to add this line
+        #     label_ids.append(label_map[labels[0]])
+        #     label_mask.append(1)
         for i, tweet_token in enumerate(tweets_tokens):
-            if i != 0:
-                ntokens = []
-                ntokens.append("[CLS]")
-                label_ids.append(label_map[labels[i]])
+            if i == 0:
+                stance_position.append(0)
+            else:
                 stance_position.append(len(input_ids))
-                label_mask.append(1)
+            ntokens = ["[CLS]"]
+            if labels_provided:
+                label_ids.append(label_map[labels[i]])
+            stance_label_mask.append(1)
             ntokens.extend(tweet_token)
             ntokens.append("[SEP]")
             # input_tokens.extend(ntokens)  # just for printing out
@@ -498,9 +499,7 @@ def bucket_conversion(tweets_tokens_buckets,
             ntokens = []
             ntokens.append("[CLS]")
             ntokens.append("[SEP]")
-            label_ids.append(0)
             stance_position.append(len(input_ids))
-            label_mask.append(0)
             tweet_input_ids = tokenizer.convert_tokens_to_ids(ntokens)
             tweet_input_mask = [1] * len(tweet_input_ids)
             tweet_input_ids = tweet_input_ids + [0] * (max_tweet_len - 2)
@@ -508,6 +507,10 @@ def bucket_conversion(tweets_tokens_buckets,
             input_ids.extend(tweet_input_ids)
             input_mask.extend(tweet_input_mask)
             segment_ids = segment_ids + [(cur_tweet_num + j) % 2] * max_tweet_len
+
+            if labels_provided:
+                label_ids.append(0)
+            stance_label_mask.append(0)
 
         while len(input_ids) < max_seq_length:
             input_ids.append(0)
@@ -521,25 +524,27 @@ def bucket_conversion(tweets_tokens_buckets,
         input_ids_buckets.append(input_ids)
         input_mask_buckets.append(input_mask)
         segment_ids_buckets.append(segment_ids)
-        label_ids_buckets.append(label_ids)
         stance_position_buckets.append(stance_position)
-        label_mask_buckets.append(label_mask)
 
-    return input_ids_buckets, input_mask_buckets, segment_ids_buckets, label_ids_buckets, \
-           stance_position_buckets, label_mask_buckets
+        if labels_provided:
+            label_ids_buckets.append(label_ids)
+        stance_label_mask_buckets.append(stance_label_mask)
+
+    return input_ids_buckets, input_mask_buckets, segment_ids_buckets, label_ids_buckets, stance_position_buckets, \
+           stance_label_mask_buckets
 
 
-def examples_to_features(examples, max_seq_length, tokenizer, max_tweet_num, max_tweet_len, type,
+def examples_to_features(examples, max_seq_length, tokenizer, max_tweet_num, max_tweet_len, task,
                          label_names=None):
     max_bucket_num = 4  # the number of buckets in each thread
 
     label_map = None
     if label_names is not None:
-        if type == "stance":
+        if task == "stance":
             label_map_dict = {'0': 'B-DENY', '1': 'B-SUPPORT', '2': 'B-QUERY',
                               '3': 'B-COMMENT'}  # Original data labels map
             label_map = {label: i for i, label in enumerate(label_names, 1)}
-        elif type == "rumor":
+        elif task == "rumor":
             label_map = {label: i for i, label in enumerate(label_names)}
 
     features = []
@@ -560,25 +565,32 @@ def examples_to_features(examples, max_seq_length, tokenizer, max_tweet_num, max
                 tweet_token = tweet_token[:(max_tweet_len - 2)]
             tweets_tokens.append(tweet_token)
 
-            if label_names is not None and type == "stance":
+            if label_names is not None and task == "stance":
                 label = example_labels[i]
                 example_label_names.append(label_map_dict[label])
 
         tweets_tokens_buckets = []
         labels_buckets = []
 
-        num_buckets = min(math.ceil(len(example_label_names) / max_tweet_num), max_bucket_num)
+        num_buckets = min(math.ceil(len(tweetlist) / max_tweet_num), max_bucket_num)
 
         for n in range(num_buckets):
             tweets_tokens_buckets.append(tweets_tokens[n * max_tweet_num: (n + 1) * max_tweet_num])
 
-            if label_names is not None and type == "stance":
+            if label_names is not None and task == "stance":
                 labels_buckets.append(example_label_names[n * max_tweet_num: (n + 1) * max_tweet_num])
 
+        for n in range(max_bucket_num - num_buckets):
+            tweets_tokens_buckets.append([])
+
+            if label_names is not None and task == "stance":
+                labels_buckets.append([])
+
         input_ids_buckets, input_mask_buckets, segment_ids_buckets, label_ids_buckets, \
-        stance_position_buckets, label_mask_buckets = bucket_conversion(tweets_tokens_buckets, labels_buckets,
+        stance_position_buckets, label_mask_buckets = bucket_conversion(tweets_tokens_buckets,
                                                                         tokenizer, max_tweet_num, max_tweet_len,
-                                                                        max_seq_length, label_map=label_map)
+                                                                        max_seq_length, labels_buckets,
+                                                                        label_map=label_map)
 
         # input_tokens1, input_ids1, input_mask1, segment_ids1, label_ids1, stance_position1, label_mask1 = \
         #     bucket_conversion(tweets_tokens1, labels1, label_map, tokenizer, max_tweet_num, max_tweet_len,
@@ -593,10 +605,12 @@ def examples_to_features(examples, max_seq_length, tokenizer, max_tweet_num, max
         #     bucket_conversion(tweets_tokens4, labels4, label_map, tokenizer, max_tweet_num, max_tweet_len,
         #                       max_seq_length)
 
-        label_ids = [item for sublist in label_ids_buckets for item in sublist]
+        stance_label_ids = [item for sublist in label_ids_buckets for item in sublist]
         stance_position = [item for sublist in stance_position_buckets for item in sublist]
-        label_mask = [item for sublist in label_mask_buckets for item in sublist]
+        stance_label_mask = [item for sublist in label_mask_buckets for item in sublist]
         input_mask = [item for sublist in input_mask_buckets for item in sublist]
+
+        rumor_label_id = label_map[example.label] if task == "rumor" else None
 
         # if ex_index < 1:
         #     logger.info("*** Example ***")
@@ -613,8 +627,8 @@ def examples_to_features(examples, max_seq_length, tokenizer, max_tweet_num, max
             input_ids_buckets=input_ids_buckets,
             input_mask_buckets=input_mask_buckets,
             segment_ids_buckets=segment_ids_buckets,
-            input_mask=input_mask, label_ids=label_ids,
-            stance_position=stance_position, label_mask=label_mask
+            input_mask=input_mask, stance_label_ids=stance_label_ids, rumor_label_id=rumor_label_id,
+            stance_position=stance_position, stance_label_mask=stance_label_mask
         ))
         # features.append(
         #     InputFeatures(input_ids1=input_ids1, input_mask1=input_mask1, segment_ids1=segment_ids1,
@@ -648,7 +662,7 @@ def prepare_data_for_training(processor, stance_processor, tokenizer, train_conf
     ## Test
     new_features = examples_to_features(train_examples, train_config.max_seq_length, tokenizer,
                                         train_config.max_tweet_num,
-                                        train_config.max_tweet_length, type="rumor", label_names=label_list)
+                                        train_config.max_tweet_length, task="rumor", label_names=label_list)
 
     # rumor detection task
     train_features = convert_examples_to_features(
@@ -851,41 +865,22 @@ class DualBertPreprocessor:
         self.max_tweet_num = config.max_tweet_num
         self.max_tweet_len = config.max_tweet_length
 
-    def __call__(self, examples):
-        test_features = convert_examples_to_features(examples, [], self.max_seq_length, self.tokenizer,
-                                                     self.max_tweet_num,
-                                                     self.max_tweet_len)
+    def __call__(self, examples, task=None):
 
-        input_ids1 = torch.tensor([f.input_ids1 for f in test_features], dtype=torch.int32)
-        input_mask1 = torch.tensor([f.input_mask1 for f in test_features], dtype=torch.int32)
-        segment_ids1 = torch.tensor([f.segment_ids1 for f in test_features], dtype=torch.int32)
-        input_ids2 = torch.tensor([f.input_ids2 for f in test_features], dtype=torch.int32)
-        input_mask2 = torch.tensor([f.input_mask2 for f in test_features], dtype=torch.int32)
-        segment_ids2 = torch.tensor([f.segment_ids2 for f in test_features], dtype=torch.int32)
-        input_ids3 = torch.tensor([f.input_ids3 for f in test_features], dtype=torch.int32)
-        input_mask3 = torch.tensor([f.input_mask3 for f in test_features], dtype=torch.int32)
-        segment_ids3 = torch.tensor([f.segment_ids3 for f in test_features], dtype=torch.int32)
-        input_ids4 = torch.tensor([f.input_ids4 for f in test_features], dtype=torch.int32)
-        input_mask4 = torch.tensor([f.input_mask4 for f in test_features], dtype=torch.int32)
-        segment_ids4 = torch.tensor([f.segment_ids4 for f in test_features], dtype=torch.int32)
-        input_mask = torch.tensor([f.input_mask for f in test_features], dtype=torch.int32)
-        label_ids = None
-        label_mask = torch.tensor([f.label_mask for f in test_features], dtype=torch.int32)
+        input_examples = []
+        for example in examples:
+            input_examples.append(InputExample(example))
+
+        test_features = examples_to_features(input_examples, self.max_seq_length, self.tokenizer, self.max_tweet_num,
+                                             self.max_tweet_len, task)
 
         return {
-            "input_ids1": input_ids1,
-            "token_type_ids1": segment_ids1,
-            "attention_mask1": input_mask1,
-            "input_ids2": input_ids2,
-            "token_type_ids2": segment_ids2,
-            "attention_mask2": input_mask2,
-            "input_ids3": input_ids3,
-            "token_type_ids3": segment_ids3,
-            "attention_mask3": input_mask3,
-            "input_ids4": input_ids4,
-            "token_type_ids4": segment_ids4,
-            "attention_mask4": input_mask4,
-            "attention_mask": input_mask,
-            "rumor_labels": label_ids,
-            "stance_label_mask": label_mask,
+            "input_ids_buckets": torch.tensor([f.input_ids_buckets for f in test_features], dtype=torch.int32),
+            "segment_ids_buckets": torch.tensor([f.segment_ids_buckets for f in test_features], dtype=torch.int32),
+            "input_mask_buckets": torch.tensor([f.input_mask_buckets for f in test_features], dtype=torch.int32),
+            "input_mask": torch.tensor([f.input_mask for f in test_features], dtype=torch.int32),
+            "stance_label_ids": torch.tensor([f.stance_label_ids for f in test_features], dtype=torch.int32),
+            "rumor_label_id": torch.tensor([f.rumor_label_id for f in test_features], dtype=torch.int32) if test_features[0].rumor_label_id is not None else None,
+            "stance_position": torch.tensor([f.stance_position for f in test_features], dtype=torch.int32),
+            "stance_label_mask": torch.tensor([f.stance_label_mask for f in test_features], dtype=torch.int32),
         }
