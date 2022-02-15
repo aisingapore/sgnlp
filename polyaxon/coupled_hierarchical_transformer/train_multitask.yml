@@ -4,7 +4,7 @@ version: 1
 kind: experiment
 
 build:
-  dockerfile: polyaxon/coupled_hierarchical_transformer/experiment.Dockerfile
+  dockerfile: polyaxon/dual_bert/experiment.Dockerfile
 
 environment:
   persistence:
@@ -20,4 +20,4 @@ logging:
   level: INFO
 
 run:
-  cmd: python -m sgnlp.models.coupled_hierarchical_transformer.train
+  cmd: python -m sgnlp.models.dual_bert.train

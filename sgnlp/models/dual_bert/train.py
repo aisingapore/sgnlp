@@ -28,7 +28,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from torch.utils.data.distributed import DistributedSampler
 import torch.nn.functional as F
 
-from sgnlp.models.coupled_hierarchical_transformer.config import DualBertConfig
+from sgnlp.models.dual_bert.config import DualBertConfig
 from .utils import classification_report
 
 from transformers import BertTokenizer
@@ -1311,6 +1311,6 @@ def train_custom_cht(train_config: CustomCoupledHierarchicalTransformerTrainConf
 
 
 if __name__ == "__main__":
-    train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/coupled_hierarchical_transformer/train_config_local.json")
+    train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/dual_bert/train_config_local.json")
     #train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
     train_custom_cht(train_config)

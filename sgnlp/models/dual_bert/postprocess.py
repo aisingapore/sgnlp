@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from sgnlp.models.coupled_hierarchical_transformer.modeling import DualBertModelOutput
+from sgnlp.models.dual_bert.modeling import DualBertModelOutput
 
 
 class DualBertPostprocessor:

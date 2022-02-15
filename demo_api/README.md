@@ -3,6 +3,9 @@
 # From root folder of repository:
 docker build -t <model_name> -f demo_api/<model_name>/Dockerfile demo_api/
 
+# For building using dev.Dockerfile
+docker build -t <model_name> -f demo_api/<model_name>/dev.Dockerfile .
+
 docker run -p 8000:8000 <model_name>
 
 E.g.

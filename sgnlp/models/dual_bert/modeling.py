@@ -9,7 +9,7 @@ from transformers import BertModel, PreTrainedModel, BertPreTrainedModel
 from transformers.file_utils import ModelOutput
 from transformers.models.bert.modeling_bert import BertPooler, BertIntermediate, BertOutput, BertSelfOutput
 
-from sgnlp.models.coupled_hierarchical_transformer.config import DualBertConfig
+from sgnlp.models.dual_bert.config import DualBertConfig
 
 
 @dataclass
