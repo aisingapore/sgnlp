@@ -59,6 +59,11 @@ local api_names = {
     module_name: "ufd",
     image_name: "ufd",
     deployment_name: "ufd"
+  },
+  "dual_bert": {
+    module_name: "dual_bert",
+    image_name: "dual-bert",
+    deployment_name: "dual-bert"
   }
 };
 
