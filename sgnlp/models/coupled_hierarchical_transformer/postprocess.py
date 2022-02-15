@@ -10,14 +10,15 @@ class DualBertPostprocessor:
         self.rumor_labels = rumour_labels
         self.stance_labels = stance_labels
 
-    def __call__(self, model_output: DualBertModelOutput, stance_label_mask):
-        rumour_label_idx = np.argmax(model_output.rumour_logits.detach().cpu().numpy())
-        rumour_label = self.rumor_labels[rumour_label_idx]
+    def __call__(self, model_outputs: [DualBertModelOutput], stance_label_mask):
 
-        stance_label_idx = torch.argmax(F.log_softmax(model_output.stance_logits, dim=2), dim=2)
-        # stance_label = self.stance_labels[stance_label_idx]
+        rumor_labels = []
+        for rumor_logits in model_outputs.rumour_logits:
+            rumour_label_idx = np.argmax(rumor_logits.detach().cpu().numpy())
+            rumor_labels.append(self.rumor_labels[rumour_label_idx])
 
-        stance_preds = []
+        stance_labels = []
+        stance_label_idx = torch.argmax(F.log_softmax(model_outputs.stance_logits, dim=2), dim=2)
         stance_label_mask = stance_label_mask.to("cpu").numpy()
         for i, mask in enumerate(stance_label_mask):
             temp_2 = []
@@ -26,10 +27,9 @@ class DualBertPostprocessor:
                     temp_2.append(self.stance_labels[stance_label_idx[i][j]])
                 else:
                     break
-            stance_preds.append(temp_2)
-
+            stance_labels.append(temp_2)
 
         return {
-            "rumour_label": rumour_label,
-            "stance_label": stance_preds
+            "rumor_labels": rumor_labels,
+            "stance_labels": stance_labels
         }

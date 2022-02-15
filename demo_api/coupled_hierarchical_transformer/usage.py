@@ -43,6 +43,11 @@ examples = [
         "#4U9525: Robin names Andreas Lubitz as the copilot in the flight deck who crashed the aircraft.",
         "@thatjohn @mschenk",
         "@thatjohn Have they named the pilot?",
+    ],
+    [
+        "#4U9525: Robin names Andreas Lubitz as the copilot in the flight deck who crashed the aircraft.",
+        "@thatjohn @mschenk",
+        "@thatjohn Have they named the pilot?",
     ]
 ]
 
@@ -51,3 +56,4 @@ model_inputs = preprocessor(examples)
 
 model_output = model(**model_inputs)
 output = postprocessor(model_output, model_inputs["stance_label_mask"])
+print(output)
