@@ -28,11 +28,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 SenticGCNData = namedtuple(
-    "SenticGCNData", ["full_text", "aspect", "left_text", "full_text_tokens", "aspect_token_index"]
+    "SenticGCNData", ["full_text", "aspect", "left_text", "full_text_tokens", "aspect_token_indexes"]
 )
 SenticGCNBertData = namedtuple(
     "SenticGCNBertData",
-    ["full_text", "aspect", "left_text", "full_text_with_bert_tokens", "full_text_tokens", "aspect_token_index"],
+    ["full_text", "aspect", "left_text", "full_text_with_bert_tokens", "full_text_tokens", "aspect_token_indexes"],
 )
 
 
@@ -300,23 +300,32 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
             full_text_tokens = batch["sentence"].split()
             for aspect in batch["aspects"]:
                 aspect = aspect.lower().strip()
-                aspect_token_indexes = [
-                    idx
-                    for idx, val in enumerate(full_text_tokens)
-                    if val.lower().translate(str.maketrans("", "", string.punctuation)) == aspect
-                ]
-                aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
-                for aspect_index, aspect_token_index in zip(aspect_idxs, aspect_token_indexes):
-                    left_text = full_text[:aspect_index].strip()
-                    processed_inputs.append(
-                        SenticGCNData(
-                            full_text=full_text,
-                            aspect=aspect,
-                            left_text=left_text,
-                            full_text_tokens=full_text_tokens,
-                            aspect_token_index=aspect_token_index,
-                        )
+                aspect_tokens = aspect.split()
+                aspect_indexes = []
+                for idx, val in enumerate(full_text_tokens):
+                    if val == aspect_tokens[0]:
+                        match = True
+                        start_idx = idx
+                        for aspect_token_index in range(len(aspect_tokens)):
+                            if full_text_tokens[start_idx] == aspect_tokens[aspect_token_index]:
+                                start_idx += 1
+                            else:
+                                match = False
+                                break
+                        if match:
+                            aspect_indexes = list(map(lambda x: idx + x, [*range(len(aspect_tokens))]))
+                            break
+                aspect_start_idx = full_text.rfind(aspect)
+                left_text = full_text[:aspect_start_idx].strip()
+                processed_inputs.append(
+                    SenticGCNData(
+                        full_text=full_text,
+                        aspect=aspect,
+                        left_text=left_text,
+                        full_text_tokens=full_text_tokens,
+                        aspect_token_indexes=aspect_indexes,
                     )
+                )
         return processed_inputs
 
     def __call__(
@@ -483,25 +492,34 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             full_text_tokens = batch["sentence"].split()
             for aspect in batch["aspects"]:
                 aspect = aspect.lower().strip()
-                aspect_token_indexes = [
-                    idx
-                    for idx, val in enumerate(full_text_tokens)
-                    if val.lower().translate(str.maketrans("", "", string.punctuation)) == aspect
-                ]
-                aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
-                for aspect_index, aspect_token_index in zip(aspect_idxs, aspect_token_indexes):
-                    left_text = full_text[:aspect_index].strip()
-                    full_text_with_bert_tokens = f"[CLS] {full_text} [SEP] {aspect} [SEP]"
-                    processed_inputs.append(
-                        SenticGCNBertData(
-                            full_text=full_text,
-                            aspect=aspect,
-                            left_text=left_text,
-                            full_text_with_bert_tokens=full_text_with_bert_tokens,
-                            full_text_tokens=full_text_tokens,
-                            aspect_token_index=aspect_token_index,
-                        )
+                aspect_tokens = aspect.split()
+                aspect_indexes = []
+                for idx, val in enumerate(full_text_tokens):
+                    if val == aspect_tokens[0]:
+                        match = True
+                        start_idx = idx
+                        for aspect_token_index in range(len(aspect_tokens)):
+                            if full_text_tokens[start_idx] == aspect_tokens[aspect_token_index]:
+                                start_idx += 1
+                            else:
+                                match = False
+                                break
+                        if match:
+                            aspect_indexes = list(map(lambda x: idx + x, [*range(len(aspect_tokens))]))
+                            break
+                aspect_start_idx = full_text.rfind(aspect)
+                left_text = full_text[:aspect_start_idx].strip()
+                full_text_with_bert_tokens = f"[CLS] {full_text} [SEP] {aspect} [SEP]"
+                processed_inputs.append(
+                    SenticGCNBertData(
+                        full_text=full_text,
+                        aspect=aspect,
+                        left_text=left_text,
+                        full_text_with_bert_tokens=full_text_with_bert_tokens,
+                        full_text_tokens=full_text_tokens,
+                        aspect_token_indexes=aspect_indexes,
                     )
+                )
         return processed_inputs
 
     def __call__(
