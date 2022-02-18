@@ -37,6 +37,10 @@ class TestSenticGCNPreprocessorTestCase(unittest.TestCase):
                 "aspects": ["location", "food"],
                 "sentence": "it 's located in a strip mall near the beverly center , not the greatest location , but the food keeps me coming back for more .",
             },  # 0, 1
+            {
+                "aspects": ["grilled chicken", "grilled chicken special with edamame puree", "grilled"],
+                "sentence": "the only grilled chicken i moderately enjoyed was their grilled chicken special with edamame puree .",
+            },  # 1, 1, 1, 1, 1
         ]
         self.test_senticnet = {"test": 1.0}
 
@@ -52,21 +56,21 @@ class TestSenticGCNPreprocessorTestCase(unittest.TestCase):
         self.assertTrue(isinstance(pre_proc.senticnet, dict))
 
         processed_inputs, processed_indices = pre_proc(self.test_inputs)
-        self.assertEqual(len(processed_inputs), 5)
+        self.assertEqual(len(processed_inputs), 10)
         self.assertEqual(len(processed_indices), 5)
 
         for proc_input in processed_inputs:
             self.assertTrue(isinstance(proc_input, SenticGCNData))
-            for key in ["full_text", "aspect", "left_text", "full_text_tokens", "aspect_token_index"]:
+            for key in ["full_text", "aspect", "left_text", "full_text_tokens", "aspect_token_indexes"]:
                 self.assertTrue(hasattr(proc_input, key))
 
         for proc_index in processed_indices:
             self.assertTrue(isinstance(proc_index, torch.Tensor))
-        self.assertEqual(processed_indices[0].shape, torch.Size([5, 27]))
-        self.assertEqual(processed_indices[1].shape, torch.Size([5, 27]))
-        self.assertEqual(processed_indices[2].shape, torch.Size([5, 27]))
-        self.assertEqual(processed_indices[3].shape, torch.Size([5, 27, 300]))
-        self.assertEqual(processed_indices[4].shape, torch.Size([5, 27, 27]))
+        self.assertEqual(processed_indices[0].shape, torch.Size([10, 27]))
+        self.assertEqual(processed_indices[1].shape, torch.Size([10, 27]))
+        self.assertEqual(processed_indices[2].shape, torch.Size([10, 27]))
+        self.assertEqual(processed_indices[3].shape, torch.Size([10, 27, 300]))
+        self.assertEqual(processed_indices[4].shape, torch.Size([10, 27, 27]))
 
     def test_senticgcn_preprocessor_from_external(self):
         """
@@ -81,7 +85,7 @@ class TestSenticGCNPreprocessorTestCase(unittest.TestCase):
         self.assertTrue(isinstance(pre_proc.senticnet, dict))
 
         processed_inputs, processed_indices = pre_proc(self.test_inputs)
-        self.assertEqual(len(processed_inputs), 5)
+        self.assertEqual(len(processed_inputs), 10)
         self.assertEqual(len(processed_indices), 5)
 
     def test_senticgcn_preprocessor_from_file(self):
@@ -99,7 +103,7 @@ class TestSenticGCNPreprocessorTestCase(unittest.TestCase):
         self.assertTrue(isinstance(pre_proc.senticnet, dict))
 
         processed_inputs, processed_indices = pre_proc(self.test_inputs)
-        self.assertEqual(len(processed_inputs), 5)
+        self.assertEqual(len(processed_inputs), 10)
         self.assertEqual(len(processed_indices), 5)
 
 
@@ -118,6 +122,10 @@ class TestSenticGCNBertPreprocessorTestCase(unittest.TestCase):
                 "aspects": ["location", "food"],
                 "sentence": "it 's located in a strip mall near the beverly center , not the greatest location , but the food keeps me coming back for more .",
             },  # 0, 1
+            {
+                "aspects": ["grilled chicken", "grilled chicken special with edamame puree", "grilled"],
+                "sentence": "the only grilled chicken i moderately enjoyed was their grilled chicken special with edamame puree .",
+            },  # 1, 1, 1, 1, 1
         ]
         self.test_senticnet = {"test": 1.0}
 
@@ -133,7 +141,7 @@ class TestSenticGCNBertPreprocessorTestCase(unittest.TestCase):
         self.assertTrue(isinstance(pre_proc.senticnet, dict))
 
         processed_inputs, processed_indices = pre_proc(self.test_inputs)
-        self.assertEqual(len(processed_inputs), 5)
+        self.assertEqual(len(processed_inputs), 10)
         self.assertEqual(len(processed_indices), 5)
 
         for proc_input in processed_inputs:
@@ -144,17 +152,17 @@ class TestSenticGCNBertPreprocessorTestCase(unittest.TestCase):
                 "left_text",
                 "full_text_with_bert_tokens",
                 "full_text_tokens",
-                "aspect_token_index",
+                "aspect_token_indexes",
             ]:
                 self.assertTrue(hasattr(proc_input, key))
 
         for proc_index in processed_indices:
             self.assertTrue(isinstance(proc_index, torch.Tensor))
-        self.assertEqual(processed_indices[0].shape, torch.Size([5, 85]))
-        self.assertEqual(processed_indices[1].shape, torch.Size([5, 85]))
-        self.assertEqual(processed_indices[2].shape, torch.Size([5, 85]))
-        self.assertEqual(processed_indices[3].shape, torch.Size([5, 85, 768]))
-        self.assertEqual(processed_indices[4].shape, torch.Size([5, 85, 85]))
+        self.assertEqual(processed_indices[0].shape, torch.Size([10, 85]))
+        self.assertEqual(processed_indices[1].shape, torch.Size([10, 85]))
+        self.assertEqual(processed_indices[2].shape, torch.Size([10, 85]))
+        self.assertEqual(processed_indices[3].shape, torch.Size([10, 85, 768]))
+        self.assertEqual(processed_indices[4].shape, torch.Size([10, 85, 85]))
 
     def test_senticgcnbert_preprocessor_from_external(self):
         """
@@ -169,7 +177,7 @@ class TestSenticGCNBertPreprocessorTestCase(unittest.TestCase):
         self.assertTrue(isinstance(pre_proc.senticnet, dict))
 
         processed_inputs, processed_indices = pre_proc(self.test_inputs)
-        self.assertEqual(len(processed_inputs), 5)
+        self.assertEqual(len(processed_inputs), 10)
         self.assertEqual(len(processed_indices), 5)
 
     def test_senticgcnbert_preprocessor_from_file(self):
@@ -187,5 +195,5 @@ class TestSenticGCNBertPreprocessorTestCase(unittest.TestCase):
         self.assertTrue(isinstance(pre_proc.senticnet, dict))
 
         processed_inputs, processed_indices = pre_proc(self.test_inputs)
-        self.assertEqual(len(processed_inputs), 5)
+        self.assertEqual(len(processed_inputs), 10)
         self.assertEqual(len(processed_indices), 5)

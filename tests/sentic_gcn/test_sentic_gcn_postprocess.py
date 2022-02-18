@@ -27,7 +27,7 @@ class TestSenticGCNPostprocessorTestCase(unittest.TestCase):
                     "Salty",
                     "funkysoup.",
                 ],
-                aspect_token_index=0,
+                aspect_token_indexes=[0],
             ),
             SenticGCNData(
                 full_text="soup is tasty but soup is a little salty. salty funkysoup.",
@@ -46,7 +46,7 @@ class TestSenticGCNPostprocessorTestCase(unittest.TestCase):
                     "Salty",
                     "funkysoup.",
                 ],
-                aspect_token_index=4,
+                aspect_token_indexes=[4],
             ),
             SenticGCNData(
                 full_text="everyone that sat in the back outside agreed that it was the worst service we had ever received.",
@@ -72,7 +72,7 @@ class TestSenticGCNPostprocessorTestCase(unittest.TestCase):
                     "ever",
                     "received.",
                 ],
-                aspect_token_index=13,
+                aspect_token_indexes=[13],
             ),
             SenticGCNData(
                 full_text="it 's located in a strip mall near the beverly center , not the greatest location , but the food keeps me coming back for more .",
@@ -107,7 +107,7 @@ class TestSenticGCNPostprocessorTestCase(unittest.TestCase):
                     "more",
                     ".",
                 ],
-                aspect_token_index=15,
+                aspect_token_indexes=[15],
             ),
             SenticGCNData(
                 full_text="it 's located in a strip mall near the beverly center , not the greatest location , but the food keeps me coming back for more .",
@@ -142,7 +142,7 @@ class TestSenticGCNPostprocessorTestCase(unittest.TestCase):
                     "more",
                     ".",
                 ],
-                aspect_token_index=19,
+                aspect_token_indexes=[19],
             ),
         ]
         self.test_model_outputs = SenticGCNModelOutput(
@@ -193,7 +193,7 @@ class TestSenticGCNBertPostprocessorTestCase(unittest.TestCase):
                     "Salty",
                     "funkysoup.",
                 ],
-                aspect_token_index=0,
+                aspect_token_indexes=[0],
             ),
             SenticGCNBertData(
                 full_text="soup is tasty but soup is a little salty. salty funkysoup.",
@@ -213,7 +213,7 @@ class TestSenticGCNBertPostprocessorTestCase(unittest.TestCase):
                     "Salty",
                     "funkysoup.",
                 ],
-                aspect_token_index=4,
+                aspect_token_indexes=[4],
             ),
             SenticGCNBertData(
                 full_text="everyone that sat in the back outside agreed that it was the worst service we had ever received.",
@@ -240,7 +240,7 @@ class TestSenticGCNBertPostprocessorTestCase(unittest.TestCase):
                     "ever",
                     "received.",
                 ],
-                aspect_token_index=13,
+                aspect_token_indexes=[13],
             ),
             SenticGCNBertData(
                 full_text="it 's located in a strip mall near the beverly center , not the greatest location , but the food keeps me coming back for more .",
@@ -276,7 +276,7 @@ class TestSenticGCNBertPostprocessorTestCase(unittest.TestCase):
                     "more",
                     ".",
                 ],
-                aspect_token_index=15,
+                aspect_token_indexes=[15],
             ),
             SenticGCNBertData(
                 full_text="it 's located in a strip mall near the beverly center , not the greatest location , but the food keeps me coming back for more .",
@@ -312,7 +312,7 @@ class TestSenticGCNBertPostprocessorTestCase(unittest.TestCase):
                     "more",
                     ".",
                 ],
-                aspect_token_index=19,
+                aspect_token_indexes=[19],
             ),
         ]
         self.test_model_outputs = SenticGCNBertModelOutput(
