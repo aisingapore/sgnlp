@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import spacy
 import torch
-from transformers import PreTrainedTokenizer, PretrainedConfig, PreTrainedModel
+from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast, PretrainedConfig, PreTrainedModel
 
 from .config import SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
 from .modeling import SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
@@ -44,8 +44,8 @@ class SenticGCNBasePreprocessor:
 
     def __init__(
         self,
-        tokenizer: Union[str, PreTrainedTokenizer],
-        embedding_model: Union[str, PreTrainedTokenizer],
+        tokenizer: Union[str, PreTrainedTokenizer, PreTrainedTokenizerFast],
+        embedding_model: Union[str, PreTrainedModel],
         tokenizer_class: PreTrainedTokenizer,
         embedding_config_class: PretrainedConfig,
         embedding_model_class: PreTrainedModel,
@@ -102,7 +102,11 @@ class SenticGCNBasePreprocessor:
             )
 
         try:
-            if type(tokenizer) == str:
+            # Init Tokenizer
+            if isinstance(tokenizer, PreTrainedTokenizer) or isinstance(tokenizer, PreTrainedTokenizerFast):
+                # Load from external instance
+                tokenizer_ = tokenizer
+            else:
                 if tokenizer.startswith("https://") or tokenizer.startswith("http://"):
                     # Load from cloud
                     # Download tokenizer files to temp dir
@@ -114,8 +118,6 @@ class SenticGCNBasePreprocessor:
                 else:
                     # Load from local directory or from HuggingFace model repository
                     tokenizer_ = tokenizer_class.from_pretrained(tokenizer)
-            else:
-                tokenizer_ = tokenizer
             self.tokenizer = tokenizer_
         except Exception as e:
             logging.error(e)
@@ -128,7 +130,10 @@ class SenticGCNBasePreprocessor:
 
         try:
             # Init Embedding model
-            if type(embedding_model) == str:
+            if isinstance(embedding_model, PreTrainedModel):
+                # Load from external instance
+                embed_model = embedding_model
+            else:
                 if embedding_model.startswith("https://") or embedding_model.startswith("http://"):
                     # Load from cloud
                     config_url = urllib.parse.urljoin(embedding_model, config_filename)
@@ -147,8 +152,6 @@ class SenticGCNBasePreprocessor:
                         # Load from HuggingFace model repository
                         embed_config = embedding_config_class.from_pretrained(embedding_model)
                         embed_model = embedding_model_class.from_pretrained(embedding_model, config=embed_config)
-            else:
-                embed_model = embedding_model
             self.embedding_model = embed_model
             self.embedding_model.to(self.device)
         except Exception as e:
