@@ -102,11 +102,7 @@ class SenticGCNBasePreprocessor:
             )
 
         try:
-            # Init Tokenizer
-            if isinstance(tokenizer, PreTrainedTokenizer):
-                # Load from external instance
-                tokenizer_ = tokenizer
-            else:
+            if type(tokenizer) == str:
                 if tokenizer.startswith("https://") or tokenizer.startswith("http://"):
                     # Load from cloud
                     # Download tokenizer files to temp dir
@@ -118,6 +114,8 @@ class SenticGCNBasePreprocessor:
                 else:
                     # Load from local directory or from HuggingFace model repository
                     tokenizer_ = tokenizer_class.from_pretrained(tokenizer)
+            else:
+                tokenizer_ = tokenizer
             self.tokenizer = tokenizer_
         except Exception as e:
             logging.error(e)
@@ -130,10 +128,7 @@ class SenticGCNBasePreprocessor:
 
         try:
             # Init Embedding model
-            if isinstance(embedding_model, PreTrainedModel):
-                # Load from external instance
-                embed_model = embedding_model
-            else:
+            if type(embedding_model) == str:
                 if embedding_model.startswith("https://") or embedding_model.startswith("http://"):
                     # Load from cloud
                     config_url = urllib.parse.urljoin(embedding_model, config_filename)
@@ -152,6 +147,8 @@ class SenticGCNBasePreprocessor:
                         # Load from HuggingFace model repository
                         embed_config = embedding_config_class.from_pretrained(embedding_model)
                         embed_model = embedding_model_class.from_pretrained(embedding_model, config=embed_config)
+            else:
+                embed_model = embedding_model
             self.embedding_model = embed_model
             self.embedding_model.to(self.device)
         except Exception as e:
