@@ -1,7 +1,6 @@
 import logging
 import pathlib
 import shutil
-import string
 import tempfile
 import urllib.parse
 from collections import namedtuple
@@ -302,18 +301,12 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
                 aspect = aspect.lower().strip()
                 aspect_tokens = aspect.split()
                 aspect_indexes = []
-                for idx, val in enumerate(full_text_tokens):
-                    if val.lower() == aspect_tokens[0]:
-                        match = True
-                        start_idx = idx
-                        for aspect_token_index in range(len(aspect_tokens)):
-                            if full_text_tokens[start_idx].lower() == aspect_tokens[aspect_token_index]:
-                                start_idx += 1
-                            else:
-                                match = False
-                                break
-                        if match:
+                for idx in range(len(full_text_tokens)):
+                    try:
+                        if " ".join(full_text_tokens[idx : idx+len(aspect_tokens)]).lower() == aspect:
                             aspect_indexes.append(list(map(lambda x: idx + x, [*range(len(aspect_tokens))])))
+                    except IndexError:
+                        continue
 
                 aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
                 for aspect_index, aspect_token_indexes in zip(aspect_idxs, aspect_indexes):
@@ -495,18 +488,12 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
                 aspect = aspect.lower().strip()
                 aspect_tokens = aspect.split()
                 aspect_indexes = []
-                for idx, val in enumerate(full_text_tokens):
-                    if val.lower() == aspect_tokens[0]:
-                        match = True
-                        start_idx = idx
-                        for aspect_token_index in range(len(aspect_tokens)):
-                            if full_text_tokens[start_idx].lower() == aspect_tokens[aspect_token_index]:
-                                start_idx += 1
-                            else:
-                                match = False
-                                break
-                        if match:
+                for idx in range(len(full_text_tokens)):
+                    try:
+                        if " ".join(full_text_tokens[idx : idx+len(aspect_tokens)]).lower() == aspect:
                             aspect_indexes.append(list(map(lambda x: idx + x, [*range(len(aspect_tokens))])))
+                    except IndexError:
+                        continue
 
                 aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
                 for aspect_index, aspect_token_indexes in zip(aspect_idxs, aspect_indexes):
@@ -526,7 +513,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
 
     def __call__(
         self, data_batch: List[Dict[str, Union[str, List[str]]]]
-    ) -> Tuple[List[SenticGCNData], List[torch.Tensor]]:
+    ) -> Tuple[List[SenticGCNBertData], List[torch.Tensor]]:
         """
         Method to generate list of input tensors from a list of sentences and their accompanying list of aspect.
 
