@@ -1,6 +1,7 @@
 import logging
 import pathlib
 import shutil
+import string
 import tempfile
 import urllib.parse
 from collections import namedtuple
@@ -299,11 +300,16 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
             full_text_tokens = batch["sentence"].split()
             for aspect in batch["aspects"]:
                 aspect = aspect.lower().strip()
-                aspect_tokens = aspect.split()
+                aspect_tokens = aspect.translate(str.maketrans("", "", string.punctuation)).split()
                 aspect_indexes = []
                 for idx in range(len(full_text_tokens)):
                     try:
-                        if " ".join(full_text_tokens[idx : idx+len(aspect_tokens)]).lower() == aspect:
+                        if (
+                            " ".join(full_text_tokens[idx : idx + len(aspect_tokens)])
+                            .translate(str.maketrans("", "", string.punctuation))
+                            .lower()
+                            == aspect
+                        ):
                             aspect_indexes.append(list(map(lambda x: idx + x, [*range(len(aspect_tokens))])))
                     except IndexError:
                         continue
@@ -486,11 +492,16 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             full_text_tokens = batch["sentence"].split()
             for aspect in batch["aspects"]:
                 aspect = aspect.lower().strip()
-                aspect_tokens = aspect.split()
+                aspect_tokens = aspect.translate(str.maketrans("", "", string.punctuation)).split()
                 aspect_indexes = []
                 for idx in range(len(full_text_tokens)):
                     try:
-                        if " ".join(full_text_tokens[idx : idx+len(aspect_tokens)]).lower() == aspect:
+                        if (
+                            " ".join(full_text_tokens[idx : idx + len(aspect_tokens)])
+                            .translate(str.maketrans("", "", string.punctuation))
+                            .lower()
+                            == aspect
+                        ):
                             aspect_indexes.append(list(map(lambda x: idx + x, [*range(len(aspect_tokens))])))
                     except IndexError:
                         continue
