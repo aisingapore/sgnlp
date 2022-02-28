@@ -36,7 +36,7 @@ def predict():
     outputs = postprocessor(model_output, model_inputs["stance_label_mask"])
 
 
-    return {"rumor_label": outputs["rumor_labels"][0],
+    return {"rumor_labels": outputs["rumor_labels"][0],
             "stance_labels": outputs["stance_labels"][0],
             "text": examples[0]}
 
