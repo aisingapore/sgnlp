@@ -30,7 +30,7 @@ class InputExample(object):
 class PreprocessedFeatures:
 
     def __init__(self, input_ids_buckets, input_mask_buckets, segment_ids_buckets, input_mask, stance_position,
-                 stance_label_mask, stance_label_ids=None, rumor_label_id=None,
+                 stance_label_mask, stance_label_ids=None, rumor_label_ids=None,
                  ):
         self.input_ids_buckets = input_ids_buckets
         self.input_mask_buckets = input_mask_buckets
@@ -38,7 +38,7 @@ class PreprocessedFeatures:
 
         self.input_mask = input_mask
         self.stance_label_ids = stance_label_ids
-        self.rumor_label_id = rumor_label_id
+        self.rumor_label_ids = rumor_label_ids
         self.stance_position = stance_position
         self.stance_label_mask = stance_label_mask
 
@@ -550,8 +550,6 @@ def examples_to_features(examples, max_seq_length, tokenizer, max_tweet_num, max
     features = []
     for (ex_index, example) in enumerate(examples):
         tweetlist = example.text
-        # tweetlist = tweetlist[:max_tweet_num]
-        # labellist = example.label[:max_tweet_num]
         example_labels = example.label
 
         tweets_tokens = []
@@ -586,269 +584,254 @@ def examples_to_features(examples, max_seq_length, tokenizer, max_tweet_num, max
             if label_names is not None and task == "stance":
                 labels_buckets.append([])
 
+        if labels_buckets==[]:labels_buckets = None
+
+
         input_ids_buckets, input_mask_buckets, segment_ids_buckets, label_ids_buckets, \
         stance_position_buckets, label_mask_buckets = bucket_conversion(tweets_tokens_buckets,
                                                                         tokenizer, max_tweet_num, max_tweet_len,
                                                                         max_seq_length, labels_buckets,
                                                                         label_map=label_map)
 
-        # input_tokens1, input_ids1, input_mask1, segment_ids1, label_ids1, stance_position1, label_mask1 = \
-        #     bucket_conversion(tweets_tokens1, labels1, label_map, tokenizer, max_tweet_num, max_tweet_len,
-        #                       max_seq_length)
-        # input_tokens2, input_ids2, input_mask2, segment_ids2, label_ids2, stance_position2, label_mask2 = \
-        #     bucket_conversion(tweets_tokens2, labels2, label_map, tokenizer, max_tweet_num, max_tweet_len,
-        #                       max_seq_length)
-        # input_tokens3, input_ids3, input_mask3, segment_ids3, label_ids3, stance_position3, label_mask3 = \
-        #     bucket_conversion(tweets_tokens3, labels3, label_map, tokenizer, max_tweet_num, max_tweet_len,
-        #                       max_seq_length)
-        # input_tokens4, input_ids4, input_mask4, segment_ids4, label_ids4, stance_position4, label_mask4 = \
-        #     bucket_conversion(tweets_tokens4, labels4, label_map, tokenizer, max_tweet_num, max_tweet_len,
-        #                       max_seq_length)
-
-        stance_label_ids = [item for sublist in label_ids_buckets for item in sublist]
+        stance_label_ids = [item for sublist in label_ids_buckets for item in sublist] if task == "stance" else None
         stance_position = [item for sublist in stance_position_buckets for item in sublist]
         stance_label_mask = [item for sublist in label_mask_buckets for item in sublist]
         input_mask = [item for sublist in input_mask_buckets for item in sublist]
 
-        rumor_label_id = label_map[example.label] if task == "rumor" else None
-
-        # if ex_index < 1:
-        #     logger.info("*** Example ***")
-        #     logger.info("guid: %s" % (example.guid))
-        #     logger.info("tokens: %s" % " ".join(
-        #         [str(x) for x in input_tokens1]))
-        #     logger.info("input_ids: %s" % " ".join([str(x) for x in input_ids1]))
-        #     logger.info("input_mask: %s" % " ".join([str(x) for x in input_mask1]))
-        #     logger.info(
-        #         "segment_ids: %s" % " ".join([str(x) for x in segment_ids1]))
-        #     logger.info("label: %s" % " ".join([str(x) for x in label_ids1]))
+        rumor_label_ids = label_map[example.label] if task == "rumor" else None
 
         features.append(PreprocessedFeatures(
             input_ids_buckets=input_ids_buckets,
             input_mask_buckets=input_mask_buckets,
             segment_ids_buckets=segment_ids_buckets,
-            input_mask=input_mask, stance_label_ids=stance_label_ids, rumor_label_id=rumor_label_id,
+            input_mask=input_mask, stance_label_ids=stance_label_ids, rumor_label_ids=rumor_label_ids,
             stance_position=stance_position, stance_label_mask=stance_label_mask
         ))
-        # features.append(
-        #     InputFeatures(input_ids1=input_ids1, input_mask1=input_mask1, segment_ids1=segment_ids1,
-        #                   input_ids2=input_ids2, input_mask2=input_mask2, segment_ids2=segment_ids2,
-        #                   input_ids3=input_ids3, input_mask3=input_mask3, segment_ids3=segment_ids3,
-        #                   input_ids4=input_ids4, input_mask4=input_mask4, segment_ids4=segment_ids4,
-        #                   input_mask=input_mask, label_id=label_ids, stance_position=stance_position,
-        #                   label_mask=label_mask))
+
     return features
 
 
-def prepare_data_for_training(processor, stance_processor, tokenizer, train_config):
-    label_list = processor.get_labels()
-    num_labels = 3  # label 0 corresponds to padding, label in label_list starts from 1
+def prepare_data_for_training(rumor_processor, stance_processor, tokenizer, train_config, model_config):
+    preprocessor = DualBertPreprocessor(model_config, tokenizer)
+    rumor_label_list = rumor_processor.get_labels()
+    num_labels = 3  # label 0 corresponds to padding, label in rumor_label_list starts from 1
 
     stance_label_list = stance_processor.get_labels()
-    stance_num_labels = len(stance_label_list) + 1  # label 0 corresponds to padding, label in label_list starts from 1
+    stance_num_labels = len(stance_label_list) + 1  # label 0 corresponds to padding, label in rumor_label_list starts from 1
 
-    train_examples = processor.get_train_examples(train_config.data_dir)
+    rumor_train_examples = rumor_processor.get_train_examples(train_config.data_dir)
     num_train_steps = int(
-        len(train_examples) / train_config.train_batch_size / train_config.gradient_accumulation_steps * train_config.num_train_epochs)
+        len(rumor_train_examples) / train_config.train_batch_size / train_config.gradient_accumulation_steps * train_config.num_train_epochs)
     stance_train_examples = stance_processor.get_train_examples(train_config.data_dir2)
     # enrich stance_train_examples to be the same as train examples
-    src_tgt_ratio = int(len(train_examples) / len(stance_train_examples))
-    remaining_samp_len = len(train_examples) - src_tgt_ratio * len(stance_train_examples)
+    src_tgt_ratio = int(len(rumor_train_examples) / len(stance_train_examples))
+    remaining_samp_len = len(rumor_train_examples) - src_tgt_ratio * len(stance_train_examples)
     extended_stance_train_examples = stance_train_examples * src_tgt_ratio
     extended_stance_train_examples.extend(stance_train_examples[:remaining_samp_len])
 
-    assert len(train_examples) == len(extended_stance_train_examples)
+    assert len(extended_stance_train_examples) == len(rumor_train_examples)
 
     ## Test
-    new_features = examples_to_features(train_examples, train_config.max_seq_length, tokenizer,
-                                        train_config.max_tweet_num,
-                                        train_config.max_tweet_length, task="rumor", label_names=label_list)
+    # new_features = examples_to_features(rumor_train_examples, train_config.max_seq_length, tokenizer,
+    #                                     train_config.max_tweet_num,
+    #                                     train_config.max_tweet_length, task="rumor", label_names=rumor_label_list)
 
     # rumor detection task
-    train_features = convert_examples_to_features(
-        train_examples, label_list, train_config.max_seq_length, tokenizer, train_config.max_tweet_num,
-        train_config.max_tweet_length)
+    rumor_train_features = preprocessor(rumor_train_examples, task="rumor", label_names=rumor_label_list)
 
-    all_input_ids1 = torch.tensor([f.input_ids1 for f in train_features], dtype=torch.int32)
-    all_input_mask1 = torch.tensor([f.input_mask1 for f in train_features], dtype=torch.int32)
-    all_segment_ids1 = torch.tensor([f.segment_ids1 for f in train_features], dtype=torch.int32)
-    all_input_ids2 = torch.tensor([f.input_ids2 for f in train_features], dtype=torch.int32)
-    all_input_mask2 = torch.tensor([f.input_mask2 for f in train_features], dtype=torch.int32)
-    all_segment_ids2 = torch.tensor([f.segment_ids2 for f in train_features], dtype=torch.int32)
-    all_input_ids3 = torch.tensor([f.input_ids3 for f in train_features], dtype=torch.int32)
-    all_input_mask3 = torch.tensor([f.input_mask3 for f in train_features], dtype=torch.int32)
-    all_segment_ids3 = torch.tensor([f.segment_ids3 for f in train_features], dtype=torch.int32)
-    all_input_ids4 = torch.tensor([f.input_ids4 for f in train_features], dtype=torch.int32)
-    all_input_mask4 = torch.tensor([f.input_mask4 for f in train_features], dtype=torch.int32)
-    all_segment_ids4 = torch.tensor([f.segment_ids4 for f in train_features], dtype=torch.int32)
-    all_input_mask = torch.tensor([f.input_mask for f in train_features], dtype=torch.int32)
-    all_label_ids = torch.tensor([f.label_id for f in train_features], dtype=torch.long)
-    all_label_mask = torch.tensor([f.label_mask for f in train_features], dtype=torch.int32)
+    # all_input_ids1 = torch.tensor([f.input_ids1 for f in rumor_train_features], dtype=torch.int32)
+    # all_input_mask1 = torch.tensor([f.input_mask1 for f in rumor_train_features], dtype=torch.int32)
+    # all_segment_ids1 = torch.tensor([f.segment_ids1 for f in rumor_train_features], dtype=torch.int32)
+    # all_input_ids2 = torch.tensor([f.input_ids2 for f in rumor_train_features], dtype=torch.int32)
+    # all_input_mask2 = torch.tensor([f.input_mask2 for f in rumor_train_features], dtype=torch.int32)
+    # all_segment_ids2 = torch.tensor([f.segment_ids2 for f in rumor_train_features], dtype=torch.int32)
+    # all_input_ids3 = torch.tensor([f.input_ids3 for f in rumor_train_features], dtype=torch.int32)
+    # all_input_mask3 = torch.tensor([f.input_mask3 for f in rumor_train_features], dtype=torch.int32)
+    # all_segment_ids3 = torch.tensor([f.segment_ids3 for f in rumor_train_features], dtype=torch.int32)
+    # all_input_ids4 = torch.tensor([f.input_ids4 for f in rumor_train_features], dtype=torch.int32)
+    # all_input_mask4 = torch.tensor([f.input_mask4 for f in rumor_train_features], dtype=torch.int32)
+    # all_segment_ids4 = torch.tensor([f.segment_ids4 for f in rumor_train_features], dtype=torch.int32)
+    # all_input_mask = torch.tensor([f.input_mask for f in rumor_train_features], dtype=torch.int32)
+    # all_label_ids = torch.tensor([f.label_id for f in rumor_train_features], dtype=torch.long)
+    # all_label_mask = torch.tensor([f.label_mask for f in rumor_train_features], dtype=torch.int32)
 
     # stance classification task
-    stance_train_features = convert_stance_examples_to_features(extended_stance_train_examples,
-                                                                stance_label_list, train_config.max_seq_length,
-                                                                tokenizer,
-                                                                train_config.max_tweet_num,
-                                                                train_config.max_tweet_length)
+    stance_train_features = preprocessor(extended_stance_train_examples, task="stance", label_names=stance_label_list)
 
-    stance_all_input_ids1 = torch.tensor([f.input_ids1 for f in stance_train_features], dtype=torch.int32)
-    stance_all_input_mask1 = torch.tensor([f.input_mask1 for f in stance_train_features], dtype=torch.int32)
-    stance_all_segment_ids1 = torch.tensor([f.segment_ids1 for f in stance_train_features], dtype=torch.int32)
-    stance_all_input_ids2 = torch.tensor([f.input_ids2 for f in stance_train_features], dtype=torch.int32)
-    stance_all_input_mask2 = torch.tensor([f.input_mask2 for f in stance_train_features], dtype=torch.int32)
-    stance_all_segment_ids2 = torch.tensor([f.segment_ids2 for f in stance_train_features], dtype=torch.int32)
-    stance_all_input_ids3 = torch.tensor([f.input_ids3 for f in stance_train_features], dtype=torch.int32)
-    stance_all_input_mask3 = torch.tensor([f.input_mask3 for f in stance_train_features], dtype=torch.int32)
-    stance_all_segment_ids3 = torch.tensor([f.segment_ids3 for f in stance_train_features], dtype=torch.int32)
-    stance_all_input_ids4 = torch.tensor([f.input_ids4 for f in stance_train_features], dtype=torch.int32)
-    stance_all_input_mask4 = torch.tensor([f.input_mask4 for f in stance_train_features], dtype=torch.int32)
-    stance_all_segment_ids4 = torch.tensor([f.segment_ids4 for f in stance_train_features], dtype=torch.int32)
-    stance_all_input_mask = torch.tensor([f.input_mask for f in stance_train_features], dtype=torch.int32)
-    stance_all_label_ids = torch.tensor([f.label_id for f in stance_train_features], dtype=torch.long)
-    # stance_all_stance_position = torch.tensor([f.stance_position for f in stance_train_features], dtype=torch.int32)
-    stance_all_label_mask = torch.tensor([f.label_mask for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_ids1 = torch.tensor([f.input_ids1 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_mask1 = torch.tensor([f.input_mask1 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_segment_ids1 = torch.tensor([f.segment_ids1 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_ids2 = torch.tensor([f.input_ids2 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_mask2 = torch.tensor([f.input_mask2 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_segment_ids2 = torch.tensor([f.segment_ids2 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_ids3 = torch.tensor([f.input_ids3 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_mask3 = torch.tensor([f.input_mask3 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_segment_ids3 = torch.tensor([f.segment_ids3 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_ids4 = torch.tensor([f.input_ids4 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_mask4 = torch.tensor([f.input_mask4 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_segment_ids4 = torch.tensor([f.segment_ids4 for f in stance_train_features], dtype=torch.int32)
+    # stance_all_input_mask = torch.tensor([f.input_mask for f in stance_train_features], dtype=torch.int32)
+    # stance_all_label_ids = torch.tensor([f.label_id for f in stance_train_features], dtype=torch.long)
+    # # stance_all_stance_position = torch.tensor([f.stance_position for f in stance_train_features], dtype=torch.int32)
+    # stance_all_label_mask = torch.tensor([f.label_mask for f in stance_train_features], dtype=torch.int32)
 
-    train_data = TensorDataset(all_input_ids1, all_input_mask1, all_segment_ids1,
-                               all_input_ids2, all_input_mask2, all_segment_ids2,
-                               all_input_ids3, all_input_mask3, all_segment_ids3,
-                               all_input_ids4, all_input_mask4, all_segment_ids4,
-                               all_input_mask, all_label_ids, all_label_mask,
-                               stance_all_input_ids1, stance_all_input_mask1, stance_all_segment_ids1,
-                               stance_all_input_ids2, stance_all_input_mask2, stance_all_segment_ids2,
-                               stance_all_input_ids3, stance_all_input_mask3, stance_all_segment_ids3,
-                               stance_all_input_ids4, stance_all_input_mask4, stance_all_segment_ids4,
-                               stance_all_input_mask, stance_all_label_ids, stance_all_label_mask)
+    # train_data = TensorDataset(all_input_ids1, all_input_mask1, all_segment_ids1,
+    #                            all_input_ids2, all_input_mask2, all_segment_ids2,
+    #                            all_input_ids3, all_input_mask3, all_segment_ids3,
+    #                            all_input_ids4, all_input_mask4, all_segment_ids4,
+    #                            all_input_mask, all_label_ids, all_label_mask,
+    #                            stance_all_input_ids1, stance_all_input_mask1, stance_all_segment_ids1,
+    #                            stance_all_input_ids2, stance_all_input_mask2, stance_all_segment_ids2,
+    #                            stance_all_input_ids3, stance_all_input_mask3, stance_all_segment_ids3,
+    #                            stance_all_input_ids4, stance_all_input_mask4, stance_all_segment_ids4,
+    #                            stance_all_input_mask, stance_all_label_ids, stance_all_label_mask)
+
     # ''' for dev evaluation
     # rumor detection task
-    eval_examples = processor.get_dev_examples(train_config.data_dir)
+    rumor_eval_examples = rumor_processor.get_dev_examples(train_config.data_dir)
     print('dev data')
-    eval_features = convert_examples_to_features(
-        eval_examples, label_list, train_config.max_seq_length, tokenizer, train_config.max_tweet_num,
-        train_config.max_tweet_length)
-
-    all_input_ids1 = torch.tensor([f.input_ids1 for f in eval_features], dtype=torch.int32)
-    all_input_mask1 = torch.tensor([f.input_mask1 for f in eval_features], dtype=torch.int32)
-    all_segment_ids1 = torch.tensor([f.segment_ids1 for f in eval_features], dtype=torch.int32)
-    all_input_ids2 = torch.tensor([f.input_ids2 for f in eval_features], dtype=torch.int32)
-    all_input_mask2 = torch.tensor([f.input_mask2 for f in eval_features], dtype=torch.int32)
-    all_segment_ids2 = torch.tensor([f.segment_ids2 for f in eval_features], dtype=torch.int32)
-    all_input_ids3 = torch.tensor([f.input_ids3 for f in eval_features], dtype=torch.int32)
-    all_input_mask3 = torch.tensor([f.input_mask3 for f in eval_features], dtype=torch.int32)
-    all_segment_ids3 = torch.tensor([f.segment_ids3 for f in eval_features], dtype=torch.int32)
-    all_input_ids4 = torch.tensor([f.input_ids4 for f in eval_features], dtype=torch.int32)
-    all_input_mask4 = torch.tensor([f.input_mask4 for f in eval_features], dtype=torch.int32)
-    all_segment_ids4 = torch.tensor([f.segment_ids4 for f in eval_features], dtype=torch.int32)
-    all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.int32)
-    all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
-    all_label_mask = torch.tensor([f.label_mask for f in eval_features], dtype=torch.int32)
+    rumor_eval_features = preprocessor(rumor_eval_examples, task="rumor", label_names=rumor_label_list)
+    # eval_features = convert_examples_to_features(
+    #     eval_examples, rumor_label_list, train_config.max_seq_length, tokenizer, train_config.max_tweet_num,
+    #     train_config.max_tweet_length)
+    #
+    # all_input_ids1 = torch.tensor([f.input_ids1 for f in eval_features], dtype=torch.int32)
+    # all_input_mask1 = torch.tensor([f.input_mask1 for f in eval_features], dtype=torch.int32)
+    # all_segment_ids1 = torch.tensor([f.segment_ids1 for f in eval_features], dtype=torch.int32)
+    # all_input_ids2 = torch.tensor([f.input_ids2 for f in eval_features], dtype=torch.int32)
+    # all_input_mask2 = torch.tensor([f.input_mask2 for f in eval_features], dtype=torch.int32)
+    # all_segment_ids2 = torch.tensor([f.segment_ids2 for f in eval_features], dtype=torch.int32)
+    # all_input_ids3 = torch.tensor([f.input_ids3 for f in eval_features], dtype=torch.int32)
+    # all_input_mask3 = torch.tensor([f.input_mask3 for f in eval_features], dtype=torch.int32)
+    # all_segment_ids3 = torch.tensor([f.segment_ids3 for f in eval_features], dtype=torch.int32)
+    # all_input_ids4 = torch.tensor([f.input_ids4 for f in eval_features], dtype=torch.int32)
+    # all_input_mask4 = torch.tensor([f.input_mask4 for f in eval_features], dtype=torch.int32)
+    # all_segment_ids4 = torch.tensor([f.segment_ids4 for f in eval_features], dtype=torch.int32)
+    # all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.int32)
+    # all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
+    # all_label_mask = torch.tensor([f.label_mask for f in eval_features], dtype=torch.int32)
 
     # stance classification task
     stance_eval_examples = stance_processor.get_test_examples(train_config.data_dir2)
     # enrich stance_train_examples to be the same as train examples
-    eval_src_tgt_ratio = int(len(eval_examples) / len(stance_eval_examples))
-    eval_remaining_samp_len = len(eval_examples) - eval_src_tgt_ratio * len(stance_eval_examples)
+    eval_src_tgt_ratio = int(len(rumor_eval_examples) / len(stance_eval_examples))
+    eval_remaining_samp_len = len(rumor_eval_examples) - eval_src_tgt_ratio * len(stance_eval_examples)
     extended_stance_eval_examples = stance_eval_examples * eval_src_tgt_ratio
     extended_stance_eval_examples.extend(stance_eval_examples[:eval_remaining_samp_len])
-    stance_eval_features = convert_stance_examples_to_features(extended_stance_eval_examples,
-                                                               stance_label_list, train_config.max_seq_length,
-                                                               tokenizer,
-                                                               train_config.max_tweet_num,
-                                                               train_config.max_tweet_length)
 
-    stance_all_input_ids1 = torch.tensor([f.input_ids1 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask1 = torch.tensor([f.input_mask1 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_segment_ids1 = torch.tensor([f.segment_ids1 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_ids2 = torch.tensor([f.input_ids2 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask2 = torch.tensor([f.input_mask2 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_segment_ids2 = torch.tensor([f.segment_ids2 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_ids3 = torch.tensor([f.input_ids3 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask3 = torch.tensor([f.input_mask3 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_segment_ids3 = torch.tensor([f.segment_ids3 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_ids4 = torch.tensor([f.input_ids4 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask4 = torch.tensor([f.input_mask4 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_segment_ids4 = torch.tensor([f.segment_ids4 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask = torch.tensor([f.input_mask for f in stance_eval_features], dtype=torch.int32)
-    stance_all_label_ids = torch.tensor([f.label_id for f in stance_eval_features], dtype=torch.long)
-    # stance_all_stance_position = torch.tensor([f.stance_position for f in stance_eval_features], dtype=torch.int32)
-    stance_all_label_mask = torch.tensor([f.label_mask for f in stance_eval_features], dtype=torch.int32)
+    stance_eval_features = preprocessor(extended_stance_eval_examples, task="stance", label_names=stance_label_list)
+    # stance_eval_features = convert_stance_examples_to_features(extended_stance_eval_examples,
+    #                                                            stance_label_list, train_config.max_seq_length,
+    #                                                            tokenizer,
+    #                                                            train_config.max_tweet_num,
+    #                                                            train_config.max_tweet_length)
+    #
+    # stance_all_input_ids1 = torch.tensor([f.input_ids1 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_input_mask1 = torch.tensor([f.input_mask1 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_segment_ids1 = torch.tensor([f.segment_ids1 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_input_ids2 = torch.tensor([f.input_ids2 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_input_mask2 = torch.tensor([f.input_mask2 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_segment_ids2 = torch.tensor([f.segment_ids2 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_input_ids3 = torch.tensor([f.input_ids3 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_input_mask3 = torch.tensor([f.input_mask3 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_segment_ids3 = torch.tensor([f.segment_ids3 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_input_ids4 = torch.tensor([f.input_ids4 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_input_mask4 = torch.tensor([f.input_mask4 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_segment_ids4 = torch.tensor([f.segment_ids4 for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_input_mask = torch.tensor([f.input_mask for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_label_ids = torch.tensor([f.label_id for f in stance_eval_features], dtype=torch.long)
+    # # stance_all_stance_position = torch.tensor([f.stance_position for f in stance_eval_features], dtype=torch.int32)
+    # stance_all_label_mask = torch.tensor([f.label_mask for f in stance_eval_features], dtype=torch.int32)
 
-    eval_data = TensorDataset(all_input_ids1, all_input_mask1, all_segment_ids1,
-                              all_input_ids2, all_input_mask2, all_segment_ids2,
-                              all_input_ids3, all_input_mask3, all_segment_ids3,
-                              all_input_ids4, all_input_mask4, all_segment_ids4,
-                              all_input_mask, all_label_ids, all_label_mask,
-                              stance_all_input_ids1, stance_all_input_mask1, stance_all_segment_ids1,
-                              stance_all_input_ids2, stance_all_input_mask2, stance_all_segment_ids2,
-                              stance_all_input_ids3, stance_all_input_mask3, stance_all_segment_ids3,
-                              stance_all_input_ids4, stance_all_input_mask4, stance_all_segment_ids4,
-                              stance_all_input_mask, stance_all_label_ids, stance_all_label_mask
-                              )
+    # eval_data = TensorDataset(all_input_ids1, all_input_mask1, all_segment_ids1,
+    #                           all_input_ids2, all_input_mask2, all_segment_ids2,
+    #                           all_input_ids3, all_input_mask3, all_segment_ids3,
+    #                           all_input_ids4, all_input_mask4, all_segment_ids4,
+    #                           all_input_mask, all_label_ids, all_label_mask,
+    #                           stance_all_input_ids1, stance_all_input_mask1, stance_all_segment_ids1,
+    #                           stance_all_input_ids2, stance_all_input_mask2, stance_all_segment_ids2,
+    #                           stance_all_input_ids3, stance_all_input_mask3, stance_all_segment_ids3,
+    #                           stance_all_input_ids4, stance_all_input_mask4, stance_all_segment_ids4,
+    #                           stance_all_input_mask, stance_all_label_ids, stance_all_label_mask
+    #                           )
+
+
     # ''' for test evaluation
     # rumor detection task
-    test_examples = processor.get_test_examples(train_config.data_dir)
-    test_features = convert_examples_to_features(
-        test_examples, label_list, train_config.max_seq_length, tokenizer, train_config.max_tweet_num,
-        train_config.max_tweet_length)
-
-    all_input_ids1 = torch.tensor([f.input_ids1 for f in test_features], dtype=torch.int32)
-    all_input_mask1 = torch.tensor([f.input_mask1 for f in test_features], dtype=torch.int32)
-    all_segment_ids1 = torch.tensor([f.segment_ids1 for f in test_features], dtype=torch.int32)
-    all_input_ids2 = torch.tensor([f.input_ids2 for f in test_features], dtype=torch.int32)
-    all_input_mask2 = torch.tensor([f.input_mask2 for f in test_features], dtype=torch.int32)
-    all_segment_ids2 = torch.tensor([f.segment_ids2 for f in test_features], dtype=torch.int32)
-    all_input_ids3 = torch.tensor([f.input_ids3 for f in test_features], dtype=torch.int32)
-    all_input_mask3 = torch.tensor([f.input_mask3 for f in test_features], dtype=torch.int32)
-    all_segment_ids3 = torch.tensor([f.segment_ids3 for f in test_features], dtype=torch.int32)
-    all_input_ids4 = torch.tensor([f.input_ids4 for f in test_features], dtype=torch.int32)
-    all_input_mask4 = torch.tensor([f.input_mask4 for f in test_features], dtype=torch.int32)
-    all_segment_ids4 = torch.tensor([f.segment_ids4 for f in test_features], dtype=torch.int32)
-    all_input_mask = torch.tensor([f.input_mask for f in test_features], dtype=torch.int32)
-    all_label_ids = torch.tensor([f.label_id for f in test_features], dtype=torch.long)
-    all_label_mask = torch.tensor([f.label_mask for f in test_features], dtype=torch.int32)
+    rumor_test_examples = rumor_processor.get_test_examples(train_config.data_dir)
+    rumor_test_features = preprocessor(rumor_test_examples, task="rumor", label_names=rumor_label_list)
+    # test_features = convert_examples_to_features(
+    #     test_examples, rumor_label_list, train_config.max_seq_length, tokenizer, train_config.max_tweet_num,
+    #     train_config.max_tweet_length)
+    #
+    # all_input_ids1 = torch.tensor([f.input_ids1 for f in test_features], dtype=torch.int32)
+    # all_input_mask1 = torch.tensor([f.input_mask1 for f in test_features], dtype=torch.int32)
+    # all_segment_ids1 = torch.tensor([f.segment_ids1 for f in test_features], dtype=torch.int32)
+    # all_input_ids2 = torch.tensor([f.input_ids2 for f in test_features], dtype=torch.int32)
+    # all_input_mask2 = torch.tensor([f.input_mask2 for f in test_features], dtype=torch.int32)
+    # all_segment_ids2 = torch.tensor([f.segment_ids2 for f in test_features], dtype=torch.int32)
+    # all_input_ids3 = torch.tensor([f.input_ids3 for f in test_features], dtype=torch.int32)
+    # all_input_mask3 = torch.tensor([f.input_mask3 for f in test_features], dtype=torch.int32)
+    # all_segment_ids3 = torch.tensor([f.segment_ids3 for f in test_features], dtype=torch.int32)
+    # all_input_ids4 = torch.tensor([f.input_ids4 for f in test_features], dtype=torch.int32)
+    # all_input_mask4 = torch.tensor([f.input_mask4 for f in test_features], dtype=torch.int32)
+    # all_segment_ids4 = torch.tensor([f.segment_ids4 for f in test_features], dtype=torch.int32)
+    # all_input_mask = torch.tensor([f.input_mask for f in test_features], dtype=torch.int32)
+    # all_label_ids = torch.tensor([f.label_id for f in test_features], dtype=torch.long)
+    # all_label_mask = torch.tensor([f.label_mask for f in test_features], dtype=torch.int32)
 
     # stance classification task
-    stance_eval_examples = stance_processor.get_test_examples(train_config.data_dir2)
+    stance_test_examples = stance_processor.get_test_examples(train_config.data_dir2)
     # enrich stance_train_examples to be the same as train examples
-    eval_src_tgt_ratio = int(len(test_examples) / len(stance_eval_examples))
-    eval_remaining_samp_len = len(test_examples) - eval_src_tgt_ratio * len(stance_eval_examples)
-    extended_stance_eval_examples = stance_eval_examples * eval_src_tgt_ratio
-    extended_stance_eval_examples.extend(stance_eval_examples[:eval_remaining_samp_len])
-    stance_eval_features = convert_stance_examples_to_features(extended_stance_eval_examples,
-                                                               stance_label_list, train_config.max_seq_length,
-                                                               tokenizer,
-                                                               train_config.max_tweet_num,
-                                                               train_config.max_tweet_length)
+    eval_src_tgt_ratio = int(len(rumor_test_examples) / len(stance_test_examples))
+    eval_remaining_samp_len = len(rumor_test_examples) - eval_src_tgt_ratio * len(stance_test_examples)
+    extended_stance_test_examples = stance_test_examples * eval_src_tgt_ratio
+    extended_stance_test_examples.extend(stance_test_examples[:eval_remaining_samp_len])
+    stance_test_features = preprocessor(extended_stance_test_examples, task="stance", label_names=stance_label_list)
+    # stance_test_features = convert_stance_examples_to_features(extended_stance_test_examples,
+    #                                                            stance_label_list, train_config.max_seq_length,
+    #                                                            tokenizer,
+    #                                                            train_config.max_tweet_num,
+    #                                                            train_config.max_tweet_length)
+    #
+    # stance_all_input_ids1 = torch.tensor([f.input_ids1 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_input_mask1 = torch.tensor([f.input_mask1 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_segment_ids1 = torch.tensor([f.segment_ids1 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_input_ids2 = torch.tensor([f.input_ids2 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_input_mask2 = torch.tensor([f.input_mask2 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_segment_ids2 = torch.tensor([f.segment_ids2 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_input_ids3 = torch.tensor([f.input_ids3 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_input_mask3 = torch.tensor([f.input_mask3 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_segment_ids3 = torch.tensor([f.segment_ids3 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_input_ids4 = torch.tensor([f.input_ids4 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_input_mask4 = torch.tensor([f.input_mask4 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_segment_ids4 = torch.tensor([f.segment_ids4 for f in stance_test_features], dtype=torch.int32)
+    # stance_all_input_mask = torch.tensor([f.input_mask for f in stance_test_features], dtype=torch.int32)
+    # stance_all_label_ids = torch.tensor([f.label_id for f in stance_test_features], dtype=torch.long)
+    # # stance_all_stance_position = torch.tensor([f.stance_position for f in stance_test_features], dtype=torch.int32)
+    # stance_all_label_mask = torch.tensor([f.label_mask for f in stance_test_features], dtype=torch.int32)
 
-    stance_all_input_ids1 = torch.tensor([f.input_ids1 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask1 = torch.tensor([f.input_mask1 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_segment_ids1 = torch.tensor([f.segment_ids1 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_ids2 = torch.tensor([f.input_ids2 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask2 = torch.tensor([f.input_mask2 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_segment_ids2 = torch.tensor([f.segment_ids2 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_ids3 = torch.tensor([f.input_ids3 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask3 = torch.tensor([f.input_mask3 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_segment_ids3 = torch.tensor([f.segment_ids3 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_ids4 = torch.tensor([f.input_ids4 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask4 = torch.tensor([f.input_mask4 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_segment_ids4 = torch.tensor([f.segment_ids4 for f in stance_eval_features], dtype=torch.int32)
-    stance_all_input_mask = torch.tensor([f.input_mask for f in stance_eval_features], dtype=torch.int32)
-    stance_all_label_ids = torch.tensor([f.label_id for f in stance_eval_features], dtype=torch.long)
-    # stance_all_stance_position = torch.tensor([f.stance_position for f in stance_eval_features], dtype=torch.int32)
-    stance_all_label_mask = torch.tensor([f.label_mask for f in stance_eval_features], dtype=torch.int32)
 
-    test_data = TensorDataset(all_input_ids1, all_input_mask1, all_segment_ids1,
-                              all_input_ids2, all_input_mask2, all_segment_ids2,
-                              all_input_ids3, all_input_mask3, all_segment_ids3,
-                              all_input_ids4, all_input_mask4, all_segment_ids4,
-                              all_input_mask, all_label_ids, all_label_mask,
-                              stance_all_input_ids1, stance_all_input_mask1, stance_all_segment_ids1,
-                              stance_all_input_ids2, stance_all_input_mask2, stance_all_segment_ids2,
-                              stance_all_input_ids3, stance_all_input_mask3, stance_all_segment_ids3,
-                              stance_all_input_ids4, stance_all_input_mask4, stance_all_segment_ids4,
-                              stance_all_input_mask, stance_all_label_ids, stance_all_label_mask
-                              )
-    return train_data, eval_data, test_data, num_train_steps
+    # test_data = TensorDataset(all_input_ids1, all_input_mask1, all_segment_ids1,
+    #                           all_input_ids2, all_input_mask2, all_segment_ids2,
+    #                           all_input_ids3, all_input_mask3, all_segment_ids3,
+    #                           all_input_ids4, all_input_mask4, all_segment_ids4,
+    #                           all_input_mask, all_label_ids, all_label_mask,
+    #                           stance_all_input_ids1, stance_all_input_mask1, stance_all_segment_ids1,
+    #                           stance_all_input_ids2, stance_all_input_mask2, stance_all_segment_ids2,
+    #                           stance_all_input_ids3, stance_all_input_mask3, stance_all_segment_ids3,
+    #                           stance_all_input_ids4, stance_all_input_mask4, stance_all_segment_ids4,
+    #                           stance_all_input_mask, stance_all_label_ids, stance_all_label_mask
+    #                           )
+    return {
+        "rumor_train_features": rumor_train_features,
+        "stance_train_features": stance_train_features,
+        "rumor_eval_features": rumor_eval_features,
+        "stance_eval_features": stance_eval_features,
+        "rumor_test_features": rumor_test_features,
+        "stance_test_features": stance_test_features,
+        "num_train_steps": num_train_steps
+    }
 
 
 class DualBertPreprocessor:
@@ -865,22 +848,36 @@ class DualBertPreprocessor:
         self.max_tweet_num = config.max_tweet_num
         self.max_tweet_len = config.max_tweet_length
 
-    def __call__(self, examples, task=None):
+    def __call__(self, examples, task=None, label_names=None):
 
-        input_examples = []
-        for example in examples:
-            input_examples.append(InputExample(example))
+        #input example validation
+        input_error_message = "For 'examples', DualBert Preprocessor can only accept list of InputExample (for training) type or a nested list of strings (for inference)"
+        if all(isinstance(example, InputExample) for example in examples):
+            input_examples = examples
+        elif all(isinstance(example, list) for example in examples):
+            input_examples = []
+            for example in examples:
+                if all(isinstance(post, str) for post in example):
+                    input_examples.append(InputExample(example))
+                else:
+                    raise ValueError(
+                        input_error_message
+                    )
+        else:
+            raise ValueError(
+                input_error_message
+            )
 
         test_features = examples_to_features(input_examples, self.max_seq_length, self.tokenizer, self.max_tweet_num,
-                                             self.max_tweet_len, task)
+                                             self.max_tweet_len, task, label_names)
 
         return {
             "input_ids_buckets": torch.tensor([f.input_ids_buckets for f in test_features], dtype=torch.int32),
             "segment_ids_buckets": torch.tensor([f.segment_ids_buckets for f in test_features], dtype=torch.int32),
             "input_mask_buckets": torch.tensor([f.input_mask_buckets for f in test_features], dtype=torch.int32),
             "input_mask": torch.tensor([f.input_mask for f in test_features], dtype=torch.int32),
-            "stance_label_ids": torch.tensor([f.stance_label_ids for f in test_features], dtype=torch.int32),
-            "rumor_label_id": torch.tensor([f.rumor_label_id for f in test_features], dtype=torch.int32) if test_features[0].rumor_label_id is not None else None,
+            "stance_label_ids": torch.tensor([f.stance_label_ids for f in test_features], dtype=torch.long) if test_features[0].stance_label_ids is not None else None,
+            "rumor_label_ids": torch.tensor([f.rumor_label_ids for f in test_features], dtype=torch.long) if test_features[0].rumor_label_ids is not None else None,
             "stance_position": torch.tensor([f.stance_position for f in test_features], dtype=torch.int32),
             "stance_label_mask": torch.tensor([f.stance_label_mask for f in test_features], dtype=torch.int32),
         }

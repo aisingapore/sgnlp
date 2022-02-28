@@ -378,8 +378,8 @@ class DualBert(DualBertPreTrainedModel):
     def init_bert(self):
         self.bert = BertModel.from_pretrained("bert-base-uncased")
 
-    def forward(self, input_ids_buckets, input_mask_buckets, segment_ids_buckets, input_mask, stance_label_ids,
-                rumor_label_id, stance_position, stance_label_mask, rumor_labels=None, stance_labels=None):
+    def forward(self, input_ids_buckets, segment_ids_buckets, input_mask_buckets, input_mask, stance_position,
+                stance_label_mask, stance_label_ids=None, rumor_label_ids=None, rumor_labels=None, stance_labels=None):
         # def forward(self, input_ids1, token_type_ids1, attention_mask1, input_ids2, token_type_ids2, attention_mask2,
         #           input_ids3, token_type_ids3, attention_mask3, input_ids4, token_type_ids4, attention_mask4,
         #          attention_mask, rumor_labels=None, stance_labels=None, stance_label_mask=None):
