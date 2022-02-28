@@ -1,0 +1,59 @@
+{
+  "name": "Coupled Hierarchical Transformer",
+  "languages": "English",
+  "description": "This is a neural network that uses the novel architecture - Coupled Hierarchical Transformer to perform two tasks - detect the veracity of a claim based on the comments that followed it as well as classify the stance of the those comments",
+  "paper": {
+    "text": "Yu, J., Jiang, J., Khoo, L. M. S., Chieu, H. L., & Xia, R. (2020). Coupled hierarchical transformer for stance-aware rumor verification in social media conversations. Association for Computational Linguistics",
+    "url": "https://aclanthology.org/2020.emnlp-main.108.pdf"
+  },
+  "trainingDataset": {
+    "text": "SemEval-2017 and PHEME Datasets",
+    "url": "https://alt.qcri.org/semeval2017/task8/index.php?id=data-and-tools"
+  },
+  "evaluationDataset": [
+    {
+      "text": "SemEval-2017",
+      "url": "https://github.com/thunlp/DocRED/tree/master/data"
+    },
+    {
+      "text": "PHEME",
+      "url": "https://www.kaggle.com/usharengaraju/pheme-dataset"
+    }
+  ],
+  "evaluationScores": [
+    "Test results for Rumor Verification:",
+    "SemEval-2017 Dataset (Trained/Reported): Macro-F1: 0.68/  Accuracy: 0.678/",
+    "PHEME Dataset (Trained/Reported): Macro-F1: 0.396/  Accuracy: 0.466/",
+    "Test results for Stance classification (SemEval-2017 Dataset):",
+    "Single Stance Type Evaluation (Trained/Reported): Support-F1: 0.421/ Deny-F1: 0.255/ Query-F1: 0.52/ Comment-F1: 0.841",
+    "Overall Evaluation (Trained/Reported): Macro-F1: 0.509/ Accuracy: 0.763/"
+
+  ],
+  "trainingConfig": {
+    "text": "Not available."
+  },
+  "trainingTime": "~2 hours for 100 epochs on a single V100 GPU.",
+  "modelWeights": {
+    "text": "https://storage.googleapis.com/sgnlp/models/dual_bert/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp/models/dual_bert/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "",
+    "url": ""
+  },
+  "modelInput": "Conversation threads",
+  "modelOutput": "Rumor veracity label and stance classification labels (per conversation thread)",
+  "modelSize": "~500MB",
+  "inferenceInfo": "Not available.",
+  "usageScenarios": "",
+  "originalCode": {
+    "text": "https://github.com/nanguoshun/LSR",
+    "url": "https://github.com/nanguoshun/LSR"
+  },
+  "license": {
+    "text": "MIT License",
+    "url": "https://choosealicense.com/licenses/mit"
+  },
+  "contact": "sg-nlp@aisingapore.org",
+  "additionalInfo": ""
+}

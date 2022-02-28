@@ -6,7 +6,8 @@ from sgnlp.models.dual_bert.modeling import DualBertModelOutput
 
 
 class DualBertPostprocessor:
-    def __init__(self, rumour_labels=["FR", "TR", "UR"], stance_labels=["PAD", "B-DENY", "B-SUPPORT", "B-QUERY", "B-COMMENT"]):
+    def __init__(self, rumour_labels=["False Rumor", "True Rumor", "Unverified Rumor"],
+                 stance_labels=["PAD", "Deny", "Support", "Query", "Comment"]):
         self.rumor_labels = rumour_labels
         self.stance_labels = stance_labels
 
@@ -27,7 +28,7 @@ class DualBertPostprocessor:
                     temp_2.append(self.stance_labels[stance_label_idx[i][j]])
                 else:
                     break
-            stance_labels.append(temp_2[1:]) #first post should not have a stance label
+            stance_labels.append(temp_2[1:])  # first post should not have a stance label
 
         return {
             "rumor_labels": rumor_labels,

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class CustomCoupledHierarchicalTransformerTrainConfig:
+class CustomDualBertTrainConfig:
     # required
     data_dir: str = field(
         # TEMP

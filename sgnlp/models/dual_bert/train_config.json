@@ -6,7 +6,7 @@
     "rumor_num_labels":3,
     "stance_num_labels":5,
     "task_name2": "semeval17_stance",
-    "output_dir": "/polyaxon-data/workspace/atenzer/CHT_demo/output_release/semeval17_multitask_output_DB_0/",
+    "output_dir": "/polyaxon-data/workspace/atenzer/CHT_demo/output_release/semeval17_multitask_output_DB_28_02/",
     "max_seq_length": 512,
     "do_train":true,
     "do_eval": true,
