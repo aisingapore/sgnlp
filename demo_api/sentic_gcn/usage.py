@@ -1,14 +1,29 @@
 from sgnlp.models.sentic_gcn import (
+    SenticGCNBertTokenizer,
+    SenticGCNBertEmbeddingConfig,
+    SenticGCNBertEmbeddingModel,
     SenticGCNBertModel,
     SenticGCNBertPreprocessor,
     SenticGCNBertConfig,
     SenticGCNBertPostprocessor,
 )
 
+# Create tokenizer
+tokenizer = SenticGCNBertTokenizer.from_pretrained("bert-base-uncased")
+
+# Create embedding model
+embed_config = SenticGCNBertEmbeddingConfig.from_pretrained("bert-base-uncased")
+embed_model = SenticGCNBertEmbeddingModel.from_pretrained("bert-base-uncased", config=embed_config)
+
+# Create preprocessor
 preprocessor = SenticGCNBertPreprocessor(
-    senticnet="https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle", device="cpu"
+    tokenizer=tokenizer,
+    embedding_model=embed_model,
+    senticnet="https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+    device="cpu",
 )
 
+# Create postprocessor
 postprocessor = SenticGCNBertPostprocessor()
 
 # Load model
@@ -22,17 +37,17 @@ model = SenticGCNBertModel.from_pretrained(
 
 # Inputs
 inputs = [
-    {
+    {  # Single word aspect
+        "aspects": ["service"],
+        "sentence": "To sum it up : service varies from good to mediorce , depending on which waiter you get ; generally it is just average ok .",
+    },
+    {  # Single-word, multiple aspects
         "aspects": ["service", "decor"],
         "sentence": "Everything is always cooked to perfection , the service is excellent, the decor cool and understated.",
     },
-    {
-        "aspects": ["food", "portions"],
-        "sentence": "The food was lousy - too sweet or too salty and the portions tiny.",
-    },
-    {
-        "aspects": ["service"],
-        "sentence": "To sum it up : service varies from good to mediorce , depending on which waiter you get ; generally it is just average ok .",
+    {  # Multi-word aspect
+        "aspects": ["grilled chicken", "chicken"],
+        "sentence": "the only chicken i moderately enjoyed was their grilled chicken special with edamame puree .",
     },
 ]
 
