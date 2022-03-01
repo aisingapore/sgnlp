@@ -9,7 +9,7 @@ from sgnlp.models.dual_bert import (
     DualBertPostprocessor
 )
 
-app = create_api(app_name=__name__, model_card_path="model_card/rst_pointer.json")
+app = create_api(app_name=__name__, model_card_path="model_card/dual_bert.json")
 
 # Load processors and models
 config = DualBertConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/dual_bert/config.json")
