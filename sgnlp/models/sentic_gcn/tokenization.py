@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import pickle
 from typing import Dict, List, Optional, Tuple
@@ -5,6 +6,9 @@ from typing import Dict, List, Optional, Tuple
 import torch
 
 from transformers import PreTrainedTokenizer, BertTokenizer
+
+
+logger = logging.getLogger(__name__)
 
 
 VOCAB_FILES_NAMES = {"vocab_file": "vocab.pkl"}
@@ -98,6 +102,7 @@ class SenticGCNTokenizer(PreTrainedTokenizer):
             if word not in vocab:
                 vocab[word] = offset
                 offset += 1
+        logger.debug(f"Created vocab with {len(vocab)} tokens.")
         return vocab
 
     def _tokenize(self, text, **kwargs):
@@ -112,6 +117,7 @@ class SenticGCNTokenizer(PreTrainedTokenizer):
         vocab_file_path = save_dir.joinpath("vocab.pkl")
         with open(vocab_file_path, "wb") as fout:
             pickle.dump(self.vocab, fout)
+        logger.debug(f"Saved vocabulary to {vocab_file_path}.")
         return (str(vocab_file_path),)
 
 

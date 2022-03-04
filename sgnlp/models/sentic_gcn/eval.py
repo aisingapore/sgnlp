@@ -23,7 +23,7 @@ from .utils import (
 )
 
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class SenticGCNBaseEvaluator:
@@ -205,12 +205,12 @@ class SenticGCNEvaluator(SenticGCNBaseEvaluator):
         test_dataloader = BucketIterator(self.raw_data, batch_size=self.config["eval_batch_size"], shuffle=False)
         # Evalute Acc and F1
         acc, f1 = self._evaluate_acc_f1(test_dataloader)
-        logging.info(f"Evaluate Results -> Acc: {acc}, F1: {f1}")
+        logger.info(f"Evaluate Results -> Acc: {acc}, F1: {f1}")
         # Save results
         acc_f1 = [f"Acc: {acc}\n", f"F1: {f1}\n"]
         self._save_results_to_file(acc_f1)
 
-        logging.info("Evaluation Complete!")
+        logger.info("Evaluation Complete!")
 
 
 class SenticGCNBertEvaluator(SenticGCNBaseEvaluator):
@@ -255,12 +255,12 @@ class SenticGCNBertEvaluator(SenticGCNBaseEvaluator):
         test_dataloader = DataLoader(self.raw_data, batch_size=self.config["eval_batch_size"], shuffle=False)
         # Evaluate Acc and F1
         acc, f1 = self._evaluate_acc_f1(test_dataloader)
-        logging.info(f"Evaluate Results -> Acc: {acc}, F1: {f1}")
+        logger.info(f"Evaluate Results -> Acc: {acc}, F1: {f1}")
         # Save results
         acc_f1 = [f"Acc: {acc}\n", f"F1: {f1}\n"]
         self._save_results_to_file(acc_f1)
 
-        logging.info("Evaluation Complete!")
+        logger.info("Evaluation Complete!")
 
 
 if __name__ == "__main__":
@@ -268,5 +268,5 @@ if __name__ == "__main__":
     if cfg.eval_args["seed"] is not None:
         set_random_seed(cfg.eval_args["seed"])
     evaluator = SenticGCNEvaluator(cfg) if cfg.eval_args["model"] == "senticgcn" else SenticGCNBertEvaluator(cfg)
-    logging.info(f"Evaluating {cfg.eval_args['model']}")
+    logger.info(f"Evaluating {cfg.eval_args['model']}")
     evaluator.evaluate()

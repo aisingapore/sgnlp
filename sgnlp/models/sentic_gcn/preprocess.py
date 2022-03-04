@@ -24,12 +24,14 @@ from .utils import (
 )
 
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 SenticGCNData = namedtuple(
     "SenticGCNData", ["full_text", "aspect", "left_text", "full_text_tokens", "aspect_token_index"]
 )
+
+
 SenticGCNBertData = namedtuple(
     "SenticGCNBertData",
     ["full_text", "aspect", "left_text", "full_text_with_bert_tokens", "full_text_tokens", "aspect_token_index"],
@@ -93,7 +95,7 @@ class SenticGCNBasePreprocessor:
                 )
             self.senticnet = senticnet_
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             raise Exception(
                 """
                     Error initializing SenticNet! Please ensure that input is either a dictionary, a str path to
@@ -120,7 +122,7 @@ class SenticGCNBasePreprocessor:
                     tokenizer_ = tokenizer_class.from_pretrained(tokenizer)
             self.tokenizer = tokenizer_
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             raise Exception(
                 """
                 Error initializing tokenizer! Please ensure that input tokenizer is either a PreTrainedTokenizer instance,
@@ -155,7 +157,7 @@ class SenticGCNBasePreprocessor:
             self.embedding_model = embed_model
             self.embedding_model.to(self.device)
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             raise Exception(
                 """
                 Error initializing embedding model! Please ensure that input tokenizer is either a PreTrainedModel instance,
