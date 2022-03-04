@@ -1,14 +1,13 @@
-import configparser
-import pathlib
+import json
 import logging
+import pathlib
 from logging import Formatter, StreamHandler, FileHandler
-from logging.config import fileConfig
+from logging.config import dictConfig
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
-from typing import Union
+from typing import List, Union
 
 
-LOG_CONFIG = pathlib.Path(__file__).parent / "config" / "logger_config.conf"
-HANDLER_DEFAULT_CONFIG = pathlib.Path(__file__).parent / "config" / "log_handlers_default_config.conf"
+LOG_CONFIG = pathlib.Path(__file__).parent / "config" / "logger_default_config.json"
 
 
 def setup_logging(log_config_path: Union[str, pathlib.Path] = LOG_CONFIG):
@@ -18,40 +17,25 @@ def setup_logging(log_config_path: Union[str, pathlib.Path] = LOG_CONFIG):
     Args:
         log_config_path (Union[str, pathlib.Path], optional): file path to logging config file. Defaults to LOG_CONFIG.
     """
+    if logging.getLogger("sgnlp").hasHandlers():
+        print("Logger already configured.")
+        return
     if isinstance(log_config_path, str):
         log_config_path = pathlib.Path(log_config_path)
     if log_config_path.exists():
-        fileConfig(log_config_path)
+        with open(log_config_path) as f:
+            config = json.load(f)
+            dictConfig(config)
     else:
         raise ValueError(f"Logging config file {str(log_config_path)} does not exist.")
 
 
-def _read_handler_config(handler_config_path: Union[str, pathlib.Path] = HANDLER_DEFAULT_CONFIG):
-    """
-    Function to read handler config file.
-
-    Args:
-        handler_config_path (Union[str, pathlib.Path], optional): file path to handler config file. Defaults to HANDLER_DEFAULT_CONFIG.
-
-    Returns:
-        dict: handler config
-    """
-    if isinstance(handler_config_path, str):
-        handler_config_path = pathlib.Path(handler_config_path)
-    if handler_config_path.exists():
-        handler_config = configparser.ConfigParser()
-        handler_config.read(handler_config_path)
-        return handler_config
-    else:
-        raise ValueError(f"Handler config file {str(handler_config_path)} does not exist.")
-
-
-def _create_stream_handler(handler_config: Union[dict, configparser.SectionProxy]):
+def _create_stream_handler(handler_config: dict):
     """
     Function to create stream handler.
 
     Args:
-        handler_config (Union[dict, configparser.SectionProxy]): handler config
+        handler_config (dict): handler config
 
     Returns:
         logging.StreamHandler: stream handler
@@ -70,12 +54,12 @@ def _create_stream_handler(handler_config: Union[dict, configparser.SectionProxy
     return log_handler
 
 
-def _create_file_handler(handler_config: Union[dict, configparser.SectionProxy]):
+def _create_file_handler(handler_config: dict):
     """
     Function to create file handler.
 
     Args:
-        handler_config (Union[dict, configparser.SectionProxy]): _description_
+        handler_config (dict): _description_
     """
     log_handler = FileHandler(
         filename=handler_config.get("filename", "logs/sgnlp.log"), mode=handler_config.get("mode", "a")
@@ -93,12 +77,12 @@ def _create_file_handler(handler_config: Union[dict, configparser.SectionProxy])
     return log_handler
 
 
-def _create_rotating_file_handler(handler_config: Union[dict, configparser.SectionProxy]):
+def _create_rotating_file_handler(handler_config: dict):
     """
     Function to create rotating file handler.
 
     Args:
-        handler_config (Union[dict, configparser.SectionProxy]): handler config
+        handler_config (dict): handler config
 
     Returns:
         logging.RotatingFileHandler: rotating file handler
@@ -121,12 +105,12 @@ def _create_rotating_file_handler(handler_config: Union[dict, configparser.Secti
     return log_handler
 
 
-def _create_timed_rotating_file_handler(handler_config: Union[dict, configparser.SectionProxy]):
+def _create_timed_rotating_file_handler(handler_config: dict):
     """
     Function to create timed rotating file handler.
 
     Args:
-        handler_config (Union[dict, configparser.SectionProxy]): handler config
+        handler_config (dict): handler config
 
     Returns:
         logging.TimedRotatingFileHandler: timed rotating file handler
@@ -157,17 +141,44 @@ _create_handler = {
 }
 
 
-def _add_handler(logger: logging.Logger, handler_config: Union[dict, configparser.SectionProxy]):
+def add_handler(handler_type: str, handler_config: dict) -> None:
     """
     Function to add handler to logger.
+    Supported handler keys: [
+        "streamHandler", "fileHandler", "rotatingFileHandler", "timedRotatingFileHandler"]
 
     Args:
-        logger (logging.Logger): logger
-        handler_config (Union[dict, configparser.SectionProxy]): handler config
+        handler_type (str)): type of handle to add
+        handler_config (dict): handler config
     """
-    handler_type = handler_config.get("type", "streamHandler")
+    logger = logging.getLogger("sgnlp")  # Root logger for SGnlp package
     if handler_type in _create_handler:
         handler = _create_handler[handler_type](handler_config)
         logger.addHandler(handler)
     else:
         raise ValueError(f"Handler type {handler_type} is not supported.")
+
+
+def remove_handler(handler_name: str) -> None:
+    """
+    Function to remove handler from logger.
+
+    Args:
+        handler_name (str): name of handler to remove
+    """
+    logger = logging.getLogger("sgnlp")  # Root logger for SGnlp package
+    for handler in logger.handlers:
+        if handler.name == handler_name:
+            logger.removeHandler(handler)
+            break
+
+
+def get_active_handlers_name() -> List[Union[str, None]]:
+    """
+    Function to get active handlers name for the 'sgnlp' loggers.
+
+    Returns:
+        List[str]: active handlers name
+    """
+    logger = logging.getLogger("sgnlp")  # Root logger for SGnlp package
+    return [handler.name for handler in logger.handlers]
