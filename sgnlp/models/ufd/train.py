@@ -28,7 +28,7 @@ from .utils import (
 )
 
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def set_seed(seed: int) -> None:
@@ -233,22 +233,10 @@ def save_models(
     if not os.path.isdir(cfg.model_folder):
         os.mkdir(cfg.model_folder)
 
-    ag_path = str(
-        pathlib.Path(cfg.model_folder).joinpath(
-            full_combi_name + "_" + "adaptor_global"
-        )
-    )
-    ad_path = str(
-        pathlib.Path(cfg.model_folder).joinpath(
-            full_combi_name + "_" + "adaptor_domain"
-        )
-    )
-    maper_path = str(
-        pathlib.Path(cfg.model_folder).joinpath(full_combi_name + "_" + "maper")
-    )
-    cls_path = str(
-        pathlib.Path(cfg.model_folder).joinpath(full_combi_name + "_" + "classifier")
-    )
+    ag_path = str(pathlib.Path(cfg.model_folder).joinpath(full_combi_name + "_" + "adaptor_global"))
+    ad_path = str(pathlib.Path(cfg.model_folder).joinpath(full_combi_name + "_" + "adaptor_domain"))
+    maper_path = str(pathlib.Path(cfg.model_folder).joinpath(full_combi_name + "_" + "maper"))
+    cls_path = str(pathlib.Path(cfg.model_folder).joinpath(full_combi_name + "_" + "classifier"))
 
     adaptor_global.save_pretrained(ag_path)
     adaptor_domain.save_pretrained(ad_path)
@@ -273,15 +261,13 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
         cfg = parse_args_and_load_config
         train(cfg)
     """
-    logging.info(f"Training arguments: {cfg}")
+    logger.debug(f"Training arguments: {cfg}")
 
     if cfg.use_wandb:
         try:
             import wandb
         except ImportError:
-            raise (
-                "wandb package not installed! Please install wandb first and try again."
-            )
+            raise ("wandb package not installed! Please install wandb first and try again.")
         wandb.init(**cfg.wandb_config)
 
     set_seed(cfg.train_args["seed"])
@@ -307,9 +293,7 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
         classifier_id = 3
 
     # Init optimizers and loss functions
-    optim_fusion = Adam(
-        combine_features_map_model.parameters(), lr=cfg.train_args["learning_rate"]
-    )
+    optim_fusion = Adam(combine_features_map_model.parameters(), lr=cfg.train_args["learning_rate"])
     loss_fn = UFDDeepInfoMaxLossModel().to(device)
     optim = Adam(
         [
@@ -386,9 +370,7 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
                     train_acc_log[epoch][domain].append(train_acc)
 
                     target_domains = sourcedomain2targetdomains[domain]
-                    for tlang, tdom in list(
-                        product(cfg.train_args["target_languages"], target_domains)
-                    ):
+                    for tlang, tdom in list(product(cfg.train_args["target_languages"], target_domains)):
                         combi_name = tlang + "_" + tdom
                         full_combi_name = domain + "_" + combi_name
 
@@ -405,9 +387,7 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
                                 ep,
                             )
 
-                        if (
-                            ep == cfg.train_args["warmup_epochs"] + 1
-                        ):  # Init list for new keys
+                        if ep == cfg.train_args["warmup_epochs"] + 1:  # Init list for new keys
                             val_loss_log[epoch][domain][combi_name] = []
                             val_acc_log[epoch][domain][combi_name] = []
 
@@ -439,7 +419,7 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
                             best_val_loss_log[full_combi_name] = (val_loss, epoch, ep)
                             best_val_acc_log[full_combi_name] = (val_acc, epoch, ep)
 
-                            logging.info(
+                            logger.info(
                                 f"Found new best for {full_combi_name}, \
                                 Epoch {epoch}, ep {ep}, Loss {val_loss:.3f}, Acc {val_acc:.3f}"
                             )
@@ -453,7 +433,7 @@ def train(cfg: UFDArguments) -> Tuple[Dict]:
                                 classifiers[domain]["model"],
                             )
 
-                            logging.info("New best models saved")
+                            logger.info("New best models saved")
 
     if cfg.verbose:
         with open(cfg.cache_folder + "adaptor_loss.pickle", "wb") as handle:

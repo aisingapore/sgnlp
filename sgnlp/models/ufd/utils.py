@@ -30,7 +30,7 @@ from .modeling import (
 )
 
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def create_unsupervised_models(
@@ -372,7 +372,7 @@ def generate_train_val_dataset(cfg: UFDArguments) -> Tuple[Dict[str, float]]:
         if os.path.isfile(train_cache_path):
             with open(train_cache_path, "rb") as handle:
                 train_data = pickle.load(handle)
-            logging.info("Train data loaded from cache")
+            logger.info(f"Train data loaded from cache: {train_cache_path}")
 
             for source_domain in cfg.train_args["source_domains"]:
                 assert (
@@ -384,7 +384,7 @@ def generate_train_val_dataset(cfg: UFDArguments) -> Tuple[Dict[str, float]]:
                 os.mkdir(cfg.cache_folder)
             with open(train_cache_path, "wb") as handle:
                 pickle.dump(train_data, handle)
-            logging.info("Train data saved in cache")
+            logger.info(f"Train data saved in cache: {train_cache_path}")
 
         valid_cache_path = str(
             pathlib.Path(cfg.cache_folder).joinpath(
@@ -394,7 +394,7 @@ def generate_train_val_dataset(cfg: UFDArguments) -> Tuple[Dict[str, float]]:
         if os.path.isfile(valid_cache_path):
             with open(valid_cache_path, "rb") as handle:
                 valid_data = pickle.load(handle)
-            logging.info("Validation data loaded from cache")
+            logger.info(f"Validation data loaded from cache: {valid_cache_path}")
 
             for target_language in cfg.train_args["target_languages"]:
                 assert (
@@ -410,7 +410,7 @@ def generate_train_val_dataset(cfg: UFDArguments) -> Tuple[Dict[str, float]]:
             valid_data = create_dataset_embedding(cfg, dataset_type="valid")
             with open(valid_cache_path, "wb") as handle:
                 pickle.dump(valid_data, handle)
-            logging.info("Validation data saved in cache")
+            logger.info(f"Validation data saved in cache: {valid_cache_path}")
 
     else:
         train_data = create_dataset_embedding(cfg, dataset_type="train")

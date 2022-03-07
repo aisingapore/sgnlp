@@ -5,6 +5,9 @@ from transformers import PreTrainedTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 
 
+logger = logging.getLogger(__name__)
+
+
 class RstPreprocessor:
     """
     Class for preprocessing a list of raw texts to a batch of tensors.
@@ -20,8 +23,8 @@ class RstPreprocessor:
 
                 self.tokenizer = nltk.word_tokenize
             except ModuleNotFoundError:
-                logging.warning('The package "nltk" is not installed!')
-                logging.warning('Please install "nltk" with "pip install nltk"')
+                logger.warning('The package "nltk" is not installed!')
+                logger.warning('Please install "nltk" with "pip install nltk"')
 
     def __call__(self, sentences: List[str]):
         """

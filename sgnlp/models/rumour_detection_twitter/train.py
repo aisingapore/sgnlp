@@ -12,7 +12,7 @@ from .modeling import RumourDetectionTwitterModel
 from .modules.optimizer.scheduler import WarmupScheduler
 from .utils import load_datasets
 
-logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,11 +37,7 @@ def train_model(args):
     logger.info(f"Experiment {expt_name}-{expt_num}")
 
     # Default to cpu if GPU is unavailable
-    device = (
-        torch.device("cuda")
-        if train_args["use_gpu"] and torch.cuda.is_available()
-        else torch.device("cpu")
-    )
+    device = torch.device("cuda") if train_args["use_gpu"] and torch.cuda.is_available() else torch.device("cpu")
 
     # Create the output dir. Raises an error if the folder already exists
     experiment_output_dir = os.path.join(
@@ -64,9 +60,7 @@ def train_model(args):
 
     # Load config if provided
     if train_args.get("model_config_path") is not None:
-        config = RumourDetectionTwitterConfig.from_json_file(
-            json_file=train_args["model_config_path"]
-        )
+        config = RumourDetectionTwitterConfig.from_json_file(json_file=train_args["model_config_path"])
     else:
         config = RumourDetectionTwitterConfig()
     config.save_pretrained(experiment_output_dir)
@@ -83,9 +77,7 @@ def train_model(args):
     train_dataloader, val_dataloader, _ = load_datasets(train_args)
 
     # Set up the optimizer
-    assert (
-        train_args["optim"] == "sgd" or train_args["optim"] == "adam"
-    ), "Only sgd and adam optimizers are supported"
+    assert train_args["optim"] == "sgd" or train_args["optim"] == "adam", "Only sgd and adam optimizers are supported"
     if train_args["optim"] == "sgd":
         optimizer = torch.optim.SGD(
             params=model.parameters(),
@@ -113,18 +105,11 @@ def train_model(args):
 
             token_ids = torch.stack(batch["tweet_token_ids"]).to(device).transpose(0, 1)
             time_delay_ids = batch["time_delay_ids"].to(device)
-            structure_ids = (
-                torch.stack(batch["structure_ids"]).transpose(0, 1).to(device)
-            )
+            structure_ids = torch.stack(batch["structure_ids"]).transpose(0, 1).to(device)
             token_attention_mask = (
-                torch.stack(batch["token_attention_mask"])
-                .transpose(0, 1)
-                .type(torch.Tensor)
-                .to(device)
+                torch.stack(batch["token_attention_mask"]).transpose(0, 1).type(torch.Tensor).to(device)
             )
-            post_attention_mask = (
-                batch["post_attention_mask"].type(torch.Tensor).to(device)
-            )
+            post_attention_mask = batch["post_attention_mask"].type(torch.Tensor).to(device)
 
             target_ids = batch["label"].to(device)
 
@@ -142,25 +127,17 @@ def train_model(args):
             optimizer.step()
 
             if i % train_args["log_frequency"] == 0:
-                logger.info(
-                    f"epoch: {epoch} batch: {i} loss: {loss} lr: {scheduler.get_last_lr()}"
-                )
+                logger.info(f"epoch: {epoch} batch: {i} loss: {loss} lr: {scheduler.get_last_lr()}")
 
                 # TODO try to integrate this with the logger
                 with open(os.path.join(experiment_output_dir, "loss_log"), "a") as f:
-                    f.write(
-                        "epoch: {} batch: {} loss: {} lr: {}\n".format(
-                            epoch, i, loss, scheduler.get_last_lr()
-                        )
-                    )
+                    f.write("epoch: {} batch: {} loss: {} lr: {}\n".format(epoch, i, loss, scheduler.get_last_lr()))
 
             # Each step gradient update is treated as 1 step
             scheduler.step()
 
         if epoch % train_args["save_model_frequency"] == 0:
-            epoch_output_dir = os.path.join(
-                experiment_output_dir, "epoch-" + str(epoch)
-            )
+            epoch_output_dir = os.path.join(experiment_output_dir, "epoch-" + str(epoch))
             os.makedirs(epoch_output_dir)
             model.save_pretrained(epoch_output_dir)
 
