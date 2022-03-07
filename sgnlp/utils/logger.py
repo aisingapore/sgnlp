@@ -121,8 +121,11 @@ def _create_timed_rotating_file_handler(handler_config: dict):
     Returns:
         logging.TimedRotatingFileHandler: timed rotating file handler
     """
+    log_file_path = pathlib.Path(handler_config.get("filename", "logs/sgnlp.log"))
+    log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
     log_handler = TimedRotatingFileHandler(
-        filename=handler_config.get("filename", "logs/sgnlp.log"),
+        filename=log_file_path,
         when=handler_config.get("when", "midnight"),
         interval=int(handler_config.get("interval", "1")),
         backupCount=int(handler_config.get("backupCount", "1")),
