@@ -27,18 +27,15 @@
     "Test results for Stance classification (SemEval-2017 Dataset):",
     "Single Stance Type Evaluation (Trained/Reported): Support-F1: 0.421/ Deny-F1: 0.255/ Query-F1: 0.52/ Comment-F1: 0.841",
     "Overall Evaluation (Trained/Reported): Macro-F1: 0.509/ Accuracy: 0.763/"
-
   ],
-  "trainingConfig": {
-    "text": "Not available."
-  },
+  "trainingConfig": "Not available.",
   "trainingTime": "~2 hours for 100 epochs on a single V100 GPU.",
   "modelWeights": {
     "text": "https://storage.googleapis.com/sgnlp/models/dual_bert/pytorch_model.bin",
     "url": "https://storage.googleapis.com/sgnlp/models/dual_bert/pytorch_model.bin"
   },
   "modelConfig": {
-    "text": "",
+    "text": "NA",
     "url": ""
   },
   "modelInput": "Conversation threads",

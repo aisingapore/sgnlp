@@ -9,7 +9,7 @@ RUN rm /bin/sh && ln -s /bin/bash /bin/sh && \
 WORKDIR $WORK_DIR
 USER $USER
 
-COPY build/polyaxon/coupled_hierarchical_transformer/conda.yml .
+COPY build/polyaxon/dual_bert/conda.yml .
 RUN conda env update -f conda.yml -n base
 
 WORKDIR /code
