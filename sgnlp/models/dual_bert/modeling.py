@@ -379,29 +379,29 @@ class DualBert(DualBertPreTrainedModel):
         self.bert = BertModel.from_pretrained("bert-base-uncased")
 
     def forward(self, input_ids_buckets, segment_ids_buckets, input_mask_buckets, input_mask, stance_position,
-                stance_label_mask, stance_label_ids=None, rumor_label_ids=None, rumor_labels=None, stance_labels=None):
+                stance_label_mask, stance_label_ids=None, rumor_label_ids=None):
         # def forward(self, input_ids1, token_type_ids1, attention_mask1, input_ids2, token_type_ids2, attention_mask2,
         #           input_ids3, token_type_ids3, attention_mask3, input_ids4, token_type_ids4, attention_mask4,
-        #          attention_mask, rumor_labels=None, stance_labels=None, stance_label_mask=None):
+        #          attention_mask, rumor_labels=None, stance_label_ids=None, stance_label_mask=None):
 
         output = DualBertModelOutput()
 
-        output_sequence = torch.tensor([], dtype=torch.int32)
+        output_sequence = torch.tensor([], device=self.device, dtype=torch.int32)
         # for input_ids, token_type_ids, attention_mask in zip(processed_input["input_ids_buckets"], processed_input[
         #     "segment_ids_buckets"], processed_input["input_mask_buckets"]):
         num_buckets = 4
         for i in range(num_buckets):
-            input_ids = input_ids_buckets[:, i]
-            token_type_ids = segment_ids_buckets[:, i]
-            attention_mask = input_mask_buckets[:, i]
+            input_ids = input_ids_buckets[:, i].to(self.device)
+            token_type_ids = segment_ids_buckets[:, i].to(self.device)
+            attention_mask = input_mask_buckets[:, i].to(self.device)
 
             tmp_model_output = self.bert(input_ids, token_type_ids, attention_mask, output_hidden_states=False)
             output_sequence = torch.cat((output_sequence, tmp_model_output.last_hidden_state), dim=1)
 
         extended_attention_mask = input_mask.unsqueeze(1).unsqueeze(2)
-        extended_attention_mask = extended_attention_mask.to(
-            dtype=next(self.parameters()).dtype)  # fp16 compatibility
+        extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
+        extended_attention_mask = extended_attention_mask.to(self.device)
 
         # for stance classification task
         # '''
@@ -423,9 +423,9 @@ class DualBert(DualBertPreTrainedModel):
 
         # '''  add label attention layer to incorporate stance predictions for rumor verification
         extended_label_mask = stance_label_mask.unsqueeze(1).unsqueeze(2)
-        extended_label_mask = extended_label_mask.to(
-            dtype=next(self.parameters()).dtype)  # fp16 compatibility
+        extended_label_mask = extended_label_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_label_mask = (1.0 - extended_label_mask) * -10000.0
+        extended_label_mask = extended_label_mask.to(self.device)
 
         rumor_output = self.rumor_pooler(add_rumor_bert_text_output_layer)
         tweet_level_output = self.stance_pooler(add_rumor_bert_text_output_layer, self.max_tweet_num,
@@ -439,26 +439,26 @@ class DualBert(DualBertPreTrainedModel):
         output.rumour_logits = self.rumor_classifier(rumor_pooled_output)
         # '''
 
-        if rumor_labels is not None:
+        if rumor_label_ids is not None:
             # alpha = 0.1
             loss_fct = CrossEntropyLoss()
-            output.rumour_loss = loss_fct(output.rumour_logits.view(-1, self.rumor_num_labels), rumor_labels.view(-1))
+            output.rumour_loss = loss_fct(output.rumour_logits.view(-1, self.rumor_num_labels).to(self.device), rumor_label_ids.view(-1).to(self.device))
             output.attention_probs = attention_probs[:, 0, 0, :]
             # sim_loss = self.cos_sim(stance_attention, rumor_attention)
             # return loss + alpha*sim_loss
 
-        if stance_labels is not None:  # for stance classification task
+        if stance_label_ids is not None:  # for stance classification task
             loss_fct = CrossEntropyLoss()
             # Only keep active parts of the loss
             if stance_label_mask is not None:
                 active_loss = stance_label_mask.view(-1) == 1
                 # print(active_loss)
                 # print(logits)
-                active_logits = output.stance_logits.view(-1, self.stance_num_labels)[active_loss]
-                active_labels = stance_labels.view(-1)[active_loss]
+                active_logits = output.stance_logits.view(-1, self.stance_num_labels)[active_loss].to(self.device)
+                active_labels = stance_label_ids.view(-1)[active_loss].to(self.device)
                 loss = loss_fct(active_logits, active_labels)
             else:
-                loss = loss_fct(output.stance_logits.view(-1, self.stance_num_labels), stance_labels.view(-1))
+                loss = loss_fct(output.stance_logits.view(-1, self.stance_num_labels).to(self.device), stance_label_ids.view(-1).to(self.device))
             output.stance_loss = loss
 
         return output

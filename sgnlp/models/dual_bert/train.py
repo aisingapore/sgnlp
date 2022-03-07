@@ -33,6 +33,7 @@ from .utils import classification_report
 
 from .modeling import DualBert
 from transformers import AdamW
+from .optimization import BertAdam
 from .preprocess import prepare_data_for_training, InputExample, DualBertPreprocessor
 from sklearn.metrics import precision_recall_fscore_support
 
@@ -360,6 +361,15 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
         optimizer_grouped_parameters,
         lr=train_config.learning_rate,
     )
+    # For testing with original optimizer
+    # optimizer = BertAdam(optimizer_grouped_parameters,
+    #                      lr=train_config.learning_rate,
+    #                      warmup=0.1,
+    #                      t_total=t_total)
+    # stance_optimizer = BertAdam(optimizer_grouped_parameters,
+    #                             lr=train_config.learning_rate,
+    #                             warmup=0.1,
+    #                             t_total=t_total)
 
     global_step = 0
     nb_tr_steps = 0
@@ -453,7 +463,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                 # ) = batch
 
                 # optimize rumor detection task
-                tmp_model_output = model(**rumor_batch, rumor_labels=rumor_batch["rumor_label_ids"])
+                tmp_model_output = model(**rumor_batch)
                 # tmp_model_output = model(
                 #     input_ids1,
                 #     segment_ids1,
@@ -499,7 +509,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                     global_step += 1
 
                 # optimize stance classification task
-                tmp_model_output = model(**stance_batch, stance_labels=stance_batch["stance_label_ids"])
+                tmp_model_output = model(**stance_batch)
                 # tmp_model_output = model(
                 #     stance_input_ids1,
                 #     stance_segment_ids1,
@@ -630,7 +640,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                                                   desc="Evaluating"):
                 with torch.no_grad():
                     rumor_batch = {k: v.to(device) for k, v in rumor_batch.items()}
-                    tmp_model_output = model(**rumor_batch, rumor_labels=rumor_batch["rumor_label_ids"])
+                    tmp_model_output = model(**rumor_batch)
                     tmp_eval_loss = tmp_model_output.rumour_loss
                     logits = tmp_model_output.rumour_logits
                     stance_logits = tmp_model_output.stance_logits
@@ -799,7 +809,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                                                     desc="Evaluating"):
 
                 with torch.no_grad():
-                    tmp_model_output = model(**rumor_batch, rumor_labels=rumor_batch["rumor_label_ids"])
+                    tmp_model_output = model(**rumor_batch)
                     # tmp_model_output = model(
                     #     input_ids1,
                     #     segment_ids1,
@@ -1054,7 +1064,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             # label_mask = label_mask.to(device)
 
             with torch.no_grad():
-                tmp_model_output = model(**batch, rumor_labels=batch["rumor_label_ids"])
+                tmp_model_output = model(**batch)
                 # tmp_model_output = model(
                 #     input_ids1,
                 #     segment_ids1,
