@@ -17,8 +17,10 @@ def setup_logging(log_config_path: Union[str, pathlib.Path] = LOG_CONFIG):
     Args:
         log_config_path (Union[str, pathlib.Path], optional): file path to logging config file. Defaults to LOG_CONFIG.
     """
-    if logging.getLogger("sgnlp").hasHandlers():
-        print("Logger already configured.")
+    logger = logging.getLogger("sgnlp")  # Root logger for SGnlp package
+    handlers = [handler.name for handler in logger.handlers]
+    if "streamHandler" in handlers and "nullHandler" in handlers:
+        logger.debug("Logger already configured.")
         return
     if isinstance(log_config_path, str):
         log_config_path = pathlib.Path(log_config_path)
@@ -61,9 +63,10 @@ def _create_file_handler(handler_config: dict):
     Args:
         handler_config (dict): _description_
     """
-    log_handler = FileHandler(
-        filename=handler_config.get("filename", "logs/sgnlp.log"), mode=handler_config.get("mode", "a")
-    )
+    log_file_path = pathlib.Path(handler_config.get("filename", "logs/sgnlp.log"))
+    log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    log_handler = FileHandler(filename=log_file_path, mode=handler_config.get("mode", "a"))
     log_handler.name = handler_config.get("name", "fileHandler")
     log_handler.setLevel(handler_config.get("level", "DEBUG"))
     log_handler.setFormatter(
@@ -87,8 +90,11 @@ def _create_rotating_file_handler(handler_config: dict):
     Returns:
         logging.RotatingFileHandler: rotating file handler
     """
+    log_file_path = pathlib.Path(handler_config.get("filename", "logs/sgnlp.log"))
+    log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
     log_handler = RotatingFileHandler(
-        filename=handler_config.get("filename", "logs/sgnlp.log"),
+        filename=log_file_path,
         mode=handler_config.get("mode", "a"),
         maxBytes=int(handler_config.get("maxBytes", "10485760")),
         backupCount=int(handler_config.get("backupCount", "1")),
@@ -141,7 +147,7 @@ _create_handler = {
 }
 
 
-def add_handler(handler_type: str, handler_config: dict) -> None:
+def add_handler(handler_type: str, handler_config: Union[dict, None] = None) -> None:
     """
     Function to add handler to logger.
     Supported handler keys: [
@@ -149,8 +155,10 @@ def add_handler(handler_type: str, handler_config: dict) -> None:
 
     Args:
         handler_type (str)): type of handle to add
-        handler_config (dict): handler config
+        handler_config (Union[dict, None]): handler config. Optional.
     """
+    if handler_config is None:
+        handler_config = {}
     logger = logging.getLogger("sgnlp")  # Root logger for SGnlp package
     if handler_type in _create_handler:
         handler = _create_handler[handler_type](handler_config)
