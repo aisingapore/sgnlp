@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pandas as pd
 from sklearn.metrics import classification_report
@@ -12,6 +13,9 @@ from .utils import (
     convert_df_to_dataset,
     parse_args_and_load_config,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def evaluate(cfg: RecconEmotionEntailmentArguments):
@@ -33,9 +37,7 @@ def evaluate(cfg: RecconEmotionEntailmentArguments):
     """
 
     tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained(cfg.model_name)
-    model = RecconEmotionEntailmentModel.from_pretrained(
-        cfg.eval_args["trained_model_dir"]
-    )
+    model = RecconEmotionEntailmentModel.from_pretrained(cfg.eval_args["trained_model_dir"])
 
     test_df = pd.read_csv(cfg.eval_args["x_test_path"])
     test_dataset = convert_df_to_dataset(
@@ -53,8 +55,14 @@ def evaluate(cfg: RecconEmotionEntailmentArguments):
     raw_pred, labels, _ = trainer.predict(RecconEmotionEntailmentData(test_dataset))
     pred = np.argmax(raw_pred, axis=1)
 
+    classification_report = classification_report(y_true=labels, y_pred=pred)
+
     with open(cfg.eval_args["results_path"], "w") as result_file:
-        result_file.write(classification_report(y_true=labels, y_pred=pred))
+        result_file.write(classification_report)
+
+    logger.info(f"Evaluation results: {pred}")
+
+    logger.info("Evaluation completed.")
 
 
 if __name__ == "__main__":

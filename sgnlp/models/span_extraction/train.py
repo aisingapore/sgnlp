@@ -1,3 +1,4 @@
+import logging
 import json
 import math
 
@@ -9,6 +10,9 @@ from .data_class import RecconSpanExtractionArguments
 from .modeling import RecconSpanExtractionModel
 from .tokenization import RecconSpanExtractionTokenizer
 from .utils import parse_args_and_load_config, load_examples, RecconSpanExtractionData
+
+
+logger = logging.getLogger(__name__)
 
 
 def train_model(cfg: RecconSpanExtractionArguments):
@@ -55,14 +59,8 @@ def train_model(cfg: RecconSpanExtractionArguments):
     train_dataset = load_examples(**load_train_exp_args)
     val_dataset = load_examples(**load_valid_exp_args)
 
-    t_total = (
-        len(train_dataset)
-        // cfg.train_args["gradient_accumulation_steps"]
-        * cfg.train_args["num_train_epochs"]
-    )
-    cfg.train_args["eval_steps"] = int(
-        len(train_dataset) / cfg.train_args["per_device_train_batch_size"]
-    )
+    t_total = len(train_dataset) // cfg.train_args["gradient_accumulation_steps"] * cfg.train_args["num_train_epochs"]
+    cfg.train_args["eval_steps"] = int(len(train_dataset) / cfg.train_args["per_device_train_batch_size"])
     cfg.train_args["warmup_steps"] = math.ceil(t_total * cfg.train_args["warmup_ratio"])
 
     training_args = TrainingArguments(**cfg.train_args)
@@ -76,6 +74,8 @@ def train_model(cfg: RecconSpanExtractionArguments):
 
     trainer.train()
     trainer.save_model()
+
+    logger.info("Training complete!")
 
 
 if __name__ == "__main__":
