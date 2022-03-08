@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import spacy
 import torch
-from transformers import PreTrainedTokenizer, PretrainedConfig, PreTrainedModel
+from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast, PretrainedConfig, PreTrainedModel
 
 from .config import SenticGCNEmbeddingConfig, SenticGCNBertEmbeddingConfig
 from .modeling import SenticGCNEmbeddingModel, SenticGCNBertEmbeddingModel
@@ -28,11 +28,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 SenticGCNData = namedtuple(
-    "SenticGCNData", ["full_text", "aspect", "left_text", "full_text_tokens", "aspect_token_index"]
+    "SenticGCNData", ["full_text", "aspect", "left_text", "full_text_tokens", "aspect_token_indexes"]
 )
 SenticGCNBertData = namedtuple(
     "SenticGCNBertData",
-    ["full_text", "aspect", "left_text", "full_text_with_bert_tokens", "full_text_tokens", "aspect_token_index"],
+    ["full_text", "aspect", "left_text", "full_text_with_bert_tokens", "full_text_tokens", "aspect_token_indexes"],
 )
 
 
@@ -44,8 +44,8 @@ class SenticGCNBasePreprocessor:
 
     def __init__(
         self,
-        tokenizer: Union[str, PreTrainedTokenizer],
-        embedding_model: Union[str, PreTrainedTokenizer],
+        tokenizer: Union[str, PreTrainedTokenizer, PreTrainedTokenizerFast],
+        embedding_model: Union[str, PreTrainedModel],
         tokenizer_class: PreTrainedTokenizer,
         embedding_config_class: PretrainedConfig,
         embedding_model_class: PreTrainedModel,
@@ -103,7 +103,7 @@ class SenticGCNBasePreprocessor:
 
         try:
             # Init Tokenizer
-            if isinstance(tokenizer, PreTrainedTokenizer):
+            if isinstance(tokenizer, PreTrainedTokenizer) or isinstance(tokenizer, PreTrainedTokenizerFast):
                 # Load from external instance
                 tokenizer_ = tokenizer
             else:
@@ -300,13 +300,22 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
             full_text_tokens = batch["sentence"].split()
             for aspect in batch["aspects"]:
                 aspect = aspect.lower().strip()
-                aspect_token_indexes = [
-                    idx
-                    for idx, val in enumerate(full_text_tokens)
-                    if val.lower().translate(str.maketrans("", "", string.punctuation)) == aspect
-                ]
+                aspect_tokens = aspect.translate(str.maketrans("", "", string.punctuation)).split()
+                aspect_indexes = []
+                for idx in range(len(full_text_tokens)):
+                    try:
+                        if (
+                            " ".join(full_text_tokens[idx : idx + len(aspect_tokens)])
+                            .translate(str.maketrans("", "", string.punctuation))
+                            .lower()
+                            == aspect
+                        ):
+                            aspect_indexes.append(list(map(lambda x: idx + x, [*range(len(aspect_tokens))])))
+                    except IndexError:
+                        continue
+
                 aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
-                for aspect_index, aspect_token_index in zip(aspect_idxs, aspect_token_indexes):
+                for aspect_index, aspect_token_indexes in zip(aspect_idxs, aspect_indexes):
                     left_text = full_text[:aspect_index].strip()
                     processed_inputs.append(
                         SenticGCNData(
@@ -314,7 +323,7 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
                             aspect=aspect,
                             left_text=left_text,
                             full_text_tokens=full_text_tokens,
-                            aspect_token_index=aspect_token_index,
+                            aspect_token_indexes=aspect_token_indexes,
                         )
                     )
         return processed_inputs
@@ -483,13 +492,22 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
             full_text_tokens = batch["sentence"].split()
             for aspect in batch["aspects"]:
                 aspect = aspect.lower().strip()
-                aspect_token_indexes = [
-                    idx
-                    for idx, val in enumerate(full_text_tokens)
-                    if val.lower().translate(str.maketrans("", "", string.punctuation)) == aspect
-                ]
+                aspect_tokens = aspect.translate(str.maketrans("", "", string.punctuation)).split()
+                aspect_indexes = []
+                for idx in range(len(full_text_tokens)):
+                    try:
+                        if (
+                            " ".join(full_text_tokens[idx : idx + len(aspect_tokens)])
+                            .translate(str.maketrans("", "", string.punctuation))
+                            .lower()
+                            == aspect
+                        ):
+                            aspect_indexes.append(list(map(lambda x: idx + x, [*range(len(aspect_tokens))])))
+                    except IndexError:
+                        continue
+
                 aspect_idxs = [index for index in range(len(full_text)) if full_text.startswith(aspect, index)]
-                for aspect_index, aspect_token_index in zip(aspect_idxs, aspect_token_indexes):
+                for aspect_index, aspect_token_indexes in zip(aspect_idxs, aspect_indexes):
                     left_text = full_text[:aspect_index].strip()
                     full_text_with_bert_tokens = f"[CLS] {full_text} [SEP] {aspect} [SEP]"
                     processed_inputs.append(
@@ -499,14 +517,14 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
                             left_text=left_text,
                             full_text_with_bert_tokens=full_text_with_bert_tokens,
                             full_text_tokens=full_text_tokens,
-                            aspect_token_index=aspect_token_index,
+                            aspect_token_indexes=aspect_token_indexes,
                         )
                     )
         return processed_inputs
 
     def __call__(
         self, data_batch: List[Dict[str, Union[str, List[str]]]]
-    ) -> Tuple[List[SenticGCNData], List[torch.Tensor]]:
+    ) -> Tuple[List[SenticGCNBertData], List[torch.Tensor]]:
         """
         Method to generate list of input tensors from a list of sentences and their accompanying list of aspect.
 

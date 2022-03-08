@@ -55,6 +55,7 @@ following code:
     download_tokenizer_files(
         "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_tokenizer/",
         "senticgcn_tokenizer")
+
     tokenizer = SenticGCNTokenizer.from_pretrained("senticgcn_tokenizer")
 
     config = SenticGCNConfig.from_pretrained(
@@ -68,29 +69,32 @@ following code:
     embed_config = SenticGCNEmbeddingConfig.from_pretrained(
         "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/config.json"
     )
+
     embed_model = SenticGCNEmbeddingModel.from_pretrained(
         "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/pytorch_model.bin",
         config=embed_config
     )
 
-    preprocessor = SenticGCNPreprocessor(tokenizer=tokenizer, embedding_model=embed_model)
+    preprocessor = SenticGCNPreprocessor(
+        tokenizer=tokenizer, embedding_model=embed_model,
+        senticnet="https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        device="cpu")
+
     postprocessor = SenticGCNPostprocessor()
 
     inputs = [
-        {
-            "aspects": ["Soup"],
-            "sentence": "The soup is a little salty."
-        },
-        {
+        {  # Single word aspect
             "aspects": ["service"],
-            "sentence": """Everyone that sat in the back outside agreed that it was the worst service we
-                           had ever received."""
+            "sentence": "To sum it up : service varies from good to mediorce , depending on which waiter you get ; generally it is just average ok .",
         },
-        {
-            "aspects": ["location", "food"],
-            "sentence": """it 's located in a strip mall near the beverly center , not the greatest
-                           location , but the food keeps me coming back for more ."""
-        }
+        {  # Single-word, multiple aspects
+            "aspects": ["service", "decor"],
+            "sentence": "Everything is always cooked to perfection , the service is excellent, the decor cool and understated.",
+        },
+        {  # Multi-word aspect
+            "aspects": ["grilled chicken", "chicken"],
+            "sentence": "the only chicken i moderately enjoyed was their grilled chicken special with edamame puree .",
+        },
     ]
 
     processed_inputs, processed_indices = preprocessor(inputs)
@@ -99,22 +103,23 @@ following code:
     post_outputs = postprocessor(processed_inputs=processed_inputs, model_outputs=raw_outputs)
 
     print(post_outputs[0])
-    # {'sentence': ['The', 'soup', 'is', 'a', 'little', 'salty.'],
-    #  'aspects': [1],
-    #  'labels': [-1]}
+    # {'sentence': ['To', 'sum', 'it', 'up', ':', 'service', 'varies', 'from', 'good', 'to', 'mediorce', ',',
+    #               'depending', 'on', 'which', 'waiter', 'you', 'get', ';', 'generally', 'it', 'is', 'just',
+    #               'average', 'ok', '.'],
+    #  'aspects': [[5]],
+    #  'labels': [0]}
 
     print(post_outputs[1])
-    # {'sentence': ['Everyone', 'that', 'sat', 'in', 'the', 'back', 'outside', 'agreed', 'that', 'it',
-    #               'was', 'the', 'worst', 'service', 'we', 'had', 'ever', 'received.'],
-    #  'aspects': [13],
-    #  'labels': [-1]}
+    # {'sentence': ['Everything', 'is', 'always', 'cooked', 'to', 'perfection', ',', 'the', 'service',
+                    'is', 'excellent,', 'the', 'decor', 'cool', 'and', 'understated.'],
+    #  'aspects': [[8], [12]],
+    #  'labels': [1, 1]}
 
     print(post_outputs[2])
-    # {'sentence': ['it', "'s", 'located', 'in', 'a', 'strip', 'mall', 'near', 'the', 'beverly',
-    #               'center', ',', 'not', 'the', 'greatest', 'location', ',', 'but', 'the', 'food',
-    #               'keeps', 'me', 'coming', 'back', 'for', 'more', '.'],
-    #  'aspects': [15, 19],
-    #  'labels': [0, 1]}
+    # {'sentence': ['the', 'only', 'chicken', 'i', 'moderately', 'enjoyed', 'was', 'their', 'grilled',
+                    'chicken', 'special', 'with', 'edamame', 'puree', '.'],
+    #  'aspects': [[8, 9], [2], [9]],
+    #  'labels': [1, 1, 1]}
 
 
 The Sentic-GCN Bert model pretrained on the SemEval 2014/2015/2016 data can be loaded and accessed
@@ -137,34 +142,38 @@ with the following code:
     config = SenticGCNBertConfig.from_pretrained(
         "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
     )
+
     model = SenticGCNBertModel.from_pretrained(
         "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin",
         config=config
     )
 
     embed_config = SenticGCNBertEmbeddingConfig.from_pretrained("bert-base-uncased")
+
     embed_model = SenticGCNBertEmbeddingModel.from_pretrained("bert-base-uncased",
         config=embed_config
     )
 
-    preprocessor = SenticGCNBertPreprocessor(tokenizer=tokenizer, embedding_model=embed_model)
+    preprocessor = SenticGCNBertPreprocessor(
+        tokenizer=tokenizer, embedding_model=embed_model,
+        senticnet="https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        device="cpu")
+
     postprocessor = SenticGCNBertPostprocessor()
 
     inputs = [
-        {
-            "aspects": ["Soup"],
-            "sentence": "The soup is a little salty."
-        },
-        {
+        {  # Single word aspect
             "aspects": ["service"],
-            "sentence": """Everyone that sat in the back outside agreed that it was the worst service we
-                           had ever received."""
+            "sentence": "To sum it up : service varies from good to mediorce , depending on which waiter you get ; generally it is just average ok .",
         },
-        {
-            "aspects": ["location", "food"],
-            "sentence": """it 's located in a strip mall near the beverly center , not the greatest
-                           location , but the food keeps me coming back for more ."""
-        }
+        {  # Single-word, multiple aspects
+            "aspects": ["service", "decor"],
+            "sentence": "Everything is always cooked to perfection , the service is excellent, the decor cool and understated.",
+        },
+        {  # Multi-word aspect
+            "aspects": ["grilled chicken", "chicken"],
+            "sentence": "the only chicken i moderately enjoyed was their grilled chicken special with edamame puree .",
+        },
     ]
 
     processed_inputs, processed_indices = preprocessor(inputs)
@@ -173,22 +182,23 @@ with the following code:
     post_outputs = postprocessor(processed_inputs=processed_inputs, model_outputs=raw_outputs)
 
     print(post_outputs[0])
-    # {'sentence': ['The', 'soup', 'is', 'a', 'little', 'salty.'],
-    #  'aspects': [1],
-    #  'labels': [-1]}
+    # {'sentence': ['To', 'sum', 'it', 'up', ':', 'service', 'varies', 'from', 'good', 'to', 'mediorce', ',',
+    #               'depending', 'on', 'which', 'waiter', 'you', 'get', ';', 'generally', 'it', 'is', 'just',
+    #               'average', 'ok', '.'],
+    #  'aspects': [[5]],
+    #  'labels': [0]}
 
     print(post_outputs[1])
-    # {'sentence': ['Everyone', 'that', 'sat', 'in', 'the', 'back', 'outside', 'agreed', 'that', 'it',
-    #               'was', 'the', 'worst', 'service', 'we', 'had', 'ever', 'received.'],
-    #  'aspects': [13],
-    #  'labels': [-1]}
+    # {'sentence': ['Everything', 'is', 'always', 'cooked', 'to', 'perfection', ',', 'the', 'service',
+                    'is', 'excellent,', 'the', 'decor', 'cool', 'and', 'understated.'],
+    #  'aspects': [[8], [12]],
+    #  'labels': [1, 1]}
 
     print(post_outputs[2])
-    # {'sentence': ['it', "'s", 'located', 'in', 'a', 'strip', 'mall', 'near', 'the', 'beverly',
-    #               'center', ',', 'not', 'the', 'greatest', 'location', ',', 'but', 'the', 'food',
-    #               'keeps', 'me', 'coming', 'back', 'for', 'more', '.'],
-    #  'aspects': [15, 19],
-    #  'labels': [0, 1]}
+    # {'sentence': ['the', 'only', 'chicken', 'i', 'moderately', 'enjoyed', 'was', 'their', 'grilled',
+                    'chicken', 'special', 'with', 'edamame', 'puree', '.'],
+    #  'aspects': [[8, 9], [2], [9]],
+    #  'labels': [1, 1, 1]}
 
 
 Input
@@ -206,6 +216,8 @@ The input data needs to be a dictionary with the following keys:
 The value(s) for aspects must be a list and each aspect must also exists in the sentence. If aspect have more than one
 occurances in the sentence, each aspect will be treated as an input instance.
 
+The value for sentence and aspect(s) must be a string and each aspect can consists of multiple words.
+
 
 Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -214,7 +226,7 @@ The output returned from :class:`~sgnlp.models.sentic_gcn.postprocess.SenticGCNP
 containing each processed input entries. Each entry consists of the following:
 
 1. sentence: The input sentence in tokenized form.
-2. aspects: A list of indices which denotes each index position in the tokenized input sentence.
+2. aspects: A list of lists of indices which denotes each index position in the tokenized input sentence.
 3. labels: A list of prediction for each aspects in order. -1 denote negative sentiment, 0 denote neutral sentiment and 1 denote positive sentiment.
 
 The logits can be accessed from the model output returned from the model.
