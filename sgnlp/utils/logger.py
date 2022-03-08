@@ -52,7 +52,7 @@ def _create_stream_handler(handler_config: dict):
             )
         )
     )
-    log_handler.setStream(eval(handler_config.get("args", "()"), vars(logging)))
+    log_handler.setStream(eval(handler_config.get("args", "(sys.stdout,)"), vars(logging)))
     return log_handler
 
 
