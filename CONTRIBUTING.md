@@ -13,6 +13,7 @@ Thank you for considering contributing to SG-NLP! We believe that SG-NLP's futur
   - [Modeling](#modeling)
   - [Train](#train)
   - [Eval](#eval)
+  - [Logging](#logging)
   - [Utils](#utils)
   - [README](#readme)
   - [Model weights and artefacts](#model-weights-and-artefacts)
