@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import MagicMock, call
 
 from sgnlp.base.preprocessor import PreprocessorBase
 
@@ -66,3 +67,30 @@ class TestPreprocessor(unittest.TestCase):
         processed_data = preprocessor(self.data)
 
         self.assertEqual(processed_data, self.expected_processed_data)
+
+    def test_preprocessor_errors_out_when_input_data_is_not_of_equal_length(self):
+        test_data = {
+            "questions": [
+                "What color is the sky"
+            ],
+            "answers": ["Blue", "I don't know"]
+        }
+        preprocessor = DummyPreprocessor()
+        with self.assertRaises(ValueError) as context:
+            preprocessor(test_data)
+
+    def test_preprocessor_processes_in_batches(self):
+        preprocessor = DummyPreprocessor(batch_size=2)
+
+        # Makes function a mock but retains actual implementation
+        preprocessor.preprocess = MagicMock(side_effect=preprocessor.preprocess)
+
+        preprocessor(self.data)
+
+        # Given data of size 3 and batch size of 2, expect to process 2 data points followed by 1 data point
+        preprocessor.preprocess.assert_has_calls(
+            calls=[call({'questions': ['What color is the sky', 'What is the weather today'],
+                         'answers': ['Blue', "I don't know"]}),
+                   call({'questions': ['When will winter come'], 'answers': ['Never']})],
+            any_order=False
+        )
