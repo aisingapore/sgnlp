@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, call
 
+import torch
+
 from sgnlp.base.preprocessor import PreprocessorBase
 
 
@@ -27,56 +29,54 @@ class DummyPreprocessor(PreprocessorBase):
 
         processed_data = {
             "questions_lengths": questions_lengths,
-            "answers_lengths": answers_lengths
+            "answers_lengths": answers_lengths,
         }
 
         return processed_data
 
 
 class TestPreprocessor(unittest.TestCase):
-
     def setUp(self):
         self.data = {
             "questions": [
                 "What color is the sky",
                 "What is the weather today",
-                "When will winter come"
+                "When will winter come",
             ],
-            "answers": [
-                "Blue",
-                "I don't know",
-                "Never"
-            ],
+            "answers": ["Blue", "I don't know", "Never"],
         }
 
         self.expected_processed_data = {
-            "questions_lengths": [
-                [4, 5, 2, 3, 3],
-                [4, 2, 3, 7, 5],
-                [4, 4, 6, 4]
-            ],
-            "answers_lengths": [
-                [4],
-                [1, 5, 4],
-                [5]
-            ]
+            "questions_lengths": torch.tensor(
+                [[4, 5, 2, 3, 3], [4, 2, 3, 7, 5], [4, 4, 6, 4, 0]]
+            ),
+            "answers_lengths": torch.tensor([[4, 0, 0], [1, 5, 4], [5, 0, 0]]),
         }
 
     def test_preprocessor_processes_correctly(self):
         preprocessor = DummyPreprocessor()
         processed_data = preprocessor(self.data)
 
-        self.assertEqual(processed_data, self.expected_processed_data)
+        self.assertTrue(
+            torch.equal(
+                processed_data["questions_lengths"],
+                self.expected_processed_data["questions_lengths"],
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                processed_data["answers_lengths"],
+                self.expected_processed_data["answers_lengths"],
+            )
+        )
 
     def test_preprocessor_errors_out_when_input_data_is_not_of_equal_length(self):
         test_data = {
-            "questions": [
-                "What color is the sky"
-            ],
-            "answers": ["Blue", "I don't know"]
+            "questions": ["What color is the sky"],
+            "answers": ["Blue", "I don't know"],
         }
         preprocessor = DummyPreprocessor()
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(ValueError):
             preprocessor(test_data)
 
     def test_preprocessor_processes_in_batches(self):
@@ -89,8 +89,17 @@ class TestPreprocessor(unittest.TestCase):
 
         # Given data of size 3 and batch size of 2, expect to process 2 data points followed by 1 data point
         preprocessor.preprocess.assert_has_calls(
-            calls=[call({'questions': ['What color is the sky', 'What is the weather today'],
-                         'answers': ['Blue', "I don't know"]}),
-                   call({'questions': ['When will winter come'], 'answers': ['Never']})],
-            any_order=False
+            calls=[
+                call(
+                    {
+                        "questions": [
+                            "What color is the sky",
+                            "What is the weather today",
+                        ],
+                        "answers": ["Blue", "I don't know"],
+                    }
+                ),
+                call({"questions": ["When will winter come"], "answers": ["Never"]}),
+            ],
+            any_order=False,
         )
