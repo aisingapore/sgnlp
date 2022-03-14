@@ -11,6 +11,8 @@ The documentation contains the following parts:
 * **Quickstart** contains information on how to install the package, basic information of how the package works,
   and a simple example.
 
+* **Logging** contains information on how logging is implemented in the package and advanced use cases for logging.
+
 * **Advanced Tutorial** contains in-depth guides for specific models. These guides go into detail on what the model
   is about and how it can be configured for training and inference.
 
@@ -27,5 +29,6 @@ You can interact with our `demos <..>`_ or view our :doc:`guide to get started <
    :hidden:
 
    Quickstart <quickstart>
+   Logging <logging>
    Advanced Tutorial <models>
    API Reference <api_reference/sgnlp>

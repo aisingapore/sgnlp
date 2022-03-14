@@ -76,7 +76,6 @@ def _create_file_handler(handler_config: dict):
             )
         )
     )
-    log_handler.mode = handler_config.get("mode", "a")
     return log_handler
 
 
@@ -96,8 +95,8 @@ def _create_rotating_file_handler(handler_config: dict):
     log_handler = RotatingFileHandler(
         filename=log_file_path,
         mode=handler_config.get("mode", "a"),
-        maxBytes=int(handler_config.get("maxBytes", "10485760")),
-        backupCount=int(handler_config.get("backupCount", "1")),
+        maxBytes=int(handler_config.get("maxBytes", 10485760)),
+        backupCount=int(handler_config.get("backupCount", 1)),
     )
     log_handler.name = handler_config.get("name", "rotatingFileHandler")
     log_handler.setLevel(handler_config.get("level", "DEBUG"))
@@ -127,8 +126,10 @@ def _create_timed_rotating_file_handler(handler_config: dict):
     log_handler = TimedRotatingFileHandler(
         filename=log_file_path,
         when=handler_config.get("when", "midnight"),
-        interval=int(handler_config.get("interval", "1")),
-        backupCount=int(handler_config.get("backupCount", "1")),
+        interval=int(handler_config.get("interval", 1)),
+        backupCount=int(handler_config.get("backupCount", 1)),
+        utc=handler_config.get("utc", False),
+        atTime=handler_config.get("atTime", None),
     )
     log_handler.name = handler_config.get("name", "timedRotatingFileHandler")
     log_handler.setLevel(handler_config.get("level", "DEBUG"))
@@ -154,7 +155,7 @@ def add_handler(handler_type: str, handler_config: Union[dict, None] = None) -> 
     """
     Function to add handler to logger.
     Supported handler keys: [
-        "streamHandler", "fileHandler", "rotatingFileHandler", "timedRotatingFileHandler"]
+    "streamHandler", "fileHandler", "rotatingFileHandler", "timedRotatingFileHandler"]
 
     Args:
         handler_type (str)): type of handle to add
