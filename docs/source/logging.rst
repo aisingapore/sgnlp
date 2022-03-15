@@ -85,7 +85,7 @@ For detailed explanation of each handlers config, please refer to the official P
     }
 
     # Note use "streamHandler" key to add a StreamHandler
-    add_handler("streamHandler", stream_config)")
+    add_handler("streamHandler", stream_config)
 
     # Add a filehandler to the 'sgnlp' logger
     file_config = {
@@ -97,7 +97,7 @@ For detailed explanation of each handlers config, please refer to the official P
     }
 
     # Note use "fileHandler" key to add a FileHandler
-    add_handler("fileHandler", file_config)")
+    add_handler("fileHandler", file_config)
 
     # Add a rotating filehandler to the 'sgnlp' logger
     rotating_file_config = {
@@ -111,7 +111,7 @@ For detailed explanation of each handlers config, please refer to the official P
     }
 
     # Note use "rotatingFileHandler" key to add a RotatingFileHandler
-    add_handler("rotatingFileHandler", rotating_file_config)")
+    add_handler("rotatingFileHandler", rotating_file_config)
 
     # Add a timed rotating filehandler to the 'sgnlp' logger
     timed_rotating_file_config = {
@@ -126,7 +126,7 @@ For detailed explanation of each handlers config, please refer to the official P
     }
 
     # Note use "timedRotatingFileHandler" key to add a TimedRotatingFileHandler
-    add_handler("timedRotatingFileHandler", timed_rotating_file_config)")
+    add_handler("timedRotatingFileHandler", timed_rotating_file_config)
 
 
 Remove Handlers
