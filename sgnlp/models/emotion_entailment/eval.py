@@ -55,10 +55,10 @@ def evaluate(cfg: RecconEmotionEntailmentArguments):
     raw_pred, labels, _ = trainer.predict(RecconEmotionEntailmentData(test_dataset))
     pred = np.argmax(raw_pred, axis=1)
 
-    classification_report = classification_report(y_true=labels, y_pred=pred)
+    cls_report = classification_report(y_true=labels, y_pred=pred)
 
     with open(cfg.eval_args["results_path"], "w") as result_file:
-        result_file.write(classification_report)
+        result_file.write(cls_report)
 
     logger.info(f"Evaluation results: {pred}")
 
