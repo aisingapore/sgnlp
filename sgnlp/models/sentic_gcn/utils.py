@@ -21,6 +21,9 @@ from transformers.tokenization_utils_base import BatchEncoding
 from .data_class import SenticGCNTrainArgs
 
 
+logger = logging.getLogger(__name__)
+
+
 def parse_args_and_load_config(
     config_path: str = "config/senticnet_gcn_config.json",
 ) -> SenticGCNTrainArgs:
@@ -38,6 +41,7 @@ def parse_args_and_load_config(
         cfg = json.load(cfg_file)
 
     sentic_asgcn_args = SenticGCNTrainArgs(**cfg)
+    logger.debug(f"Config loaded from {cfg_path}")
     return sentic_asgcn_args
 
 
@@ -71,6 +75,7 @@ def download_tokenizer_files(
     file_paths = [urllib.parse.urljoin(base_url, file_name) for file_name in files]
     for file_path in file_paths:
         download_url_file(file_path, save_folder)
+    logger.debug(f"Tokenizer files downloaded to {save_folder}")
 
 
 def download_url_file(url: str, save_folder: Union[str, pathlib.Path]) -> None:
@@ -92,7 +97,7 @@ def download_url_file(url: str, save_folder: Union[str, pathlib.Path]) -> None:
             for data in req:
                 f.write(data)
     else:
-        logging.error(f"Fail to request files from {url}.")
+        logger.error(f"Fail to request files from {url}.")
 
 
 def pad_and_truncate(
@@ -169,6 +174,7 @@ def build_embedding_matrix(
     Returns:
         np.array: numpy array of embedding matrix
     """
+    logger.debug(f"Building embedding matrix from {word_vec_file_path}")
     embedding_matrix = np.zeros((len(vocab), embed_dim))
     embedding_matrix[1, :] = np.random.uniform(-1 / np.sqrt(embed_dim), 1 / np.sqrt(embed_dim), (1, embed_dim))
     word_vec = load_word_vec(word_vec_file_path, vocab, embed_dim)
@@ -183,6 +189,7 @@ def build_embedding_matrix(
             save_file_path.parent.mkdir(exist_ok=True)
         with open(save_file_path, "wb") as fout:
             pickle.dump(embedding_matrix, fout)
+        logger.debug(f"Embedding matrix saved to {save_file_path}")
 
     return embedding_matrix
 
@@ -206,6 +213,7 @@ def load_and_process_senticnet(
     Returns:
         Dict[str, float]: return dictionary with concept word as keys and intensity as values.
     """
+    logger.debug(f"Loading and processing senticnet from {senticnet_file_path}")
     saved_senticnet_file_path = pathlib.Path(saved_preprocessed_senticnet_file_path)
     if saved_senticnet_file_path.exists() and not save_preprocessed_senticnet:
         with open(saved_senticnet_file_path, "rb") as f:
@@ -226,6 +234,7 @@ def load_and_process_senticnet(
             saved_senticnet_file_path.parent.mkdir(exist_ok=True)
             with open(saved_senticnet_file_path, "wb") as f:
                 pickle.dump(sentic_dict, f)
+            logger.debug(f"Saved preprocessed senticnet to {saved_senticnet_file_path}")
     return sentic_dict
 
 

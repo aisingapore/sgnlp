@@ -1,4 +1,7 @@
 import spacy
+from .utils.logger import setup_logging
+
+setup_logging()
 
 # Download spacy model if not installed
 spacy_model = "en_core_web_sm"

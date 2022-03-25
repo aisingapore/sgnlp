@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import posixpath
 import urllib.parse
@@ -19,6 +20,9 @@ from .modeling import (
     UFDClassifierModel,
     UFDModel,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class UFDModelBuilder:
@@ -61,6 +65,9 @@ class UFDModelBuilder:
             product(*[self.source_domains, self.target_languages, self.target_domains])
         )
         self.trimmed_model_sets = [lst for lst in model_sets if lst[0] != lst[2]]
+
+        logger.debug(f"Pretrained model(s) root path: {self.models_root_path}")
+        logger.debug(f"Model sets: {self.trimmed_model_sets}")
 
     def _create_adaptor_domain(
         self, config_full_path: str, model_full_path: str

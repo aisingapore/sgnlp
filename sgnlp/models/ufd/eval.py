@@ -19,6 +19,9 @@ from .utils import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 def test_ufd(
     test_data: List,
     adaptor_global: UFDAdaptorGlobalModel,
@@ -81,14 +84,8 @@ def evaluate(cfg: UFDArguments) -> None:
         evaluate(cfg)
     """
 
-    logging.basicConfig(
-        filename=str(
-            pathlib.Path(cfg.eval_args["result_folder"])
-            / cfg.eval_args["result_filename"]
-        ),
-        level=logging.INFO,
-        force=True,
-    )
+    log_file_path = pathlib.Path(cfg.eval_args["result_folder"]) / cfg.eval_args["result_filename"]
+    log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     device = torch.device(cfg.device)
     loss_criterion = torch.nn.CrossEntropyLoss().to(device)
@@ -107,9 +104,7 @@ def evaluate(cfg: UFDArguments) -> None:
                     adaptor_global_model,
                     combine_features_map_model,
                     classifier_model,
-                ) = load_trained_models(
-                    cfg, source_domain, target_language, target_domain
-                )
+                ) = load_trained_models(cfg, source_domain, target_language, target_domain)
 
                 test_loss, test_acc = test_ufd(
                     test_data[target_language][target_domain],
@@ -121,9 +116,11 @@ def evaluate(cfg: UFDArguments) -> None:
                     cfg,
                 )
 
-                logging.info(
-                    f"Model trained on {cfg.eval_args['source_language']} {source_domain}, validated on {target_language} {target_domain} | Test acc: {test_acc}, Test loss: {test_loss}"
-                )
+                results = f"Model trained on {cfg.eval_args['source_language']} {source_domain}, validated on {target_language} {target_domain} | Test acc: {test_acc}, Test loss: {test_loss}"
+                logger.info(results)
+
+                with open(log_file_path, "a") as f:
+                    f.write(results)
 
 
 if __name__ == "__main__":

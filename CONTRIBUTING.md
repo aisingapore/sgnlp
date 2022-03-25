@@ -13,6 +13,7 @@ Thank you for considering contributing to SG-NLP! We believe that SG-NLP's futur
   - [Modeling](#modeling)
   - [Train](#train)
   - [Eval](#eval)
+  - [Logging](#logging)
   - [Utils](#utils)
   - [README](#readme)
   - [Model weights and artefacts](#model-weights-and-artefacts)
@@ -67,7 +68,8 @@ To contribute a model, add a folder for the model at `sgnlp/sgnlp/models/<model_
 
 To manage the number of dependencies installed with `sgnlp`, contributors are strongly recommended to limit their code to use the packages listed in `setup.py`. If additional dependencies are required, please introduce a check in the `__init__.py` at `sgnlp/sgnlp/models/<model_name>/__init__.py`. For example, the Latent Structure Refinement model for Relation Extraction requires the `networkx` package. The code snippet from LSR's `__init__.py` checks if `networkx` is installed when the model is imported. Users will have to install these additional dependencies separately.
 
-```
+```python
+
 from ...utils.requirements import check_requirements
 
 requirements = ["networkx"]
@@ -78,7 +80,8 @@ check_requirements(requirements)
 
 Model configs contain model architecture information. Typically, this would include hyperparameters for the different layers within the model as well as the loss function. Model configs should inherit from the `PretrainedConfig` class from the `transformers` package. The following is an example from the Cross Lingual Cross Domain Sentiment Analysis model.
 
-```
+```python
+
 from transformers import PretrainedConfig
 
 class UFDClassifierConfig(PretrainedConfig):
@@ -94,7 +97,8 @@ class UFDClassifierConfig(PretrainedConfig):
 
 For models that use or adapt pre-trained configs already available in the `transformers` package, the model config should inherit from the pre-trained config class instead. For example, this model config inherits from `BertConfig` which is a child class of `PretrainedConfig`.
 
-```
+```python
+
 from transformers import BertConfig
 
 class NewModelConfig(BertConfig):
@@ -108,7 +112,8 @@ The `preprocess.py` script and its associated preprocessor class is an addition 
 
 The preprocessor class inherits from the default `object` class. All preprocessing steps should be executed in the class' `__call__` method. The `__call__` method should return a dictionary containing all the necessary input tensors required by the model. The following code snippet illustrates the `__call__` method from the RECCON Span Extraction model's `RecconSpanExtractionPreprocessor`.
 
-```
+```python
+
 class RecconSpanExtractionPreprocessor:
 
     def __call__(
@@ -145,7 +150,8 @@ In the RECCON Span Extraction model, `output` is a dictionary with the token ids
 
 The `tokenizer.py` is optional if the `preprocess.py` already contains a tokenizer. All tokenizers should inherit from the `PreTrainedTokenizer` or `PreTrainedTokenizerFast` classes from the `transformers` package.
 
-```
+```python
+
 from transformers import PreTrainedTokenizer
 
 class NewModelTokenizer(PreTrainedTokenizer):
@@ -155,7 +161,8 @@ class NewModelTokenizer(PreTrainedTokenizer):
 
 For models that use or adapt pre-trained tokenizers already available in the `transformers` package, the tokenizer should inherit from the pre-trained tokenizer class instead. For example, the RECCON Span Extraction tokenizer inherits from `BertTokenizer` which inherits from `PreTrainedTokenizer`.
 
-```
+```python
+
 from transformers import BertTokenizer
 
 class RecconSpanExtractionTokenizer(BertTokenizer):
@@ -179,7 +186,8 @@ There are 2 steps required to add a new model class. The first step is to introd
 
 The key things to define as the `config_class`, `base_model_prefix` class attributes and `_init_weights` method. The `_init_weights` method dictates how the weights for the different layers are instantiated.
 
-```
+```python
+
 from transformers import PreTrainedModel
 from .config import LsrConfig
 
@@ -200,7 +208,7 @@ class LsrPreTrainedModel(PreTrainedModel):
 
 Subsequently, the main model class should inherit from this `NewModelPreTrainedModel` class. The main model class contains the code required to execute the model's forward pass.
 
-```
+```python
 
 class RumourDetectionTwitterModel(RumourDetectionTwitterPreTrainedModel):
 
@@ -254,7 +262,8 @@ There are 3 key things to note in the above implementation.
 
 3. The `forward` method's output is an object of the `RumourDetectionTwitterModelOutput` dataclass. This dataclass is illustrated in the code snippet below.
 
-```
+```python
+
 from dataclasses import dataclass
 from transformers.file_utils import ModelOutput
 
@@ -285,6 +294,22 @@ class RumourDetectionTwitterModelOutput(ModelOutput):
 ### utils
 
 `utils.py` should contain other functions which are useful for `train.py` or `eval.py` but do not directly fit within any of the other scripts above.
+
+### logging
+
+When the `sgnlp` package is first imported, a logger with the base name `sgnlp` is setup with a default `StreamHandler` and `NullHandler`.  
+For logging within all model scripts mentioned above, contributer should use the `logging.getLogger(__name__)` to obtain a logger specific the to the script and use that logger for logging throughout the script. Log messages will inherit the format setup when `sgnlp` package is first imported.  
+
+```python
+
+import logging
+logger = logging.getLevel(__name__)
+
+...
+
+logger.info("Log message here")
+# 2022-03-01 12:00:00,000 - INFO - sgnlp.models.sentic_gcn.preprocess - preprocess.py - 10 - Log message here
+```
 
 ### README
 

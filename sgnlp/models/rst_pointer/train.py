@@ -20,7 +20,7 @@ from .modules.type import DiscourseTreeNode, DiscourseTreeSplit
 from .preprocess import RstPreprocessor
 from .utils import parse_args_and_load_config
 
-logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 

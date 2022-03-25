@@ -27,7 +27,7 @@ from .tokenization import SenticGCNTokenizer, SenticGCNBertTokenizer
 from .utils import parse_args_and_load_config, set_random_seed, SenticGCNDatasetGenerator, BucketIterator
 
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class SenticGCNBaseTrainer:
@@ -182,7 +182,7 @@ class SenticGCNBaseTrainer:
         global_step = 0
 
         for epoch in range(self.config.epochs):
-            logging.info(f"Training epoch: {epoch}")
+            logger.info(f"Training epoch: {epoch}")
             n_correct, n_total, loss_total = 0, 0, 0
             self.model.train()
             for _, batch in enumerate(train_dataloader):
@@ -211,11 +211,11 @@ class SenticGCNBaseTrainer:
                 if global_step % self.config.log_step == 0:
                     train_acc = n_correct / n_total
                     train_loss = loss_total / n_total
-                    logging.info(f"Train Acc: {train_acc:.4f}, Train Loss: {train_loss:.4f}")
+                    logger.info(f"Train Acc: {train_acc:.4f}, Train Loss: {train_loss:.4f}")
 
             # Run eval for validation dataloader
             val_acc, val_f1 = self._evaluate_acc_f1(val_dataloader)
-            logging.info(
+            logger.info(
                 f"""
                 Epoch: {epoch}
                 Test Acc: {val_acc:.4f}
@@ -225,16 +225,16 @@ class SenticGCNBaseTrainer:
 
             # Report new max F1
             if val_f1 > max_val_f1:
-                logging.info(f"New max F1: {val_f1:.4f} @ epoch {epoch}")
+                logger.info(f"New max F1: {val_f1:.4f} @ epoch {epoch}")
                 max_val_f1 = val_f1
 
             # Report new max acc and save if required
             if val_acc > max_val_acc:
-                logging.info(f"New max Accuracy: {val_acc:.4f} @ epoch {epoch}")
+                logger.info(f"New max Accuracy: {val_acc:.4f} @ epoch {epoch}")
                 max_val_acc = val_acc
                 max_val_epoch = epoch
                 self.model.save_pretrained(tmpdir)
-                logging.info(
+                logger.info(
                     f"""
                     Best model saved. Acc: {max_val_acc:.4f}, F1: {max_val_f1}, Epoch: {max_val_epoch}
                 """
@@ -242,7 +242,7 @@ class SenticGCNBaseTrainer:
 
             # Early stopping
             if epoch - max_val_epoch >= self.config.patience:
-                logging.info(f"Early stopping")
+                logger.info(f"Early stopping")
                 break
         return max_val_acc, max_val_f1, max_val_epoch
 
@@ -265,7 +265,7 @@ class SenticGCNBaseTrainer:
 
         repeat_result = {}
         for i in range(self.config.repeats):
-            logging.info(f"Start repeat train loop : {i + 1}")
+            logger.info(f"Start repeat train loop : {i + 1}")
             repeat_tmpdir = self.temp_dir.joinpath(f"repeat{i + 1}")
 
             self._reset_params()
@@ -412,7 +412,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
 
         # Evaluate test set
         test_acc, test_f1 = self._evaluate_acc_f1(test_dataloader)
-        logging.info(f"Best Model - Test Acc: {test_acc:.4f} - Test F1: {test_f1:.4f}")
+        logger.info(f"Best Model - Test Acc: {test_acc:.4f} - Test F1: {test_f1:.4f}")
 
         repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
 
@@ -420,7 +420,7 @@ class SenticGCNBertTrainer(SenticGCNBaseTrainer):
         self._save_model()
         self._clean_temp_dir(repeat_result)
 
-        logging.info("Training Completed!")
+        logger.info("Training Completed!")
 
 
 class SenticGCNTrainer(SenticGCNBaseTrainer):
@@ -564,7 +564,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
 
         # Run main train
         repeat_result = self._train(train_dataloader, val_dataloader)
-        logging.info(f"Best Train Acc: {self.global_max_acc} - Best Train F1: {self.global_max_f1}")
+        logger.info(f"Best Train Acc: {self.global_max_acc} - Best Train F1: {self.global_max_f1}")
 
         # Recreate best model from all repeat loops
         config_path = self.global_best_model_tmpdir.joinpath("config.json")
@@ -575,7 +575,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
 
         # Evaluate test set
         test_acc, test_f1 = self._evaluate_acc_f1(test_dataloader)
-        logging.info(f"Best Model - Test Acc: {test_acc:.4f} - Test F1: {test_f1:.4f}")
+        logger.info(f"Best Model - Test Acc: {test_acc:.4f} - Test F1: {test_f1:.4f}")
 
         repeat_result["test"] = {"max_val_acc": test_acc, "max_val_f1": test_f1}
 
@@ -583,7 +583,7 @@ class SenticGCNTrainer(SenticGCNBaseTrainer):
         self._save_model()
         self._clean_temp_dir(repeat_result)
 
-        logging.info("Training Completed!")
+        logger.info("Training Completed!")
 
 
 if __name__ == "__main__":

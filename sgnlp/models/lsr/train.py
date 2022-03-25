@@ -18,7 +18,7 @@ from .modeling import LsrModel, LsrModelOutput
 from .preprocess import LsrPreprocessor
 from .utils import h_t_idx_generator
 
-logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 

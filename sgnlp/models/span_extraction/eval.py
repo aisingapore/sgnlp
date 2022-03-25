@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 
@@ -20,6 +21,9 @@ from .utils import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 def evaluate(cfg: RecconSpanExtractionArguments):
     """
     Method to evaluate a trained RecconSpanExtractionModel.
@@ -38,27 +42,19 @@ def evaluate(cfg: RecconSpanExtractionArguments):
         evaluate(cfg)
     """
     device = (
-        torch.device("cuda")
-        if torch.cuda.is_available() and not cfg.eval_args["no_cuda"]
-        else torch.device("cpu")
+        torch.device("cuda") if torch.cuda.is_available() and not cfg.eval_args["no_cuda"] else torch.device("cpu")
     )
 
     tokenizer = RecconSpanExtractionTokenizer.from_pretrained(cfg.model_name)
-    model = RecconSpanExtractionModel.from_pretrained(
-        cfg.eval_args["trained_model_dir"]
-    )
+    model = RecconSpanExtractionModel.from_pretrained(cfg.eval_args["trained_model_dir"])
 
     with open(cfg.test_data_path, "r") as f:
         test_json = json.load(f)
 
-    eval_dataset, examples, features = load_examples(
-        test_json, tokenizer, evaluate=True, output_examples=True
-    )
+    eval_dataset, examples, features = load_examples(test_json, tokenizer, evaluate=True, output_examples=True)
 
     eval_sample = SequentialSampler(eval_dataset)
-    eval_dataloader = DataLoader(
-        eval_dataset, sampler=eval_sample, batch_size=cfg.eval_args["batch_size"]
-    )
+    eval_dataloader = DataLoader(eval_dataset, sampler=eval_sample, batch_size=cfg.eval_args["batch_size"])
 
     eval_loss = 0.0
     nb_eval_steps = 0
@@ -95,15 +91,9 @@ def evaluate(cfg: RecconSpanExtractionArguments):
     prefix = "text"
     os.makedirs(cfg.eval_args["results_path"], exist_ok=True)
 
-    output_prediction_file = os.path.join(
-        cfg.eval_args["results_path"], "predictions_{}.json".format(prefix)
-    )
-    output_nbest_file = os.path.join(
-        cfg.eval_args["results_path"], "nbest_predictions_{}.json".format(prefix)
-    )
-    output_null_log_odds_file = os.path.join(
-        cfg.eval_args["results_path"], "null_odds_{}.json".format(prefix)
-    )
+    output_prediction_file = os.path.join(cfg.eval_args["results_path"], "predictions_{}.json".format(prefix))
+    output_nbest_file = os.path.join(cfg.eval_args["results_path"], "nbest_predictions_{}.json".format(prefix))
+    output_null_log_odds_file = os.path.join(cfg.eval_args["results_path"], "null_odds_{}.json".format(prefix))
 
     all_predictions, all_nbest_json, scores_diff_json = write_predictions(
         examples,
@@ -124,10 +114,12 @@ def evaluate(cfg: RecconSpanExtractionArguments):
 
     r = evaluate_results(texts)
 
-    with open(
-        os.path.join(cfg.eval_args["results_path"], "results.txt"), "w"
-    ) as result_file:
+    logger.info(f"Results: {r}")
+
+    with open(os.path.join(cfg.eval_args["results_path"], "results.txt"), "w") as result_file:
         result_file.write(r)
+
+    logger.info("Evaluation complete.")
 
 
 if __name__ == "__main__":

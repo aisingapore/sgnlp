@@ -2,6 +2,9 @@ import logging
 from typing import List
 
 
+logger = logging.getLogger(__name__)
+
+
 class RstPostprocessor:
     def __init__(self, detokenizer=None):
         if detokenizer is not None:
@@ -12,11 +15,11 @@ class RstPostprocessor:
 
                 self.detokenizer = nltk.tokenize.treebank.TreebankWordDetokenizer()
             except ModuleNotFoundError:
-                logging.warning(
+                logger.warning(
                     "Could not import nltk.treebank.TreebankWordDetokenizer. "
                     "Please install nltk to use this postprocessor."
                 )
-                logging.warning('To use "nltk", please install with "pip install nltk"')
+                logger.warning('To use "nltk", please install with "pip install nltk"')
 
     def __call__(
         self,

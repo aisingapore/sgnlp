@@ -1,3 +1,4 @@
+import logging
 import math
 
 import pandas as pd
@@ -12,6 +13,9 @@ from .utils import (
     convert_df_to_dataset,
     parse_args_and_load_config,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def train_model(train_config: RecconEmotionEntailmentArguments):
@@ -33,26 +37,16 @@ def train_model(train_config: RecconEmotionEntailmentArguments):
     """
 
     config = RecconEmotionEntailmentConfig.from_pretrained(train_config.model_name)
-    tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained(
-        train_config.model_name
-    )
-    model = RecconEmotionEntailmentModel.from_pretrained(
-        train_config.model_name, config=config
-    )
+    tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained(train_config.model_name)
+    model = RecconEmotionEntailmentModel.from_pretrained(train_config.model_name, config=config)
 
     train_df = pd.read_csv(train_config.x_train_path)
     val_df = pd.read_csv(train_config.x_valid_path)
-    train_dataset = convert_df_to_dataset(
-        df=train_df, max_seq_length=train_config.max_seq_length, tokenizer=tokenizer
-    )
-    val_dataset = convert_df_to_dataset(
-        df=val_df, max_seq_length=train_config.max_seq_length, tokenizer=tokenizer
-    )
+    train_dataset = convert_df_to_dataset(df=train_df, max_seq_length=train_config.max_seq_length, tokenizer=tokenizer)
+    val_dataset = convert_df_to_dataset(df=val_df, max_seq_length=train_config.max_seq_length, tokenizer=tokenizer)
 
     train_config.len = len(train_df)
-    train_config.train_args["eval_steps"] = (
-        train_config.len / train_config.train_args["per_device_train_batch_size"]
-    )
+    train_config.train_args["eval_steps"] = train_config.len / train_config.train_args["per_device_train_batch_size"]
     train_config.train_args["warmup_steps"] = math.ceil(
         (
             train_config.len
@@ -72,6 +66,8 @@ def train_model(train_config: RecconEmotionEntailmentArguments):
 
     trainer.train()
     trainer.save_model()
+
+    logger.info("Training completed.")
 
 
 if __name__ == "__main__":
