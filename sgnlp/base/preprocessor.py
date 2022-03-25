@@ -23,6 +23,20 @@ def get_merge_function(
     pad_direction="right",
     max_padding_lengths: Dict[str, int] = None,
 ):
+    """Returns a function that is used to merge inputs to :class:`~sgnlp.base.preprocessor.PreprocessorBase`.
+
+    The merge functions returned from this function covers general use cases for NLP problems. If preprocessing needs
+    are more complicated, it is recommended to write your own merge function.
+
+    Args:
+        return_as_tensor(:obj:`bool`, defaults to True): Whether to return as a torch tensor.
+        padding(:obj:`bool`, defaults to True): Whether to pad the vectors.
+        pad_id(:obj:`int`, defaults to 0): ID for padding
+        pad_direction(:obj:`str`, defaults to "right"): Pad direction. Either "left" or "right".
+        max_padding_lengths(:obj: Dict[str, int], defaults to None): Max padding length for each input field. Expected
+            input format to be a dictionary with the keys being the same as the inputs and the values being the max
+            padding length.
+    """
     def merge_function(batches: List[Dict[str, list]]):
         keys = batches[0].keys()
         merged = {}
@@ -73,6 +87,14 @@ def get_merge_function(
 
 
 class PreprocessorBase:
+    """This is the base class for preprocessors.
+
+    Args:
+        batch_size: Number of inputs processed in each iteration.
+        batch_merge_fn: This defines the way the preprocessed batches are merged and returned. A custom function can be
+            defined to change the merge behaviour.
+    """
+
     def __init__(self, batch_size=16, batch_merge_fn=None):
         self.batch_size = batch_size
         self.batch_merge_fn = (
