@@ -13,7 +13,7 @@ class RstPointerSegmenterConfig(PretrainedConfig):
 
     Args:
         word_dim (:obj:`int`, defaults to 1024): Word embedding dimension size.
-        hidden_dim (:obj:`int`, defaults to 64): Hidden dimension zie.
+        hidden_dim (:obj:`int`, defaults to 64): Hidden dimension size.
         dropout_prob (:obj:`float`, defaults to 0.2): Dropout probability.
         use_bilstm (:obj:`bool`, defaults to :obj:`True`): Whether to use bilstm layer.
         num_rnn_layers (:obj:`int`, defaults to 6): Number of RNN layers.
