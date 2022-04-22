@@ -1,6 +1,10 @@
 local build_and_push_staging(module_name, image_name) = {
   image: "registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest",
   stage: "build_and_push_staging",
+  tags: [
+    "on-prem",
+    "dind",
+  ],
   when: "manual",
   script: [
     "echo 'Logging in to AISG Docker Registry...'",
@@ -16,6 +20,10 @@ local build_and_push_staging(module_name, image_name) = {
 local restart_kubernetes_staging(module_name, deployment_name) = {
   image: "registry.aisingapore.net/sea-core-nlp/seacorenlp-runner:latest",
   stage: "restart_kubernetes_staging",
+  tags: [
+    "on-prem",
+    "dind",
+  ],
   when: "manual",
   needs: ["%s_build_and_push_staging" % module_name],
   script: [
@@ -36,6 +44,21 @@ local api_names = {
     module_name: "csgec",
     image_name: "csgec",
     deployment_name: "csgec"
+  },
+  "lif_3way_ap": {
+    module_name: "lif_3way_ap",
+    image_name: "lif-3way-ap",
+    deployment_name: "lif-3way-ap"
+  },
+  "sentic_gcn": {
+    module_name: "sentic_gcn",
+    image_name: "sentic-gcn",
+    deployment_name: "sentic-gcn"
+  },
+  "ufd": {
+    module_name: "ufd",
+    image_name: "ufd",
+    deployment_name: "ufd"
   }
 };
 

@@ -25,7 +25,9 @@ class LsrPostprocessor:
         self.pred_threshold = pred_threshold
 
     @staticmethod
-    def from_file_paths(rel2id_path: str, rel_info_path: str, pred_threshold: float = 0.3):
+    def from_file_paths(
+        rel2id_path: str, rel_info_path: str, pred_threshold: float = 0.3
+    ):
         """Constructs LsrPostprocessor from relevant DocRED files.
 
         Args:
@@ -41,7 +43,7 @@ class LsrPostprocessor:
         """
         rel2id = json.load(open(rel2id_path))
         rel_info = json.load(open(rel_info_path))
-        rel_info['Na'] = 'No relation'
+        rel_info["Na"] = "No relation"
         return LsrPostprocessor(rel2id, rel_info, pred_threshold)
 
     def __call__(self, prediction, data):
@@ -59,8 +61,10 @@ class LsrPostprocessor:
 
         output = []
         for prediction_instance, data_instance in zip(prediction, data):
-            document = [item for sublist in data_instance['sents'] for item in sublist]  # Flatten nested list tokens
-            num_entities = len(data_instance['vertexSet'])
+            document = [
+                item for sublist in data_instance["sents"] for item in sublist
+            ]  # Flatten nested list tokens
+            num_entities = len(data_instance["vertexSet"])
             total_relation_combinations = num_entities * (num_entities - 1)
 
             pred = sigmoid(prediction_instance).data.cpu().numpy()
@@ -74,36 +78,38 @@ class LsrPostprocessor:
                 rel_description = self.rel_info[self.id2rel[rel_idx]]
 
                 # Typecasts are to allow JSON serializable (Numpy types generally not json serializable by default)
-                relations.append({
-                    "score": float(pred[h_t_idx, rel_idx]),
-                    "relation": rel_description,
-                    "object_idx": int(h_idx),
-                    "subject_idx": int(t_idx)
-                })
+                relations.append(
+                    {
+                        "score": float(pred[h_t_idx, rel_idx]),
+                        "relation": rel_description,
+                        "object_idx": int(h_idx),
+                        "subject_idx": int(t_idx),
+                    }
+                )
 
             # Compute sentence start indices
             sentence_start_idx = [0]
             sentence_start_idx_counter = 0
-            for sent in data_instance['sents']:
+            for sent in data_instance["sents"]:
                 sentence_start_idx_counter += len(sent)
                 sentence_start_idx.append(sentence_start_idx_counter)
 
             clusters = []
-            for vertex_set in data_instance['vertexSet']:
+            for vertex_set in data_instance["vertexSet"]:
                 cluster = []
                 for entity in vertex_set:
-                    sent_id = entity['sent_id']  # sent_id that entity appears in
+                    sent_id = entity["sent_id"]  # sent_id that entity appears in
                     pos_adjustment = sentence_start_idx[sent_id]  # start idx of sent
-                    pos = list(entity['pos'])
-                    pos = [pos[0] + pos_adjustment,
-                           pos[1] + pos_adjustment]  # adjust pos by adding start of sentence idx
+                    pos = list(entity["pos"])
+                    pos = [
+                        pos[0] + pos_adjustment,
+                        pos[1] + pos_adjustment,
+                    ]  # adjust pos by adding start of sentence idx
                     cluster.append(pos)
                 clusters.append(cluster)
 
-            output.append({
-                "clusters": clusters,
-                "document": document,
-                "relations": relations
-            })
+            output.append(
+                {"clusters": clusters, "document": document, "relations": relations}
+            )
 
         return output

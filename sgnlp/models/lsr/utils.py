@@ -7,8 +7,8 @@ def join_document(json_instance):
 
     json_instance: A JSON instance from DocRED dataset
     """
-    joined_sentences = [' '.join(sent) for sent in json_instance['sents']]
-    document = ' '.join(joined_sentences)
+    joined_sentences = [" ".join(sent) for sent in json_instance["sents"]]
+    document = " ".join(joined_sentences)
     return document
 
 

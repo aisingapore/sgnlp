@@ -55,24 +55,24 @@ class LsrConfig(PretrainedConfig):
     """
 
     def __init__(
-            self,
-            finetune_emb: bool = False,
-            word_embedding_shape: Tuple[int, int] = (194784, 100),
-            ner_dim: int = 20,
-            coref_dim: int = 20,
-            hidden_dim: int = 120,
-            distance_size: int = 20,
-            num_relations: int = 97,
-            dropout_rate: float = 0.3,
-            dropout_emb: float = 0.2,
-            dropout_gcn: float = 0.4,
-            use_struct_att: bool = False,
-            use_reasoning_block: bool = True,
-            reasoner_layer_sizes: Tuple[int, int] = (3, 4),
-            max_length: int = 512,
-            use_bert: bool = False,
-            initializer_range: float = 0.02,
-            **kwargs
+        self,
+        finetune_emb: bool = False,
+        word_embedding_shape: Tuple[int, int] = (194784, 100),
+        ner_dim: int = 20,
+        coref_dim: int = 20,
+        hidden_dim: int = 120,
+        distance_size: int = 20,
+        num_relations: int = 97,
+        dropout_rate: float = 0.3,
+        dropout_emb: float = 0.2,
+        dropout_gcn: float = 0.4,
+        use_struct_att: bool = False,
+        use_reasoning_block: bool = True,
+        reasoner_layer_sizes: Tuple[int, int] = (3, 4),
+        max_length: int = 512,
+        use_bert: bool = False,
+        initializer_range: float = 0.02,
+        **kwargs
     ):
         super().__init__(**kwargs)
 

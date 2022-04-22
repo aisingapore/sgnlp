@@ -89,13 +89,13 @@ class RumourDetectionTwitterModel(RumourDetectionTwitterPreTrainedModel):
         self.init_weights()
 
     def forward(
-            self,
-            token_ids: torch.Tensor,
-            time_delay_ids: torch.Tensor,
-            structure_ids: torch.Tensor,
-            token_attention_mask=None,
-            post_attention_mask=None,
-            labels: Optional[torch.Tensor] = None,
+        self,
+        token_ids: torch.Tensor,
+        time_delay_ids: torch.Tensor,
+        structure_ids: torch.Tensor,
+        token_attention_mask=None,
+        post_attention_mask=None,
+        labels: Optional[torch.Tensor] = None,
     ):
         """Forward method to compute model output given a Twitter thread.
 

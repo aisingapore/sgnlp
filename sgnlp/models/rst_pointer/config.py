@@ -28,17 +28,19 @@ class RstPointerSegmenterConfig(PretrainedConfig):
         # Initialize with default values
         config = RstPointerSegmenterConfig()
     """
+
     def __init__(
-            self,
-            word_dim=1024,
-            hidden_dim=64,
-            dropout_prob=0.2,
-            use_bilstm=True,
-            num_rnn_layers=6,
-            rnn_type="GRU",
-            is_batch_norm=True,
-            elmo_size="Large",
-            **kwargs):
+        self,
+        word_dim=1024,
+        hidden_dim=64,
+        dropout_prob=0.2,
+        use_bilstm=True,
+        num_rnn_layers=6,
+        rnn_type="GRU",
+        is_batch_norm=True,
+        elmo_size="Large",
+        **kwargs
+    ):
         super().__init__(**kwargs)
         self.word_dim = word_dim
         self.hidden_dim = hidden_dim
@@ -84,23 +86,25 @@ class RstPointerParserConfig(PretrainedConfig):
         # Initialize with default values
         config = RstPointerParserConfig()
     """
+
     def __init__(
-            self,
-            word_dim=1024,
-            hidden_size=64,
-            decoder_input_size=64,
-            atten_model='Dotproduct',
-            classifier_input_size=64,
-            classifier_hidden_size=64,
-            highorder=False,
-            classes_label=39,
-            classifier_bias=True,
-            rnn_layers=6,
-            dropout_e=0.33,
-            dropout_d=0.5,
-            dropout_c=0.5,
-            elmo_size="Large",
-            **kwargs):
+        self,
+        word_dim=1024,
+        hidden_size=64,
+        decoder_input_size=64,
+        atten_model="Dotproduct",
+        classifier_input_size=64,
+        classifier_hidden_size=64,
+        highorder=False,
+        classes_label=39,
+        classifier_bias=True,
+        rnn_layers=6,
+        dropout_e=0.33,
+        dropout_d=0.5,
+        dropout_c=0.5,
+        elmo_size="Large",
+        **kwargs
+    ):
         super().__init__(**kwargs)
         self.word_dim = word_dim
         self.hidden_size = hidden_size

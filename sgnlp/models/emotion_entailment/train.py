@@ -33,8 +33,12 @@ def train_model(train_config: RecconEmotionEntailmentArguments):
     """
 
     config = RecconEmotionEntailmentConfig.from_pretrained(train_config.model_name)
-    tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained(train_config.model_name)
-    model = RecconEmotionEntailmentModel.from_pretrained(train_config.model_name, config=config)
+    tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained(
+        train_config.model_name
+    )
+    model = RecconEmotionEntailmentModel.from_pretrained(
+        train_config.model_name, config=config
+    )
 
     train_df = pd.read_csv(train_config.x_train_path)
     val_df = pd.read_csv(train_config.x_valid_path)
@@ -47,13 +51,13 @@ def train_model(train_config: RecconEmotionEntailmentArguments):
 
     train_config.len = len(train_df)
     train_config.train_args["eval_steps"] = (
-            train_config.len / train_config.train_args["per_device_train_batch_size"]
+        train_config.len / train_config.train_args["per_device_train_batch_size"]
     )
     train_config.train_args["warmup_steps"] = math.ceil(
         (
-                train_config.len
-                // train_config.train_args["gradient_accumulation_steps"]
-                * train_config.train_args["num_train_epochs"]
+            train_config.len
+            // train_config.train_args["gradient_accumulation_steps"]
+            * train_config.train_args["num_train_epochs"]
         )
         * train_config.train_args["warmup_ratio"]
     )

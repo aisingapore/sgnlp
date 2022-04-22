@@ -16,6 +16,8 @@ cache:
 
 run_non_slow_unit_tests:
   stage: unit_test_non_slow
+  tags:
+    - dind
   before_script:
     - python -m venv .venv
     - source .venv/bin/activate
@@ -29,6 +31,8 @@ run_non_slow_unit_tests:
 
 run_slow_unit_tests:
   stage: unit_test_slow
+  tags:
+    - dind
   when: manual
   before_script:
     - python -m venv .venv
@@ -45,6 +49,8 @@ run_slow_unit_tests:
 
 generate_demo_api_yaml:
   stage: pre
+  tags:
+    - dind
   image: alpine:latest
   script:
     - apk add -U jsonnet
@@ -55,6 +61,8 @@ generate_demo_api_yaml:
 
 generate_dev_demo_api_yaml:
   stage: pre
+  tags:
+    - dind
   image: alpine:latest
   script:
     - apk add -U jsonnet

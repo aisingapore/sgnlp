@@ -1,0 +1,15 @@
+CONCEPT				POLARITY		INTENSITY
+abandon				negative		-0.84
+abandoned			negative		-0.85
+abandoned_person		negative		-0.79
+abandoned_quarry		negative		-0.78
+abandonment			negative		-0.82
+abase				negative		-0.90
+abasement			negative		-0.90
+abash				negative		-0.77
+abashed				negative		-0.92
+abashment			negative		-0.76
+abasia				negative		-0.67
+abate				negative		-0.86
+abatement			negative		-0.85
+abattoir			negative		-0.77

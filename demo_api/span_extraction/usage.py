@@ -40,4 +40,5 @@ input_batch = {
 tensor_dict, evidences, examples, features = preprocessor(input_batch)
 raw_output = model(**tensor_dict)
 context, evidence_span, probability = postprocessor(
-    raw_output, evidences, examples, features)
+    raw_output, evidences, examples, features
+)

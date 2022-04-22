@@ -7,7 +7,7 @@ from ..utils import get_default_device
 
 
 class Bert:
-    MASK = '[MASK]'
+    MASK = "[MASK]"
     CLS = "[CLS]"
     SEP = "[SEP]"
 
@@ -40,9 +40,9 @@ class Bert:
         assert ids.size(1) < self.max_len
         if pad:
             padded_ids = torch.zeros(1, self.max_len).to(ids)
-            padded_ids[0, :ids.size(1)] = ids
+            padded_ids[0, : ids.size(1)] = ids
             mask = torch.zeros(1, self.max_len).to(ids)
-            mask[0, :ids.size(1)] = 1
+            mask[0, : ids.size(1)] = 1
             return padded_ids, mask
         else:
             return ids

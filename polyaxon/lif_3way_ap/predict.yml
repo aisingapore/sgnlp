@@ -1,0 +1,32 @@
+---
+version: 1
+
+kind: experiment
+
+build:
+  dockerfile: polyaxon/lif_3way_ap/experiment.Dockerfile
+
+environment:
+  persistence:
+    data: [ "100e-nlp-lab-data" ]
+  resources:
+    gpu:
+      requests: 1
+      limits: 1
+
+framework: pytorch
+
+logging:
+  level: INFO
+
+run:
+  cmd: allennlp predict \
+    /polyaxon-data/workspace/jonheng/lif-3way-ap/exp-3/model.tar.gz \
+    /polyaxon-data/workspace/jonheng/l2af/dataset/test_i.json \
+    --output-file /polyaxon-data/workspace/jonheng/lif-3way-ap/exp-3/test_i_predictions.json \
+    --batch-size 32 \
+    --silent \
+    --cuda-device 0 \
+    --use-dataset-reader \
+    --predictor lif_3way_ap_predictor \
+    --include-package sgnlp.models.lif_3way_ap
