@@ -13,11 +13,11 @@ extras_require = {
 setup(
     name="sgnlp",
     packages=find_packages(),
-    version="0.3.0.dev",
+    version="0.3.0",
     description="Machine learning models from Singapore's NLP research community",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    author="Jonathan Heng, Raymond Ng, Zhi Chong Tan, Benedict Lee",
+    author="Jonathan Heng, Raymond Ng, Zhi Chong Tan, Benedict Lee, Alon Tenzer",
     author_email="sg-nlp@aisingapore.org",
     keywords=["NLP", "machine learning", "deep learning"],
     install_requires=[
