@@ -60,6 +60,9 @@ pytest <path/to/script>
 - Update version in `setup.py` to the correct version
 - Commit the change and tag it in Github
 - Publish to PyPI
+- Update demo_api and gitlab pipelines accordingly to deploy to production.
+- Run production pipelines to build relevant demo apis.
+- Continue deployment process in frontend/helm repo.
 
 ## Publishing to PyPI
 
