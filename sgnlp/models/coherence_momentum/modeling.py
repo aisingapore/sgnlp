@@ -31,12 +31,10 @@ class MomentumModel(PreTrainedModel):
         self.queue = []
         self.queue_size = config.queue_size
         self.con_loss_weight = config.contrastive_loss_weight
-        self.negs = config.num_negs
+        self.num_negs = config.num_negs
         self.margin = config.margin
         self.cosim = nn.CosineSimilarity()
-        self.crossEntropy = nn.CrossEntropyLoss()
-        self.getTranspose = lambda x: torch.transpose(x, -2, -1)
-        self.subMargin = lambda z: z - config.margin
+        self.sub_margin = lambda z: z - config.margin
 
         self.conlinear = nn.Linear(hidden_size, 1)
 
@@ -77,7 +75,7 @@ class MomentumModel(PreTrainedModel):
         neg_moco_rep = list(map(self.get_momentum_rep, list(neg_docs)))
 
         if len(self.queue) >= self.queue_size:  # global negative queue size
-            del self.queue[: self.negs]
+            del self.queue[: self.num_negs]
         self.queue.extend(neg_moco_rep[0])
 
         pos_sim, neg_sims = self.get_cos_sim(pos_rep, pos_slice_rep)
@@ -97,14 +95,14 @@ class MomentumModel(PreTrainedModel):
         return pos_score.detach(), neg_scores[0].detach()
 
     def sim_contrastive_loss(self, pos_sim, neg_sims):
-        neg_sims_sub = torch.stack(list(map(self.subMargin, neg_sims))).view(-1)
+        neg_sims_sub = torch.stack(list(map(self.sub_margin, neg_sims))).view(-1)
         all_sims = torch.cat((neg_sims_sub, pos_sim), dim=-1)
         lsmax = -1 * F.log_softmax(all_sims, dim=-1)
         loss = lsmax[-1]
         return loss
 
     def contrastive_loss(self, pos_score, neg_scores):
-        neg_scores_sub = torch.stack(list(map(self.subMargin, neg_scores)))
+        neg_scores_sub = torch.stack(list(map(self.sub_margin, neg_scores)))
         all_scores = torch.cat((neg_scores_sub, pos_score), dim=-1)
         lsmax = -1 * F.log_softmax(all_scores, dim=-1)
         pos_loss = lsmax[-1]

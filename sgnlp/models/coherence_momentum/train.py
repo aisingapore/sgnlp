@@ -1,3 +1,4 @@
+import argparse
 import pickle
 import torch
 import time
@@ -9,6 +10,9 @@ from transformers import AdamW
 from torch.optim.swa_utils import SWALR
 from transformers import XLNetTokenizer
 from modeling import MomentumModel
+from sgnlp.models.coherence_momentum.config import CoherenceConfig
+from sgnlp.models.coherence_momentum.train_config import CoherenceMomentumTrainConfig
+from sgnlp.utils.train_config import load_train_config
 
 
 class MomentumDataset(Dataset):
@@ -130,9 +134,7 @@ class MomentumDataset(Dataset):
 
 
 class LoadData:
-    def __init__(
-            self, fname, batch_size, model, device, datatype, negs, max_len, model_type
-    ):
+    def __init__(self, fname, batch_size, model, device, datatype, negs, max_len):
         self.fname = fname
         self.batch_size = batch_size
         self.dataset = MomentumDataset(fname, model, device, datatype, negs, max_len)
@@ -151,70 +153,62 @@ class TrainMomentumModel:
             os.mkdir(output_dir)
         model_path = os.path.join(
             output_dir,
-            "{}_seed-{}_bs-{}_lr-{}_step-{}_type-{}_acc-{}.mom".format(
-                self.desc,
-                self.seed,
-                self.batch_size,
-                self.learning_rate,
-                step,
-                self.model_size,
-                accuracy,
-            ),
+            f"momentum_seed-{self.seed}_bs-{self.batch_size}_lr-{self.train_config.lr_start}_step-{step}_type-{self.model_size}_acc-{accuracy}",
         )
-        # torch.save(self.xlnet_model.state_dict(), model_path)
         self.xlnet_model.save_pretrained(model_path)
 
-    def __init__(self, args):
-        self.batch_size = args.batch_size
-        self.model_size = args.model_size
-        self.learning_rate = args.lr_start
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        self.train_file = args.train_file
-        self.dev_file = args.dev_file
-        if args.test_file:
-            self.test_file = args.test_file
-        else:
-            self.test_file = args.dev_file
-        self.negs = args.num_negs
-        self.rank_negs = args.num_rank_negs
-        self.train_steps = args.train_steps
-        self.margin = args.margin
-        self.desc = args.model_description
-        self.seed = args.seed
-        self.datatype = args.data_type
-        self.max_len = args.max_len
-        self.bestacc = 0.0
-        self.model_type = args.coherence_model_type
-
-        torch.manual_seed(args.seed)
-        torch.cuda.manual_seed_all(args.seed)
-
-        self.xlnet_model = MomentumModel(args)
-        self.xlnet_model.init_encoders()
-
-        self.output_dir = args.output_dir + datetime.datetime.now().strftime(
-            "%Y%m%d%H%M%S"
+    def __init__(self, model_config_path, train_config_path):
+        self.model_config = CoherenceConfig.from_pretrained(model_config_path)
+        self.train_config = load_train_config(
+            CoherenceMomentumTrainConfig, train_config_path
         )
 
+        self.model_size = self.model_config.model_size
+        self.num_negs = self.model_config.num_negs
+        self.max_len = self.model_config.max_len
+        self.rank_negs = self.model_config.num_rank_negs
+
+        self.dev_file = self.train_config.dev_file
+        if self.train_config.test_file:
+            self.test_file = self.train_config.test_file
+        else:
+            self.test_file = self.train_config.dev_file
+        self.output_dir = (
+            self.train_config.output_dir
+            + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        )
+        self.datatype = self.train_config.data_type
+        self.eval_interval = self.train_config.eval_interval
+        self.seed = self.train_config.seed
+        self.batch_size = self.train_config.batch_size
+        self.train_steps = self.train_config.train_steps
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        torch.manual_seed(self.seed)
+        torch.cuda.manual_seed_all(self.seed)
+
+        self.xlnet_model = MomentumModel(self.model_config)
+        self.xlnet_model.init_encoders()
         self.xlnet_model = self.xlnet_model.to(self.device)
 
-        self.optimizer = AdamW(self.xlnet_model.parameters(), lr=self.learning_rate)
+        self.optimizer = AdamW(
+            self.xlnet_model.parameters(), lr=self.train_config.lr_start
+        )
         self.scheduler = SWALR(
             self.optimizer,
             anneal_strategy="linear",
-            anneal_epochs=args.lr_anneal_epochs,
-            swa_lr=args.lr_end,
+            anneal_epochs=self.train_config.lr_anneal_epochs,
+            swa_lr=self.train_config.lr_end,
         )
-        self.total_loss = 0.0
 
-        self.eval_interval = args.eval_interval
+        self.total_loss = 0.0
+        self.bestacc = 0.0
 
     def get_ranked_negs(self, neg_scores):
         ranked_idx = sorted(
             range(len(neg_scores)), key=neg_scores.__getitem__, reverse=True
         )
-        hard_negs = ranked_idx[: self.negs]
+        hard_negs = ranked_idx[: self.num_negs]
         return hard_negs
 
     def get_next_train_data(self, processed_exploration_data):
@@ -237,7 +231,7 @@ class TrainMomentumModel:
 
                 next_neg_idx = self.get_ranked_negs(neg_scores)
 
-                if len(next_neg_idx) < self.negs:
+                if len(next_neg_idx) < self.num_negs:
                     continue
 
                 neg_data_list = torch.stack(
@@ -250,11 +244,11 @@ class TrainMomentumModel:
     def hard_negs_controller(self):
         start = time.time()
         train_data = MomentumDataset(
-            self.train_file,
+            self.train_config.train_file,
             self.model_size,
             self.device,
             self.datatype,
-            self.negs,
+            self.num_negs,
             self.max_len,
         )
         init_train_data = train_data.data[: self.train_steps]
@@ -272,10 +266,9 @@ class TrainMomentumModel:
 
             if iteration_index == 0:
                 processed_train_data_list = train_data.prepare_train_data(
-                    init_train_data, self.negs
+                    init_train_data, self.num_negs
                 )
                 self.train_xlnet_model(processed_train_data_list, iteration_index)
-                next_train_data = []
             else:
                 start_index = iteration_index * self.train_steps
                 end_index = start_index + self.train_steps
@@ -316,9 +309,6 @@ class TrainMomentumModel:
             self.total_loss += combined_loss.item()
 
     def eval_model(self, data_file, step, start):
-
-        print(self.desc, self.seed, "EVAL START")
-        batch_size = self.batch_size
         self.xlnet_model.eval()
         test_data = LoadData(
             data_file,
@@ -326,9 +316,8 @@ class TrainMomentumModel:
             self.model_size,
             self.device,
             self.datatype,
-            self.negs,
+            self.num_negs,
             self.max_len,
-            self.model_type,
         )
         test_loader = test_data.data_loader()
 
@@ -379,3 +368,16 @@ class TrainMomentumModel:
             )
 
         return
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train_config_file", type=str)
+    parser.add_argument("--model_config_file", type=str)
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    trainer = TrainMomentumModel(args.model_config_file, args.train_config_file)
