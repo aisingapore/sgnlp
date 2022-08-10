@@ -1,5 +1,15 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import json
 import copy
 import math
+import logging
+import tarfile
+import tempfile
+import shutil
 from dataclasses import dataclass
 
 import torch
@@ -9,7 +19,9 @@ from transformers import BertModel, PreTrainedModel, BertPreTrainedModel
 from transformers.file_utils import ModelOutput
 from transformers.models.bert.modeling_bert import BertPooler, BertIntermediate, BertOutput, BertSelfOutput
 
-from sgnlp.models.dual_bert.config import DualBertConfig
+from config import DualBertConfig
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -378,87 +390,213 @@ class DualBert(DualBertPreTrainedModel):
     def init_bert(self):
         self.bert = BertModel.from_pretrained("bert-base-uncased")
 
-    def forward(self, input_ids_buckets, segment_ids_buckets, input_mask_buckets, input_mask, stance_position,
-                stance_label_mask, stance_label_ids=None, rumor_label_ids=None):
-        # def forward(self, input_ids1, token_type_ids1, attention_mask1, input_ids2, token_type_ids2, attention_mask2,
-        #           input_ids3, token_type_ids3, attention_mask3, input_ids4, token_type_ids4, attention_mask4,
-        #          attention_mask, rumor_labels=None, stance_label_ids=None, stance_label_mask=None):
+#    def forward(self, input_ids_buckets, segment_ids_buckets, input_mask_buckets, input_mask, stance_position,
+#                stance_label_mask, stance_label_ids=None, rumor_label_ids=None):
+#        # def forward(self, input_ids1, token_type_ids1, attention_mask1, input_ids2, token_type_ids2, attention_mask2,
+#        #           input_ids3, token_type_ids3, attention_mask3, input_ids4, token_type_ids4, attention_mask4,
+#        #          attention_mask, rumor_labels=None, stance_label_ids=None, stance_label_mask=None):
+#
+#        output = DualBertModelOutput()
+#
+#        output_sequence = torch.tensor([], device=self.device, dtype=torch.float32)
+#        # for input_ids, token_type_ids, attention_mask in zip(processed_input["input_ids_buckets"], processed_input[
+#        #     "segment_ids_buckets"], processed_input["input_mask_buckets"]):
+#        num_buckets = 4
+#        for i in range(num_buckets):
+#            input_ids = input_ids_buckets[:, i].to(self.device)
+#            token_type_ids = segment_ids_buckets[:, i].to(self.device)
+#            attention_mask = input_mask_buckets[:, i].to(self.device)
+#
+#            tmp_model_output = self.bert(input_ids, token_type_ids, attention_mask, output_hidden_states=False)
+#            output_sequence = torch.cat((output_sequence, tmp_model_output.last_hidden_state), dim=1)
+#
+#        extended_attention_mask = input_mask.unsqueeze(1).unsqueeze(2)
+#        extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
+#        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
+#        extended_attention_mask = extended_attention_mask.to(self.device)
+#
+#        # for stance classification task
+#        # '''
+#        # ##add_output_layer = self.add_self_attention(sequence_output, extended_attention_mask)
+#        add_stance_bert_encoder, stance_attention_probs = self.add_stance_bert_attention(output_sequence,
+#                                                                                         extended_attention_mask)
+#        final_stance_text_output = add_stance_bert_encoder[-1]
+#        stance_attention = stance_attention_probs[-1]
+#        label_logit_output = self.stance_pooler(final_stance_text_output, self.max_tweet_num, self.max_tweet_length)
+#        sequence_stance_output = self.dropout(label_logit_output)
+#        output.stance_logits = self.stance_classifier(sequence_stance_output)
+#        # '''
+#
+#        add_rumor_bert_encoder, rumor_attention_probs = self.add_rumor_bert_attention(final_stance_text_output,
+#                                                                                      output_sequence,
+#                                                                                      extended_attention_mask)
+#        add_rumor_bert_text_output_layer = add_rumor_bert_encoder[-1]
+#        rumor_attention = rumor_attention_probs[-1]
+#
+#        # '''  add label attention layer to incorporate stance predictions for rumor verification
+#        extended_label_mask = stance_label_mask.unsqueeze(1).unsqueeze(2)
+#        extended_label_mask = extended_label_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
+#        extended_label_mask = (1.0 - extended_label_mask) * -10000.0
+#        extended_label_mask = extended_label_mask.to(self.device)
+#
+#        rumor_output = self.rumor_pooler(add_rumor_bert_text_output_layer)
+#        tweet_level_output = self.stance_pooler(add_rumor_bert_text_output_layer, self.max_tweet_num,
+#                                                self.max_tweet_length)
+#        final_rumor_output = torch.cat((tweet_level_output, output.stance_logits), dim=-1)  # stance_logits
+#        combined_layer, attention_probs = self.add_self_attention(final_rumor_output, extended_label_mask)
+#        hybrid_rumor_stance_output = self.hybrid_rumor_pooler(combined_layer)
+#        hybrid_conversion_output = self.linear_conversion(hybrid_rumor_stance_output)
+#        final_rumor_text_output = torch.cat((rumor_output, hybrid_conversion_output), dim=-1)
+#        rumor_pooled_output = self.dropout(final_rumor_text_output)
+#        output.rumour_logits = self.rumor_classifier(rumor_pooled_output)
+#        # '''
+#
+#        if rumor_label_ids is not None:
+#            # alpha = 0.1
+#            loss_fct = CrossEntropyLoss()
+#            output.rumour_loss = loss_fct(output.rumour_logits.view(-1, self.rumor_num_labels).to(self.device), rumor_label_ids.view(-1).to(self.device))
+#            output.attention_probs = attention_probs[:, 0, 0, :]
+#            # sim_loss = self.cos_sim(stance_attention, rumor_attention)
+#            # return loss + alpha*sim_loss
+#
+#        if stance_label_ids is not None:  # for stance classification task
+#            loss_fct = CrossEntropyLoss()
+#            # Only keep active parts of the loss
+#            if stance_label_mask is not None:
+#                active_loss = stance_label_mask.view(-1) == 1
+#                # print(active_loss)
+#                # print(logits)
+#                active_logits = output.stance_logits.view(-1, self.stance_num_labels)[active_loss].to(self.device)
+#                active_labels = stance_label_ids.view(-1)[active_loss].to(self.device)
+#                loss = loss_fct(active_logits, active_labels)
+#            else:
+#                loss = loss_fct(output.stance_logits.view(-1, self.stance_num_labels).to(self.device), stance_label_ids.view(-1).to(self.device))
+#            output.stance_loss = loss
+#
+#        return output
 
-        output = DualBertModelOutput()
+    def forward(self, input_ids1, token_type_ids1, attention_mask1, input_ids2, token_type_ids2, attention_mask2,
+                input_ids3, token_type_ids3, attention_mask3, input_ids4, token_type_ids4, attention_mask4,
+                attention_mask, rumor_labels=None, task=None, stance_labels=None, stance_label_mask=None):
 
-        output_sequence = torch.tensor([], device=self.device, dtype=torch.int32)
-        # for input_ids, token_type_ids, attention_mask in zip(processed_input["input_ids_buckets"], processed_input[
-        #     "segment_ids_buckets"], processed_input["input_mask_buckets"]):
-        num_buckets = 4
-        for i in range(num_buckets):
-            input_ids = input_ids_buckets[:, i].to(self.device)
-            token_type_ids = segment_ids_buckets[:, i].to(self.device)
-            attention_mask = input_mask_buckets[:, i].to(self.device)
+        sequence_output1 = self.bert(input_ids1, token_type_ids1, attention_mask1,output_hidden_states=False)
+        sequence_output2 = self.bert(input_ids2, token_type_ids2, attention_mask2,output_hidden_states=False)
+        sequence_output3 = self.bert(input_ids3, token_type_ids3, attention_mask3,output_hidden_states=False)
+        sequence_output4 = self.bert(input_ids4, token_type_ids4, attention_mask4,output_hidden_states=False)
 
-            tmp_model_output = self.bert(input_ids, token_type_ids, attention_mask, output_hidden_states=False)
-            output_sequence = torch.cat((output_sequence, tmp_model_output.last_hidden_state), dim=1)
+        tmp_sequence = torch.cat((sequence_output1.last_hidden_state, sequence_output2.last_hidden_state), dim=1)
+        tmp_sequence = torch.cat((tmp_sequence, sequence_output3.last_hidden_state), dim=1)
+        sequence_output = torch.cat((tmp_sequence, sequence_output4.last_hidden_state), dim=1)
 
-        extended_attention_mask = input_mask.unsqueeze(1).unsqueeze(2)
-        extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
+        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
+        extended_attention_mask = extended_attention_mask.to(
+            dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-        extended_attention_mask = extended_attention_mask.to(self.device)
 
         # for stance classification task
         # '''
         # ##add_output_layer = self.add_self_attention(sequence_output, extended_attention_mask)
-        add_stance_bert_encoder, stance_attention_probs = self.add_stance_bert_attention(output_sequence,
+        add_stance_bert_encoder, stance_attention_probs = self.add_stance_bert_attention(sequence_output,
                                                                                          extended_attention_mask)
         final_stance_text_output = add_stance_bert_encoder[-1]
         stance_attention = stance_attention_probs[-1]
         label_logit_output = self.stance_pooler(final_stance_text_output, self.max_tweet_num, self.max_tweet_length)
         sequence_stance_output = self.dropout(label_logit_output)
-        output.stance_logits = self.stance_classifier(sequence_stance_output)
+        stance_logits = self.stance_classifier(sequence_stance_output)
         # '''
 
-        add_rumor_bert_encoder, rumor_attention_probs = self.add_rumor_bert_attention(final_stance_text_output,
-                                                                                      output_sequence,
-                                                                                      extended_attention_mask)
-        add_rumor_bert_text_output_layer = add_rumor_bert_encoder[-1]
-        rumor_attention = rumor_attention_probs[-1]
+        if task is None:  # for rumor detection task
+            # '''
+            add_rumor_bert_encoder, rumor_attention_probs = self.add_rumor_bert_attention(final_stance_text_output,
+                                                                                          sequence_output,
+                                                                                          extended_attention_mask)
+            add_rumor_bert_text_output_layer = add_rumor_bert_encoder[-1]
+            rumor_attention = rumor_attention_probs[-1]
 
-        # '''  add label attention layer to incorporate stance predictions for rumor verification
-        extended_label_mask = stance_label_mask.unsqueeze(1).unsqueeze(2)
-        extended_label_mask = extended_label_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
-        extended_label_mask = (1.0 - extended_label_mask) * -10000.0
-        extended_label_mask = extended_label_mask.to(self.device)
+            # '''  add label attention layer to incorporate stance predictions for rumor verification
+            extended_label_mask = stance_label_mask.unsqueeze(1).unsqueeze(2)
+            extended_label_mask = extended_label_mask.to(
+                dtype=next(self.parameters()).dtype)  # fp16 compatibility
+            extended_label_mask = (1.0 - extended_label_mask) * -10000.0
 
-        rumor_output = self.rumor_pooler(add_rumor_bert_text_output_layer)
-        tweet_level_output = self.stance_pooler(add_rumor_bert_text_output_layer, self.max_tweet_num,
-                                                self.max_tweet_length)
-        final_rumor_output = torch.cat((tweet_level_output, output.stance_logits), dim=-1)  # stance_logits
-        combined_layer, attention_probs = self.add_self_attention(final_rumor_output, extended_label_mask)
-        hybrid_rumor_stance_output = self.hybrid_rumor_pooler(combined_layer)
-        hybrid_conversion_output = self.linear_conversion(hybrid_rumor_stance_output)
-        final_rumor_text_output = torch.cat((rumor_output, hybrid_conversion_output), dim=-1)
-        rumor_pooled_output = self.dropout(final_rumor_text_output)
-        output.rumour_logits = self.rumor_classifier(rumor_pooled_output)
-        # '''
+            # previous version using label attention
+            '''
+            final_rumor_text_output = self.rumor_pooler(add_rumor_bert_text_output_layer)
+            rumor_pooled_output = self.dropout(final_rumor_text_output)
+            stance_label_layer, attention_probs = self.add_self_attention(stance_logits, extended_label_mask)
+            stance_attention_vectors = stance_label_layer[:, 0]
+            final_rumor_output = torch.cat((rumor_pooled_output, stance_attention_vectors), dim=-1)
+            logits = self.rumor_classifier(final_rumor_output)
+            '''
 
-        if rumor_label_ids is not None:
-            # alpha = 0.1
-            loss_fct = CrossEntropyLoss()
-            output.rumour_loss = loss_fct(output.rumour_logits.view(-1, self.rumor_num_labels).to(self.device), rumor_label_ids.view(-1).to(self.device))
-            output.attention_probs = attention_probs[:, 0, 0, :]
-            # sim_loss = self.cos_sim(stance_attention, rumor_attention)
-            # return loss + alpha*sim_loss
+            # new version
+            '''
+            tweet_level_output = self.stance_pooler(add_rumor_bert_text_output_layer, self.max_tweet_num,
+                                                    self.max_tweet_length)
+            final_rumor_output = torch.cat((tweet_level_output, stance_logits), dim=-1) # stance_logits
+            combined_layer, attention_probs = self.add_self_attention(final_rumor_output, extended_label_mask)
+            final_rumor_text_output = self.rumor_pooler(combined_layer)
+            rumor_pooled_output = self.dropout(final_rumor_text_output)
+            logits = self.rumor_classifier(rumor_pooled_output)
+            '''
 
-        if stance_label_ids is not None:  # for stance classification task
-            loss_fct = CrossEntropyLoss()
-            # Only keep active parts of the loss
-            if stance_label_mask is not None:
-                active_loss = stance_label_mask.view(-1) == 1
-                # print(active_loss)
-                # print(logits)
-                active_logits = output.stance_logits.view(-1, self.stance_num_labels)[active_loss].to(self.device)
-                active_labels = stance_label_ids.view(-1)[active_loss].to(self.device)
-                loss = loss_fct(active_logits, active_labels)
+            # Version 3
+            '''
+            hybrid_stance_output = torch.cat((sequence_stance_output, stance_logits), dim=-1)  # stance_logits
+            final_rumor_text_output = self.rumor_pooler(add_rumor_bert_text_output_layer)
+            rumor_pooled_output = self.dropout(final_rumor_text_output)
+            stance_label_layer, attention_probs = self.add_self_attention(hybrid_stance_output, extended_label_mask)
+            stance_attention_vectors = stance_label_layer[:, 0]
+            final_rumor_output = torch.cat((rumor_pooled_output, stance_attention_vectors), dim=-1)
+            logits = self.rumor_classifier(final_rumor_output)
+            '''
+            # Version 4
+            # 
+            rumor_output = self.rumor_pooler(add_rumor_bert_text_output_layer)
+            tweet_level_output = self.stance_pooler(add_rumor_bert_text_output_layer, self.max_tweet_num,
+                                                    self.max_tweet_length)
+            final_rumor_output = torch.cat((tweet_level_output, stance_logits), dim=-1) # stance_logits
+            combined_layer, attention_probs = self.add_self_attention(final_rumor_output, extended_label_mask)
+            hybrid_rumor_stance_output = self.hybrid_rumor_pooler(combined_layer)
+            hybrid_conversion_output = self.linear_conversion(hybrid_rumor_stance_output)
+            final_rumor_text_output = torch.cat((rumor_output, hybrid_conversion_output), dim=-1)
+            rumor_pooled_output = self.dropout(final_rumor_text_output)
+            logits = self.rumor_classifier(rumor_pooled_output)
+            # 
+
+            if rumor_labels is not None:
+                #alpha = 0.1
+                loss_fct = CrossEntropyLoss()
+                loss = loss_fct(logits.view(-1, self.rumor_num_labels), rumor_labels.view(-1))
+                #sim_loss = self.cos_sim(stance_attention, rumor_attention)
+                #return loss + alpha*sim_loss
+                return loss
             else:
-                loss = loss_fct(output.stance_logits.view(-1, self.stance_num_labels).to(self.device), stance_label_ids.view(-1).to(self.device))
-            output.stance_loss = loss
+                #return logits
+                return logits, attention_probs[:, 0, 0, :]
+                # fisrt 0 denotes head, second 0 denotes the first position's attention over all the tweets
+        else:
+            # for stance classification task
 
-        return output
+            # label_logit_output = self.stance_pooler(sequence_output)
+            '''
+            label_logit_output = self.stance_pooler(final_stance_text_output)
+            sequence_stance_output = self.dropout(label_logit_output)
+            stance_logits = self.stance_classifier(sequence_stance_output)
+            '''
+
+            if stance_labels is not None:  # for stance classification task
+                loss_fct = CrossEntropyLoss()
+                # Only keep active parts of the loss
+                if stance_label_mask is not None:
+                    active_loss = stance_label_mask.view(-1) == 1
+                    # print(active_loss)
+                    # print(logits)
+                    active_logits = stance_logits.view(-1, self.stance_num_labels)[active_loss]
+                    active_labels = stance_labels.view(-1)[active_loss]
+                    loss = loss_fct(active_logits, active_labels)
+                else:
+                    loss = loss_fct(stance_logits.view(-1, self.stance_num_labels), stance_labels.view(-1))
+                return loss
+            else:
+                return stance_logits

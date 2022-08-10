@@ -28,16 +28,16 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from torch.utils.data.distributed import DistributedSampler
 import torch.nn.functional as F
 
-from sgnlp.models.dual_bert.config import DualBertConfig
-from .utils import classification_report
+from config import DualBertConfig
+from utils import classification_report
 
-from .modeling import DualBert
-from transformers import AdamW
-from .optimization import BertAdam
-from .preprocess import prepare_data_for_training, InputExample, DualBertPreprocessor
+from modeling import DualBert
+from transformers import AdamW, BertTokenizer
+from optimization import BertAdam
+from preprocess import prepare_data_for_training, InputExample, DualBertPreprocessor
 from sklearn.metrics import precision_recall_fscore_support
 
-from .train_args import CustomDualBertTrainConfig
+from train_args import CustomDualBertTrainConfig
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
@@ -245,16 +245,26 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
     #     rumor_processor, stance_processor, tokenizer, train_config, model_config
     # )
 
+    if tokenizer is not None:
+        pass
+    else:
+        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased",do_lower_case=True)
+
+
     preprocessed_data = prepare_data_for_training(
         rumor_processor, stance_processor, tokenizer, train_config, model_config
     )
 
-    rumor_train_dataset = DualBertDataset(preprocessed_data["rumor_train_features"])
-    stance_train_dataset = DualBertDataset(preprocessed_data["stance_train_features"])
-    rumor_eval_dataset = DualBertDataset(preprocessed_data["rumor_eval_features"])
-    stance_eval_dataset = DualBertDataset(preprocessed_data["stance_eval_features"])
-    rumor_test_dataset = DualBertDataset(preprocessed_data["rumor_test_features"])
-    stance_test_dataset = DualBertDataset(preprocessed_data["stance_test_features"])
+    # rumor_train_dataset = DualBertDataset(preprocessed_data["rumor_train_features"])
+    # stance_train_dataset = DualBertDataset(preprocessed_data["stance_train_features"])
+    # rumor_eval_dataset = DualBertDataset(preprocessed_data["rumor_eval_features"])
+    # stance_eval_dataset = DualBertDataset(preprocessed_data["stance_eval_features"])
+    # rumor_test_dataset = DualBertDataset(preprocessed_data["rumor_test_features"])
+    # stance_test_dataset = DualBertDataset(preprocessed_data["stance_test_features"])
+
+    train_dataset = preprocessed_data["train_features"]
+    eval_dataset = preprocessed_data["eval_features"]
+    test_dataset = preprocessed_data["test_features"]
 
     if train_config.local_rank == -1 or train_config.no_cuda:
         device = torch.device(
@@ -307,15 +317,20 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
 
     # Prepare model
     print("The current multi-task learning model is our Dual Bert model...")
-    config = DualBertConfig(
-        rumor_num_labels=train_config.rumor_num_labels,
-        stance_num_labels=train_config.stance_num_labels,
-        max_tweet_num=train_config.max_tweet_num,
-        max_tweet_length=train_config.max_tweet_length,
-        convert_size=train_config.convert_size,
-    )
-    model = DualBert(config)
-    model.init_bert()
+  #  config = DualBertConfig(
+  #      rumor_num_labels=train_config.rumor_num_labels,
+  #      stance_num_labels=train_config.stance_num_labels,
+  #      max_tweet_num=train_config.max_tweet_num,
+  #      max_tweet_length=train_config.max_tweet_length,
+  #      convert_size=train_config.convert_size,
+  #  )
+  #  model = DualBert(config)
+  #  model.init_bert()
+    model = DualBert.from_pretrained(train_config.bert_model,
+                                     rumor_num_labels=train_config.rumor_num_labels,stance_num_labels=train_config.stance_num_labels,
+                                     max_tweet_num=train_config.max_tweet_num, max_tweet_length=train_config.max_tweet_length,
+                                     convert_size=train_config.convert_size)
+
 
     if train_config.fp16:
         model.half()
@@ -349,27 +364,29 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             "weight_decay": 0.0,
         },
     ]
+
     t_total = preprocessed_data["num_train_steps"]
+
     if train_config.local_rank != -1:
         t_total = t_total // torch.distributed.get_world_size()
 
-    optimizer = AdamW(
-        optimizer_grouped_parameters,
-        lr=train_config.learning_rate,
-    )
-    stance_optimizer = AdamW(
-        optimizer_grouped_parameters,
-        lr=train_config.learning_rate,
-    )
+    #optimizer = AdamW(
+    #    optimizer_grouped_parameters,
+    #    lr=train_config.learning_rate,
+    #)
+    #stance_optimizer = AdamW(
+    #    optimizer_grouped_parameters,
+    #    lr=train_config.learning_rate,
+    #)
     # For testing with original optimizer
-    # optimizer = BertAdam(optimizer_grouped_parameters,
-    #                      lr=train_config.learning_rate,
-    #                      warmup=0.1,
-    #                      t_total=t_total)
-    # stance_optimizer = BertAdam(optimizer_grouped_parameters,
-    #                             lr=train_config.learning_rate,
-    #                             warmup=0.1,
-    #                             t_total=t_total)
+    optimizer = BertAdam(optimizer_grouped_parameters,
+                         lr=train_config.learning_rate,
+                         warmup=0.1,
+                         t_total=t_total)
+    stance_optimizer = BertAdam(optimizer_grouped_parameters,
+                                lr=train_config.learning_rate,
+                                warmup=0.1,
+                                t_total=t_total)
 
     global_step = 0
     nb_tr_steps = 0
@@ -379,37 +396,54 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
         print("training data")
 
         if train_config.local_rank == -1:
-            rumor_train_sampler = RandomSampler(rumor_train_dataset)
-            stance_train_sampler = RandomSampler(stance_train_dataset)
+            # rumor_train_sampler = RandomSampler(rumor_train_dataset)
+            # stance_train_sampler = RandomSampler(stance_train_dataset)
+            train_sampler = RandomSampler(train_dataset)
         else:
-            rumor_train_sampler = DistributedSampler(rumor_train_dataset)
-            stance_train_sampler = DistributedSampler(stance_train_dataset)
+            # rumor_train_sampler = DistributedSampler(rumor_train_dataset)
+            # stance_train_sampler = DistributedSampler(stance_train_dataset)
+            train_sampler = DistributedSampler(train_dataset)
 
-        rumor_train_dataloader = DataLoader(
-            rumor_train_dataset, sampler=rumor_train_sampler, batch_size=train_config.train_batch_size
-        )
-        stance_train_dataloader = DataLoader(
-            stance_train_dataset, sampler=stance_train_sampler, batch_size=train_config.train_batch_size
-        )
+        # rumor_train_dataloader = DataLoader(
+        #     rumor_train_dataset, sampler=rumor_train_sampler, batch_size=train_config.train_batch_size
+        # )
+        # stance_train_dataloader = DataLoader(
+        #     stance_train_dataset, sampler=stance_train_sampler, batch_size=train_config.train_batch_size
+        # )
 
-        # Run prediction for full data
-        rumor_eval_sampler = SequentialSampler(rumor_eval_dataset)
-        rumor_eval_dataloader = DataLoader(
-            rumor_eval_dataset, sampler=rumor_eval_sampler, batch_size=train_config.eval_batch_size
-        )
-        stance_eval_sampler = SequentialSampler(stance_eval_dataset)
-        stance_eval_dataloader = DataLoader(
-            stance_eval_dataset, sampler=stance_eval_sampler, batch_size=train_config.eval_batch_size
+        train_dataloader = DataLoader(
+            train_dataset, sampler=train_sampler, batch_size=train_config.train_batch_size
         )
 
         # Run prediction for full data
-        rumor_test_sampler = SequentialSampler(rumor_test_dataset)
-        rumor_test_dataloader = DataLoader(
-            rumor_test_dataset, sampler=rumor_test_sampler, batch_size=train_config.eval_batch_size
+        # rumor_eval_sampler = SequentialSampler(rumor_eval_dataset)
+        # rumor_eval_dataloader = DataLoader(
+        #     rumor_eval_dataset, sampler=rumor_eval_sampler, batch_size=train_config.eval_batch_size
+        # )
+        # stance_eval_sampler = SequentialSampler(stance_eval_dataset)
+        # stance_eval_dataloader = DataLoader(
+        #     stance_eval_dataset, sampler=stance_eval_sampler, batch_size=train_config.eval_batch_size
+        # )
+
+        eval_sampler = SequentialSampler(eval_dataset)
+        eval_dataloader = DataLoader(
+            eval_dataset, sampler=eval_sampler, batch_size=train_config.eval_batch_size
         )
-        stance_test_sampler = SequentialSampler(stance_test_dataset)
-        stance_test_dataloader = DataLoader(
-            stance_test_dataset, sampler=stance_test_sampler, batch_size=train_config.eval_batch_size
+
+
+        # Run prediction for full data
+        # rumor_test_sampler = SequentialSampler(rumor_test_dataset)
+        # rumor_test_dataloader = DataLoader(
+        #     rumor_test_dataset, sampler=rumor_test_sampler, batch_size=train_config.eval_batch_size
+        # )
+        # stance_test_sampler = SequentialSampler(stance_test_dataset)
+        # stance_test_dataloader = DataLoader(
+        #     stance_test_dataset, sampler=stance_test_sampler, batch_size=train_config.eval_batch_size
+        # )
+
+        test_sampler = SequentialSampler(test_dataset)
+        test_dataloader = DataLoader(
+            test_dataset, sampler=test_sampler, batch_size=train_config.eval_batch_size
         )
 
         max_acc_f1 = 0.0
@@ -425,10 +459,25 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             stance_tr_loss = 0
             nb_tr_examples, nb_tr_steps = 0, 0
             stance_nb_tr_examples, stance_nb_tr_steps = 0, 0
-            for step, (rumor_batch, stance_batch) in enumerate(
-                    tqdm(zip(rumor_train_dataloader, stance_train_dataloader), desc="Iteration")):
-                rumor_batch = {k: v.to(device) for k, v in rumor_batch.items()}
-                stance_batch = {k: v.to(device) for k, v in stance_batch.items()}
+
+            for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
+                batch = tuple(t.to(device) for t in batch)
+                input_ids1, input_mask1, segment_ids1, input_ids2, input_mask2, segment_ids2, \
+                input_ids3, input_mask3, segment_ids3, input_ids4, input_mask4, segment_ids4, \
+                input_mask, label_ids, label_mask, stance_input_ids1, stance_input_mask1, stance_segment_ids1, \
+                stance_input_ids2, stance_input_mask2, stance_segment_ids2, stance_input_ids3, stance_input_mask3, \
+                stance_segment_ids3, stance_input_ids4, stance_input_mask4, stance_segment_ids4, \
+                stance_input_mask, stance_label_ids, stance_label_mask = batch
+
+                # optimize rumor detection task
+                loss = model(input_ids1, segment_ids1, input_mask1, input_ids2, segment_ids2, input_mask2,
+                             input_ids3, segment_ids3, input_mask3, input_ids4, segment_ids4, input_mask4,
+                             input_mask, rumor_labels=label_ids, stance_label_mask=label_mask)
+
+            # for step, (rumor_batch, stance_batch) in enumerate(
+            #         tqdm(zip(rumor_train_dataloader, stance_train_dataloader), desc="Iteration")):
+            #     rumor_batch = {k: v.to(device) for k, v in rumor_batch.items()}
+            #     stance_batch = {k: v.to(device) for k, v in stance_batch.items()}
                 # (
                 #     input_ids1,
                 #     input_mask1,
@@ -463,7 +512,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                 # ) = batch
 
                 # optimize rumor detection task
-                tmp_model_output = model(**rumor_batch)
+                # tmp_model_output = model(**rumor_batch)
                 # tmp_model_output = model(
                 #     input_ids1,
                 #     segment_ids1,
@@ -481,7 +530,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                 #     rumor_labels=label_ids,
                 #     stance_label_mask=label_mask,
                 # )
-                loss = tmp_model_output.rumour_loss
+                # loss = tmp_model_output.rumour_loss
 
                 if n_gpu > 1:
                     loss = loss.mean()  # mean() to average on multi-gpu.
@@ -494,8 +543,8 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                     loss.backward()
 
                 tr_loss += loss.item()
-                # nb_tr_examples += input_ids1.size(0)
-                nb_tr_examples += rumor_batch["input_ids_buckets"][0].size(0)
+                nb_tr_examples += input_ids1.size(0)
+                # nb_tr_examples += rumor_batch["input_ids_buckets"].size(0)
                 nb_tr_steps += 1
                 if (step + 1) % train_config.gradient_accumulation_steps == 0:
                     # modify learning rate with special warm up BERT uses
@@ -509,7 +558,15 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                     global_step += 1
 
                 # optimize stance classification task
-                tmp_model_output = model(**stance_batch)
+
+                stance_loss = model(stance_input_ids1, stance_segment_ids1, stance_input_mask1, stance_input_ids2,
+                                    stance_segment_ids2, stance_input_mask2, stance_input_ids3, stance_segment_ids3,
+                                    stance_input_mask3, stance_input_ids4, stance_segment_ids4, stance_input_mask4,
+                                    stance_input_mask,
+                                    task='stance', stance_labels=stance_label_ids,
+                                    stance_label_mask=stance_label_mask)
+
+                # tmp_model_output = model(**stance_batch)
                 # tmp_model_output = model(
                 #     stance_input_ids1,
                 #     stance_segment_ids1,
@@ -527,7 +584,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                 #     stance_labels=stance_label_ids,
                 #     stance_label_mask=stance_label_mask,
                 # )
-                stance_loss = tmp_model_output.stance_loss
+                # stance_loss = tmp_model_output.stance_loss
                 if n_gpu > 1:
                     stance_loss = stance_loss.mean()  # mean() to average on multi-gpu.
                 if train_config.gradient_accumulation_steps > 1:
@@ -540,7 +597,8 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
 
                 stance_tr_loss += stance_loss.item()
                 # stance_nb_tr_examples += stance_input_ids1.size(0)
-                stance_nb_tr_examples += stance_batch["input_ids_buckets"][0].size(0)
+                # stance_nb_tr_examples += stance_batch["input_ids_buckets"].size(0)
+                stance_nb_tr_examples += stance_input_ids1.size(0)
                 stance_nb_tr_steps += 1
                 if (step + 1) % train_config.gradient_accumulation_steps == 0:
                     # modify learning rate with special warm up BERT uses
@@ -636,18 +694,71 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             #     stance_label_ids = stance_label_ids.to(device)
             #     # stance_stance_position = stance_stance_position.to(device)
             #     stance_label_mask = stance_label_mask.to(device)
-            for rumor_batch, stance_batch in tqdm(zip(rumor_eval_dataloader, stance_eval_dataloader),
-                                                  desc="Evaluating"):
+            # for rumor_batch, stance_batch in tqdm(zip(rumor_eval_dataloader, stance_eval_dataloader),
+            #                                      desc="Evaluating"):
+            #    with torch.no_grad():
+            #        rumor_batch = {k: v.to(device) for k, v in rumor_batch.items()}
+            #        tmp_model_output = model(**rumor_batch)
+            #        tmp_eval_loss = tmp_model_output.rumour_loss
+            #        logits = tmp_model_output.rumour_logits
+            #        stance_batch = {k: v.to(device) for k, v in stance_batch.items()}
+            #        tmp_model_output = model(**stance_batch)
+            #        stance_logits = tmp_model_output.stance_logits
+
+            for input_ids1, input_mask1, segment_ids1, input_ids2, input_mask2, segment_ids2, \
+                input_ids3, input_mask3, segment_ids3, input_ids4, input_mask4, segment_ids4, \
+                input_mask, label_ids, label_mask, stance_input_ids1, stance_input_mask1, stance_segment_ids1, \
+                stance_input_ids2, stance_input_mask2, stance_segment_ids2, stance_input_ids3, stance_input_mask3, \
+                stance_segment_ids3, stance_input_ids4, stance_input_mask4, stance_segment_ids4, \
+                stance_input_mask, stance_label_ids, stance_label_mask in tqdm(eval_dataloader, desc="Evaluating"):
+                input_ids1 = input_ids1.to(device)
+                input_mask1 = input_mask1.to(device)
+                segment_ids1 = segment_ids1.to(device)
+                input_ids2 = input_ids2.to(device)
+                input_mask2 = input_mask2.to(device)
+                segment_ids2 = segment_ids2.to(device)
+                input_ids3 = input_ids3.to(device)
+                input_mask3 = input_mask3.to(device)
+                segment_ids3 = segment_ids3.to(device)
+                input_ids4 = input_ids4.to(device)
+                input_mask4 = input_mask4.to(device)
+                segment_ids4 = segment_ids4.to(device)
+                input_mask = input_mask.to(device)
+                label_ids = label_ids.to(device)
+                label_mask = label_mask.to(device)
+
+                stance_input_ids1 = stance_input_ids1.to(device)
+                stance_input_mask1 = stance_input_mask1.to(device)
+                stance_segment_ids1 = stance_segment_ids1.to(device)
+                stance_input_ids2 = stance_input_ids2.to(device)
+                stance_input_mask2 = stance_input_mask2.to(device)
+                stance_segment_ids2 = stance_segment_ids2.to(device)
+                stance_input_ids3 = stance_input_ids3.to(device)
+                stance_input_mask3 = stance_input_mask3.to(device)
+                stance_segment_ids3 = stance_segment_ids3.to(device)
+                stance_input_ids4 = stance_input_ids4.to(device)
+                stance_input_mask4 = stance_input_mask4.to(device)
+                stance_segment_ids4 = stance_segment_ids4.to(device)
+                stance_input_mask = stance_input_mask.to(device)
+                stance_label_ids = stance_label_ids.to(device)
+                #stance_stance_position = stance_stance_position.to(device)
+                stance_label_mask = stance_label_mask.to(device)
+
                 with torch.no_grad():
-                    rumor_batch = {k: v.to(device) for k, v in rumor_batch.items()}
-                    tmp_model_output = model(**rumor_batch)
-                    tmp_eval_loss = tmp_model_output.rumour_loss
-                    logits = tmp_model_output.rumour_logits
-                    stance_logits = tmp_model_output.stance_logits
+                    tmp_eval_loss = model(input_ids1, segment_ids1, input_mask1, input_ids2, segment_ids2, input_mask2,
+                                   input_ids3, segment_ids3, input_mask3, input_ids4, segment_ids4, input_mask4,
+                                   input_mask, label_ids, stance_label_mask=label_mask)
+                    logits, _ = model(input_ids1, segment_ids1, input_mask1, input_ids2, segment_ids2, input_mask2,
+                                   input_ids3, segment_ids3, input_mask3, input_ids4, segment_ids4, input_mask4,
+                                   input_mask, stance_label_mask=label_mask)
+                    stance_logits = model(stance_input_ids1, stance_segment_ids1, stance_input_mask1, stance_input_ids2,
+                                    stance_segment_ids2, stance_input_mask2, stance_input_ids3, stance_segment_ids3,
+                                    stance_input_mask3, stance_input_ids4, stance_segment_ids4, stance_input_mask4,
+                                    stance_input_mask, task='stance', stance_label_mask=stance_label_mask)
 
                 logits = logits.detach().cpu().numpy()
-                # label_ids = label_ids.to("cpu").numpy()
-                label_ids = rumor_batch["rumor_label_ids"].to("cpu").numpy()
+                label_ids = label_ids.to("cpu").numpy()
+                # label_ids = rumor_batch["rumor_label_ids"].to("cpu").numpy()
                 true_label_list.append(label_ids)
                 pred_label_list.append(logits)
                 tmp_eval_accuracy = accuracy(logits, label_ids)
@@ -657,10 +768,10 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
 
                 stance_logits = torch.argmax(F.log_softmax(stance_logits, dim=2), dim=2)
                 stance_logits = stance_logits.detach().cpu().numpy()
-                # stance_label_ids = stance_label_ids.to("cpu").numpy()
-                stance_label_ids = stance_batch["stance_label_ids"].to("cpu").numpy()
-                # stance_label_mask = stance_label_mask.to("cpu").numpy()
-                stance_label_mask = stance_batch["stance_label_mask"].to("cpu").numpy()
+                stance_label_ids = stance_label_ids.to("cpu").numpy()
+                # stance_label_ids = stance_batch["stance_label_ids"].to("cpu").numpy()
+                stance_label_mask = stance_label_mask.to("cpu").numpy()
+                # stance_label_mask = stance_batch["stance_label_mask"].to("cpu").numpy()
                 for i, mask in enumerate(stance_label_mask):
                     temp_1 = []
                     temp_2 = []
@@ -674,7 +785,8 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                     stance_y_pred.append(temp_2)
 
                 # nb_eval_examples += input_ids1.size(0)
-                nb_eval_examples += rumor_batch["input_ids_buckets"][0].size(0)
+                # nb_eval_examples += rumor_batch["input_ids_buckets"].size(0)
+                nb_eval_examples += input_ids1.size(0)
                 nb_eval_steps += 1
 
             eval_loss = eval_loss / nb_eval_steps
@@ -805,11 +917,12 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             #     stance_label_ids = stance_label_ids.to(device)
             #     # stance_stance_position = stance_stance_position.to(device)
             #     stance_label_mask = stance_label_mask.to(device)
-            for (rumor_batch, stance_batch) in tqdm(zip(rumor_test_dataloader, stance_test_dataloader),
-                                                    desc="Evaluating"):
+            # for (rumor_batch, stance_batch) in tqdm(zip(rumor_test_dataloader, stance_test_dataloader),
+            #                                         desc="Evaluating"):
 
-                with torch.no_grad():
-                    tmp_model_output = model(**rumor_batch)
+            #     with torch.no_grad():
+            #         rumor_batch = {k: v.to(device) for k, v in rumor_batch.items()}
+            #         tmp_model_output = model(**rumor_batch)
                     # tmp_model_output = model(
                     #     input_ids1,
                     #     segment_ids1,
@@ -827,10 +940,11 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                     #     label_ids,
                     #     stance_label_mask=label_mask,
                     # )
-                    tmp_eval_loss = tmp_model_output.rumour_loss
-                    logits = tmp_model_output.rumour_logits
+            #         tmp_eval_loss = tmp_model_output.rumour_loss
+            #         logits = tmp_model_output.rumour_logits
 
-                    tmp_model_output = model(**stance_batch)
+            #         stance_batch = {k: v.to(device) for k, v in stance_batch.items()}
+            #         tmp_model_output = model(**stance_batch)
                     # tmp_model_output = model(
                     #     stance_input_ids1,
                     #     stance_segment_ids1,
@@ -847,11 +961,62 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                     #     stance_input_mask,
                     #     stance_label_mask=stance_label_mask,
                     # )
-                    stance_logits = tmp_model_output.stance_logits
+                    # stance_logits = tmp_model_output.stance_logits
+
+            for input_ids1, input_mask1, segment_ids1, input_ids2, input_mask2, segment_ids2, \
+                input_ids3, input_mask3, segment_ids3, input_ids4, input_mask4, segment_ids4, \
+                input_mask, label_ids, label_mask, stance_input_ids1, stance_input_mask1, stance_segment_ids1, \
+                stance_input_ids2, stance_input_mask2, stance_segment_ids2, stance_input_ids3, stance_input_mask3, \
+                stance_segment_ids3, stance_input_ids4, stance_input_mask4, stance_segment_ids4, \
+                stance_input_mask, stance_label_ids, stance_label_mask in tqdm(test_dataloader, desc="Evaluating"):
+                input_ids1 = input_ids1.to(device)
+                input_mask1 = input_mask1.to(device)
+                segment_ids1 = segment_ids1.to(device)
+                input_ids2 = input_ids2.to(device)
+                input_mask2 = input_mask2.to(device)
+                segment_ids2 = segment_ids2.to(device)
+                input_ids3 = input_ids3.to(device)
+                input_mask3 = input_mask3.to(device)
+                segment_ids3 = segment_ids3.to(device)
+                input_ids4 = input_ids4.to(device)
+                input_mask4 = input_mask4.to(device)
+                segment_ids4 = segment_ids4.to(device)
+                input_mask = input_mask.to(device)
+                label_ids = label_ids.to(device)
+                label_mask = label_mask.to(device)
+
+                stance_input_ids1 = stance_input_ids1.to(device)
+                stance_input_mask1 = stance_input_mask1.to(device)
+                stance_segment_ids1 = stance_segment_ids1.to(device)
+                stance_input_ids2 = stance_input_ids2.to(device)
+                stance_input_mask2 = stance_input_mask2.to(device)
+                stance_segment_ids2 = stance_segment_ids2.to(device)
+                stance_input_ids3 = stance_input_ids3.to(device)
+                stance_input_mask3 = stance_input_mask3.to(device)
+                stance_segment_ids3 = stance_segment_ids3.to(device)
+                stance_input_ids4 = stance_input_ids4.to(device)
+                stance_input_mask4 = stance_input_mask4.to(device)
+                stance_segment_ids4 = stance_segment_ids4.to(device)
+                stance_input_mask = stance_input_mask.to(device)
+                stance_label_ids = stance_label_ids.to(device)
+                #stance_stance_position = stance_stance_position.to(device)
+                stance_label_mask = stance_label_mask.to(device)
+
+                with torch.no_grad():
+                    tmp_eval_loss = model(input_ids1, segment_ids1, input_mask1, input_ids2, segment_ids2, input_mask2,
+                                   input_ids3, segment_ids3, input_mask3, input_ids4, segment_ids4, input_mask4,
+                                   input_mask, label_ids, stance_label_mask=label_mask)
+                    logits, _ = model(input_ids1, segment_ids1, input_mask1, input_ids2, segment_ids2, input_mask2,
+                                   input_ids3, segment_ids3, input_mask3, input_ids4, segment_ids4, input_mask4,
+                                   input_mask, stance_label_mask=label_mask)
+                    stance_logits = model(stance_input_ids1, stance_segment_ids1, stance_input_mask1, stance_input_ids2,
+                                    stance_segment_ids2, stance_input_mask2, stance_input_ids3, stance_segment_ids3,
+                                    stance_input_mask3, stance_input_ids4, stance_segment_ids4, stance_input_mask4,
+                                    stance_input_mask, task='stance', stance_label_mask=stance_label_mask)
 
                 logits = logits.detach().cpu().numpy()
-                # label_ids = label_ids.to("cpu").numpy()
-                label_ids = rumor_batch["rumor_label_ids"].to("cpu").numpy()
+                label_ids = label_ids.to("cpu").numpy()
+                # label_ids = rumor_batch["rumor_label_ids"].to("cpu").numpy()
                 true_label_list.append(label_ids)
                 pred_label_list.append(logits)
                 tmp_eval_accuracy = accuracy(logits, label_ids)
@@ -861,8 +1026,10 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
 
                 stance_logits = torch.argmax(F.log_softmax(stance_logits, dim=2), dim=2)
                 stance_logits = stance_logits.detach().cpu().numpy()
-                stance_label_ids = stance_batch["stance_label_ids"].to("cpu").numpy()
-                stance_label_mask = stance_batch["stance_label_mask"].to("cpu").numpy()
+                stance_label_ids = stance_label_ids.to('cpu').numpy()
+                # stance_label_ids = stance_batch["stance_label_ids"].to("cpu").numpy()
+                stance_label_mask = stance_label_mask.to('cpu').numpy()
+                # stance_label_mask = stance_batch["stance_label_mask"].to("cpu").numpy()
                 for i, mask in enumerate(stance_label_mask):
                     temp_1 = []
                     temp_2 = []
@@ -875,8 +1042,8 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                     stance_y_true.append(temp_1)
                     stance_y_pred.append(temp_2)
 
-                # nb_eval_examples += input_ids1.size(0)
-                nb_eval_examples += rumor_batch["input_ids_buckets"][0].size(0)
+                nb_eval_examples += input_ids1.size(0)
+                # nb_eval_examples += rumor_batch["input_ids_buckets"].size(0)
                 nb_eval_steps += 1
 
             eval_loss = eval_loss / nb_eval_steps
@@ -930,9 +1097,13 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
     #     max_tweet_length=train_config.max_tweet_length,
     #     convert_size=train_config.convert_size,
     # )
+    model_state_dict = torch.load(output_model_file)
+
     if os.listdir(train_config.output_dir):
-        config = DualBertConfig.from_pretrained(os.path.join(train_config.output_dir, "config.json"))
-        model = DualBert.from_pretrained(output_model_file, config=config)
+        model = DualBert.from_pretrained(train_config.bert_model, state_dict=model_state_dict,
+                                         rumor_num_labels=train_config.rumor_num_labels,stance_num_labels=train_config.stance_num_labels,
+                                         max_tweet_num=train_config.max_tweet_num, max_tweet_length=train_config.max_tweet_length,
+                                         convert_size=train_config.convert_size)
 
     model.to(device)
 
@@ -950,8 +1121,8 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
         for (ex_index, example) in enumerate(stance_eval_examples):
             stances_list.append(example.label)
 
-        preprocessor = DualBertPreprocessor(model_config, tokenizer)
-        eval_features = preprocessor(eval_examples, task="rumor", label_names=rumor_label_list)
+        #preprocessor = DualBertPreprocessor(model_config, tokenizer)
+        # eval_features = preprocessor(eval_examples, task="rumor", label_names=rumor_label_list)
         # eval_features = convert_examples_to_features(
         #     eval_examples,
         #     rumor_label_list,
@@ -960,6 +1131,12 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
         #     train_config.max_tweet_num,
         #     train_config.max_tweet_length,
         # )
+
+        test_sampler = SequentialSampler(test_dataset)
+        test_dataloader = DataLoader(
+            test_dataset, sampler=test_sampler, batch_size=train_config.eval_batch_size
+        )
+
         logger.info("\n***** Running evaluation on Test Set *****")
         logger.info("  Num examples = %d", len(eval_examples))
         logger.info("  Batch size = %d", train_config.eval_batch_size)
@@ -1009,7 +1186,7 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
         #     [f.label_mask for f in eval_features], dtype=torch.int32
         # )
 
-        eval_dataset = DualBertDataset(eval_features)
+        # eval_dataset = DualBertDataset(eval_features)
         # eval_data = TensorDataset(
         #     all_input_ids1,
         #     all_input_mask1,
@@ -1028,10 +1205,10 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
         #     all_label_mask,
         # )
         # Run prediction for full data
-        eval_sampler = SequentialSampler(eval_dataset)
-        eval_dataloader = DataLoader(
-            eval_dataset, sampler=eval_sampler, batch_size=train_config.eval_batch_size
-        )
+        # eval_sampler = SequentialSampler(eval_dataset)
+        # eval_dataloader = DataLoader(
+        #    eval_dataset, sampler=eval_sampler, batch_size=train_config.eval_batch_size
+        # )
 
         model.eval()
         eval_loss, eval_accuracy = 0, 0
@@ -1045,8 +1222,8 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
         stance_label_map[0] = "PAD"
         # convert_stance_label_map = {-1: -1, 0: 0, 1: 2, 2: 1, 3: 3}  # this will solve the problem above
 
-        for batch in tqdm(eval_dataloader, desc="Evaluating"):
-            batch = {k: v.to(device) for k, v in batch.items()}
+        # for batch in tqdm(eval_dataloader, desc="Evaluating"):
+          #  batch = {k: v.to(device) for k, v in batch.items()}
             # input_ids1 = input_ids1.to(device)
             # input_mask1 = input_mask1.to(device)
             # segment_ids1 = segment_ids1.to(device)
@@ -1063,8 +1240,9 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             # label_ids = label_ids.to(device)
             # label_mask = label_mask.to(device)
 
-            with torch.no_grad():
-                tmp_model_output = model(**batch)
+            # with torch.no_grad():
+                # batch = {k: v.to(device) for k, v in batch.items()}
+                # tmp_model_output = model(**batch)
                 # tmp_model_output = model(
                 #     input_ids1,
                 #     segment_ids1,
@@ -1083,14 +1261,53 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
                 #     stance_label_mask=label_mask,
                 # )
 
-                tmp_eval_loss = tmp_model_output.rumour_loss
-                logits = tmp_model_output.rumour_logits
-                stance_logits = tmp_model_output.stance_logits
-                attention_probs = tmp_model_output.attention_probs
+                #tmp_eval_loss = tmp_model_output.rumour_loss
+                #logits = tmp_model_output.rumour_logits
+                #stance_logits = tmp_model_output.stance_logits
+                # attention_probs = tmp_model_output.attention_probs
+
+#        for input_ids1, input_mask1, segment_ids1, input_ids2, input_mask2, segment_ids2, \
+#                input_ids3, input_mask3, segment_ids3, input_ids4, input_mask4, segment_ids4, \
+#                input_mask, label_ids, label_mask in tqdm(test_dataloader, desc="Evaluating"):
+
+        for input_ids1, input_mask1, segment_ids1, input_ids2, input_mask2, segment_ids2, \
+            input_ids3, input_mask3, segment_ids3, input_ids4, input_mask4, segment_ids4, \
+            input_mask, label_ids, label_mask, stance_input_ids1, stance_input_mask1, stance_segment_ids1, \
+            stance_input_ids2, stance_input_mask2, stance_segment_ids2, stance_input_ids3, stance_input_mask3, \
+            stance_segment_ids3, stance_input_ids4, stance_input_mask4, stance_segment_ids4, \
+            stance_input_mask, stance_label_ids, stance_label_mask in tqdm(test_dataloader, desc="Evaluating"): 
+
+            input_ids1 = input_ids1.to(device)
+            input_mask1 = input_mask1.to(device)
+            segment_ids1 = segment_ids1.to(device)
+            input_ids2 = input_ids2.to(device)
+            input_mask2 = input_mask2.to(device)
+            segment_ids2 = segment_ids2.to(device)
+            input_ids3 = input_ids3.to(device)
+            input_mask3 = input_mask3.to(device)
+            segment_ids3 = segment_ids3.to(device)
+            input_ids4 = input_ids4.to(device)
+            input_mask4 = input_mask4.to(device)
+            segment_ids4 = segment_ids4.to(device)
+            input_mask = input_mask.to(device)
+            label_ids = label_ids.to(device)
+            label_mask = label_mask.to(device)
+
+            with torch.no_grad():
+                tmp_eval_loss = model(input_ids1, segment_ids1, input_mask1, input_ids2, segment_ids2, input_mask2,
+                                      input_ids3, segment_ids3, input_mask3, input_ids4, segment_ids4, input_mask4,
+                                      input_mask, label_ids, stance_label_mask=label_mask)
+                logits, attention_probs = model(input_ids1, segment_ids1, input_mask1, input_ids2, segment_ids2, input_mask2,
+                                   input_ids3, segment_ids3, input_mask3, input_ids4, segment_ids4, input_mask4,
+                                   input_mask, stance_label_mask=label_mask)
+                stance_logits = model(input_ids1, segment_ids1, input_mask1, input_ids2, segment_ids2, input_mask2,
+                                   input_ids3, segment_ids3, input_mask3, input_ids4, segment_ids4, input_mask4,
+                                   input_mask, task='stance', stance_label_mask=label_mask)
 
             logits = logits.detach().cpu().numpy()
             attention_probs = attention_probs.detach().cpu().numpy()
-            label_ids = batch["rumor_label_ids"].to("cpu").numpy()
+            # label_ids = batch["rumor_label_ids"].to("cpu").numpy()
+            label_ids = label_ids.to('cpu').numpy()
             true_label_list.append(label_ids)
             pred_label_list.append(logits)
             tmp_eval_accuracy = accuracy(logits, label_ids)
@@ -1098,7 +1315,8 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             if train_config.mt_model == "DB":
                 stance_logits = torch.argmax(F.log_softmax(stance_logits, dim=2), dim=2)
                 stance_logits = stance_logits.detach().cpu().numpy()
-                stance_label_mask = batch["stance_label_mask"].to("cpu").numpy()
+                # stance_label_mask = batch["stance_label_mask"].to("cpu").numpy()
+                stance_label_mask = label_mask.to('cpu').numpy()
                 for i, mask in enumerate(stance_label_mask):
                     temp_1 = []
                     attention_probs_temp_1 = []
@@ -1115,9 +1333,12 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             eval_loss += tmp_eval_loss.mean().item()
             eval_accuracy += tmp_eval_accuracy
 
-            # nb_eval_examples += input_ids1.size(0)
-            nb_eval_examples += batch["input_ids_buckets"][0].size(0)
+            nb_eval_examples += input_ids1.size(0)
+            # nb_eval_examples += batch["input_ids_buckets"].size(0)
             nb_eval_steps += 1
+
+        print(f'accurate examples number:{eval_accuracy}')
+        print(f'total examples:{nb_eval_examples}')
 
         eval_loss = eval_loss / nb_eval_steps
         eval_accuracy = eval_accuracy / nb_eval_examples
@@ -1333,6 +1554,6 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
 
 if __name__ == "__main__":
     # train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/dual_bert/train_config_local.json")
-    train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
+    train_config = load_train_config("train_config.json")
     model_config = DualBertConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/dual_bert/config.json")
     train_custom_dual_bert(train_config, model_config)
