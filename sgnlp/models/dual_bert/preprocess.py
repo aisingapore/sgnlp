@@ -872,12 +872,12 @@ class DualBertPreprocessor:
                                              self.max_tweet_len, task, label_names)
 
         return {
-            "input_ids_buckets": torch.tensor([f.input_ids_buckets for f in test_features], dtype=torch.int32),
-            "segment_ids_buckets": torch.tensor([f.segment_ids_buckets for f in test_features], dtype=torch.int32),
-            "input_mask_buckets": torch.tensor([f.input_mask_buckets for f in test_features], dtype=torch.int32),
-            "input_mask": torch.tensor([f.input_mask for f in test_features], dtype=torch.int32),
+            "input_ids_buckets": torch.tensor([f.input_ids_buckets for f in test_features], dtype=torch.long),
+            "segment_ids_buckets": torch.tensor([f.segment_ids_buckets for f in test_features], dtype=torch.long),
+            "input_mask_buckets": torch.tensor([f.input_mask_buckets for f in test_features], dtype=torch.long),
+            "input_mask": torch.tensor([f.input_mask for f in test_features], dtype=torch.long),
             "stance_label_ids": torch.tensor([f.stance_label_ids for f in test_features], dtype=torch.long) if test_features[0].stance_label_ids is not None else None,
             "rumor_label_ids": torch.tensor([f.rumor_label_ids for f in test_features], dtype=torch.long) if test_features[0].rumor_label_ids is not None else None,
-            "stance_position": torch.tensor([f.stance_position for f in test_features], dtype=torch.int32),
-            "stance_label_mask": torch.tensor([f.stance_label_mask for f in test_features], dtype=torch.int32),
+            "stance_position": torch.tensor([f.stance_position for f in test_features], dtype=torch.long),
+            "stance_label_mask": torch.tensor([f.stance_label_mask for f in test_features], dtype=torch.long),
         }

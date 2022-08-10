@@ -28,16 +28,16 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 from torch.utils.data.distributed import DistributedSampler
 import torch.nn.functional as F
 
-from sgnlp.models.dual_bert.config import DualBertConfig
-from .utils import classification_report
+from config import DualBertConfig
+from utils import classification_report
 
-from .modeling import DualBert
+from modeling import DualBert
 from transformers import AdamW
-from .optimization import BertAdam
-from .preprocess import prepare_data_for_training, InputExample, DualBertPreprocessor
+from optimization import BertAdam
+from preprocess import prepare_data_for_training, InputExample, DualBertPreprocessor
 from sklearn.metrics import precision_recall_fscore_support
 
-from .train_args import CustomDualBertTrainConfig
+from train_args import CustomDualBertTrainConfig
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
@@ -930,9 +930,13 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
     #     max_tweet_length=train_config.max_tweet_length,
     #     convert_size=train_config.convert_size,
     # )
+    model_state_dict = torch.load(output_model_file)
+
     if os.listdir(train_config.output_dir):
-        config = DualBertConfig.from_pretrained(os.path.join(train_config.output_dir, "config.json"))
-        model = DualBert.from_pretrained(output_model_file, config=config)
+        model = DualBert.from_pretrained(train_config.bert_model, state_dict=model_state_dict,
+                                         rumor_num_labels=train_config.rumor_num_labels,stance_num_labels=train_config.stance_num_labels,
+                                         max_tweet_num=train_config.max_tweet_num, max_tweet_length=train_config.max_tweet_length,
+                                         convert_size=train_config.convert_size)
 
     model.to(device)
 
@@ -1116,8 +1120,11 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
             eval_accuracy += tmp_eval_accuracy
 
             # nb_eval_examples += input_ids1.size(0)
-            nb_eval_examples += batch["input_ids_buckets"][0].size(0)
+            nb_eval_examples += batch["input_ids_buckets"].size(0)
             nb_eval_steps += 1
+
+        print(f'accurate examples number:{eval_accuracy}')
+        print(f'total examples:{nb_eval_examples}')
 
         eval_loss = eval_loss / nb_eval_steps
         eval_accuracy = eval_accuracy / nb_eval_examples
@@ -1333,6 +1340,6 @@ def train_custom_dual_bert(train_config: CustomDualBertTrainConfig, model_config
 
 if __name__ == "__main__":
     # train_config = load_train_config("/Users/nus/Documents/Code/projects/SGnlp/sgnlp/sgnlp/models/dual_bert/train_config_local.json")
-    train_config = load_train_config("/polyaxon-data/workspace/atenzer/CHT_demo/train_config.json")
+    train_config = load_train_config("train_config.json")
     model_config = DualBertConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/dual_bert/config.json")
     train_custom_dual_bert(train_config, model_config)

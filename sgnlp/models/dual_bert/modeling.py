@@ -9,7 +9,7 @@ from transformers import BertModel, PreTrainedModel, BertPreTrainedModel
 from transformers.file_utils import ModelOutput
 from transformers.models.bert.modeling_bert import BertPooler, BertIntermediate, BertOutput, BertSelfOutput
 
-from sgnlp.models.dual_bert.config import DualBertConfig
+from config import DualBertConfig
 
 
 @dataclass
@@ -386,7 +386,7 @@ class DualBert(DualBertPreTrainedModel):
 
         output = DualBertModelOutput()
 
-        output_sequence = torch.tensor([], device=self.device, dtype=torch.int32)
+        output_sequence = torch.tensor([], device=self.device, dtype=torch.float32)
         # for input_ids, token_type_ids, attention_mask in zip(processed_input["input_ids_buckets"], processed_input[
         #     "segment_ids_buckets"], processed_input["input_mask_buckets"]):
         num_buckets = 4
