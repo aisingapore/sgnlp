@@ -42,7 +42,7 @@ run:
       secret:
         secretName: "gcp-sa-credentials"
   container:
-    image: asia.gcr.io/nlp-hub/coherence-paradigm-refactored:0.5
+    image: asia.gcr.io/nlp-hub/coherence-paradigm-refactored:0.6
     imagePullPolicy: IfNotPresent
     workingDir: "{{ WORKING_DIR }}"
     command: ["/bin/bash","-c"]
