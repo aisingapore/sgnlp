@@ -382,3 +382,4 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     trainer = TrainMomentumModel(args.model_config_file, args.train_config_file)
+    trainer.hard_negs_controller()
