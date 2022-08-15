@@ -269,7 +269,7 @@ class TrainMomentumModel:
                 processed_train_data_list = train_data.prepare_train_data(
                     init_train_data, self.num_negs
                 )
-                self.train_xlnet_model(processed_train_data_list, iteration_index)
+                self.train_xlnet_model(processed_train_data_list)
             else:
                 start_index = iteration_index * self.train_steps
                 end_index = start_index + self.train_steps
@@ -278,7 +278,7 @@ class TrainMomentumModel:
                     train_data.data[start_index:end_index], self.rank_negs
                 )
                 next_train_data = self.get_next_train_data(processed_explore_data_list)
-                self.train_xlnet_model(next_train_data, iteration_index)
+                self.train_xlnet_model(next_train_data)
 
                 if (self.train_steps * (iteration_index + 1)) % self.eval_interval == 0:
                     self.scheduler.step()
