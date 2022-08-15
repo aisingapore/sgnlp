@@ -1,17 +1,18 @@
 import argparse
 import pickle
-import torch
 import time
 import os
 import datetime
 import random
+
+import torch
 from torch.utils.data import Dataset, DataLoader, SequentialSampler
-from transformers import AdamW
+from transformers import AdamW, XLNetTokenizer
 from torch.optim.swa_utils import SWALR
-from transformers import XLNetTokenizer
-from modeling import MomentumModel
-from sgnlp.models.coherence_momentum.config import CoherenceConfig
-from sgnlp.models.coherence_momentum.train_config import CoherenceMomentumTrainConfig
+
+from .modeling import MomentumModel
+from .config import CoherenceConfig
+from .train_config import CoherenceMomentumTrainConfig
 from sgnlp.utils.train_config import load_train_config
 
 
