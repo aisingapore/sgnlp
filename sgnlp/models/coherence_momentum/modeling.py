@@ -15,7 +15,6 @@ class MomentumModel(PreTrainedModel):
     def __init__(self, config):
 
         super().__init__(config)
-        self.batch_size = config.batch_size
         self.momentum_coefficient = config.momentum_coefficient
 
         self.encoder_name = f"xlnet-{config.model_size}-cased"
