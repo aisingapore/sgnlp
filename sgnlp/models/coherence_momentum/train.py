@@ -4,6 +4,7 @@ import time
 import os
 import datetime
 import random
+import shutil
 
 import torch
 from torch.utils.data import Dataset, DataLoader, SequentialSampler
@@ -149,15 +150,6 @@ class LoadData:
 
 
 class TrainMomentumModel:
-    def save_model(self, output_dir, step, accuracy):
-        if not os.path.isdir(output_dir):
-            os.mkdir(output_dir)
-        model_path = os.path.join(
-            output_dir,
-            f"momentum_seed-{self.seed}_bs-{self.batch_size}_lr-{self.train_config.lr_start}_step-{step}_type-{self.model_size}_acc-{accuracy}",
-        )
-        self.xlnet_model.save_pretrained(model_path)
-
     def __init__(self, model_config_path, train_config_path):
         self.model_config = CoherenceConfig.from_pretrained(model_config_path)
         self.train_config = load_train_config(
@@ -175,14 +167,17 @@ class TrainMomentumModel:
         else:
             self.test_file = self.train_config.dev_file
         self.output_dir = (
-            self.train_config.output_dir
-            + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                self.train_config.output_dir
+                + "-"
+                + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         )
         self.datatype = self.train_config.data_type
         self.eval_interval = self.train_config.eval_interval
         self.seed = self.train_config.seed
         self.batch_size = self.train_config.batch_size
         self.train_steps = self.train_config.train_steps
+        self.num_checkpoints = self.train_config.num_checkpoints
+        self.best_checkpoints = []  # List of tuples of (accuracy, path)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         torch.manual_seed(self.seed)
@@ -369,6 +364,26 @@ class TrainMomentumModel:
             )
 
         return
+
+    def save_model(self, output_dir, step, accuracy):
+        if not os.path.isdir(output_dir):
+            os.mkdir(output_dir)
+        model_path = os.path.join(
+            output_dir,
+            f"momentum_seed-{self.seed}_bs-{self.batch_size}_lr-{self.train_config.lr_start}"
+            f"_step-{step}_type-{self.model_size}_acc-{accuracy:.3f}",
+        )
+
+        if len(self.best_checkpoints) == 0:
+            self.xlnet_model.save_pretrained(model_path)
+            self.best_checkpoints.append((accuracy, model_path))
+        elif accuracy > self.best_checkpoints[-1][0]:
+            self.xlnet_model.save_pretrained(model_path)
+            self.best_checkpoints.append((accuracy, model_path))
+            self.best_checkpoints.sort(key=lambda x: x[0], reverse=True)
+            if len(self.best_checkpoints) > self.num_checkpoints:
+                _, dir_to_delete = self.best_checkpoints.pop()
+                shutil.rmtree(dir_to_delete, ignore_errors=True)
 
 
 def parse_args():
