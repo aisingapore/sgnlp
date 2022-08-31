@@ -18,13 +18,14 @@ from sgnlp.utils.train_config import load_train_config
 
 
 class CoherenceMomentumDataset(Dataset):
-    def __init__(self, fname, model, device, datatype, negs, max_len):
+    def __init__(self, fname, model_size, device, datatype, negs, max_len):
         self.fname = fname
         self.device = device
         self.data = pickle.load(open(fname, "rb"))
         random.shuffle(self.data)
-        self.tokenizer = XLNetTokenizer.from_pretrained("xlnet-{}-cased".format(model))
-        self.truncount = 0
+        self.tokenizer = XLNetTokenizer.from_pretrained(
+            "xlnet-{}-cased".format(model_size)
+        )
         self.datatype = datatype
         self.negs = negs
         self.max_len = max_len
@@ -34,12 +35,11 @@ class CoherenceMomentumDataset(Dataset):
             padding_size = self.max_len - len(ids)
             padding = [
                 self.tokenizer.convert_tokens_to_ids(self.tokenizer.pad_token)
-                for i in range(padding_size)
+                for _ in range(padding_size)
             ]
             ids = ids + padding
         else:
             ids = ids[: self.max_len]
-            self.truncount += 1
 
         return ids
 
@@ -136,11 +136,11 @@ class CoherenceMomentumDataset(Dataset):
 
 
 class LoadData:
-    def __init__(self, fname, batch_size, model, device, datatype, negs, max_len):
+    def __init__(self, fname, batch_size, model_size, device, datatype, negs, max_len):
         self.fname = fname
         self.batch_size = batch_size
         self.dataset = CoherenceMomentumDataset(
-            fname, model, device, datatype, negs, max_len
+            fname, model_size, device, datatype, negs, max_len
         )
 
     def data_loader(self):
