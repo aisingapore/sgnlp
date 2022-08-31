@@ -11,13 +11,13 @@ from torch.utils.data import Dataset, DataLoader, SequentialSampler
 from transformers import AdamW, XLNetTokenizer
 from torch.optim.swa_utils import SWALR
 
-from .modeling import MomentumModel
-from .config import CoherenceConfig
+from .modeling import CoherenceMomentumModel
+from .config import CoherenceMomentumConfig
 from .train_config import CoherenceMomentumTrainConfig
 from sgnlp.utils.train_config import load_train_config
 
 
-class MomentumDataset(Dataset):
+class CoherenceMomentumDataset(Dataset):
     def __init__(self, fname, model, device, datatype, negs, max_len):
         self.fname = fname
         self.device = device
@@ -139,7 +139,9 @@ class LoadData:
     def __init__(self, fname, batch_size, model, device, datatype, negs, max_len):
         self.fname = fname
         self.batch_size = batch_size
-        self.dataset = MomentumDataset(fname, model, device, datatype, negs, max_len)
+        self.dataset = CoherenceMomentumDataset(
+            fname, model, device, datatype, negs, max_len
+        )
 
     def data_loader(self):
         data_sampler = SequentialSampler(self.dataset)
@@ -151,7 +153,7 @@ class LoadData:
 
 class TrainMomentumModel:
     def __init__(self, model_config_path, train_config_path):
-        self.model_config = CoherenceConfig.from_pretrained(model_config_path)
+        self.model_config = CoherenceMomentumConfig.from_pretrained(model_config_path)
         self.train_config = load_train_config(
             CoherenceMomentumTrainConfig, train_config_path
         )
@@ -167,9 +169,9 @@ class TrainMomentumModel:
         else:
             self.test_file = self.train_config.dev_file
         self.output_dir = (
-                self.train_config.output_dir
-                + "-"
-                + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            self.train_config.output_dir
+            + "-"
+            + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         )
         self.datatype = self.train_config.data_type
         self.eval_interval = self.train_config.eval_interval
@@ -183,7 +185,7 @@ class TrainMomentumModel:
         torch.manual_seed(self.seed)
         torch.cuda.manual_seed_all(self.seed)
 
-        self.xlnet_model = MomentumModel(self.model_config)
+        self.xlnet_model = CoherenceMomentumModel(self.model_config)
         self.xlnet_model.init_encoders()
         self.xlnet_model = self.xlnet_model.to(self.device)
 
@@ -239,7 +241,7 @@ class TrainMomentumModel:
 
     def hard_negs_controller(self):
         start = time.time()
-        train_data = MomentumDataset(
+        train_data = CoherenceMomentumDataset(
             self.train_config.train_file,
             self.model_size,
             self.device,

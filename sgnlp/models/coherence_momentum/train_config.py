@@ -19,7 +19,9 @@ class CoherenceMomentumTrainConfig:
     seed: int = field(default=100)
     batch_size: int = field(default=1)
     train_steps: int = field(default=200)
-    num_checkpoints: int = field(default=5, metadata={"help": "Number of best checkpoints to save"})
+    num_checkpoints: int = field(
+        default=5, metadata={"help": "Number of best checkpoints to save"}
+    )
 
     def __post_init__(self):
         assert (

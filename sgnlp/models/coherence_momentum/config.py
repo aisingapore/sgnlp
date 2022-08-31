@@ -1,9 +1,7 @@
 from transformers import PretrainedConfig
 
 
-class CoherenceConfig(PretrainedConfig):
-    model_type = "general_coherence_model"
-
+class CoherenceMomentumConfig(PretrainedConfig):
     def __init__(
         self,
         model_size: str = "base",

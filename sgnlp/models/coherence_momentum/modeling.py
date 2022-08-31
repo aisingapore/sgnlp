@@ -3,15 +3,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import XLNetModel, XLNetConfig
 from transformers import PreTrainedModel
-from .config import CoherenceConfig
+from .config import CoherenceMomentumConfig
 
 
-class MomentumPreTrainedModel(PreTrainedModel):
-    config_class = CoherenceConfig
-    base_model_prefix = "momentum"
+class CoherenceMomentumPreTrainedModel(PreTrainedModel):
+    config_class = CoherenceMomentumConfig
+    base_model_prefix = "coherence_momentum"
 
 
-class MomentumModel(PreTrainedModel):
+class CoherenceMomentumModel(CoherenceMomentumPreTrainedModel):
     def __init__(self, config):
 
         super().__init__(config)
