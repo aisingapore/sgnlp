@@ -60,8 +60,8 @@ class LsrMetrics:
 
         Args:
             input_theta (`optional`, `float`):
-                Prediction threshold. Provide a value between 0 to 1 if you want to compute the precision and recall
-                for that specific threshold. Otherwise the optimal based on f1 score will be computed for you.
+                Prediction threshold. Provide a value between 0 and 1 if you want to compute the precision and recall
+                for that specific threshold. Otherwise, the optimal based on f1 score will be computed for you.
         """
         # Sorts in descending order by predicted value
         self.test_result.sort(key=lambda x: x[1], reverse=True)

@@ -59,6 +59,11 @@ local api_names = {
     module_name: "ufd",
     image_name: "ufd",
     deployment_name: "ufd"
+  },
+  "coherence_momentum": {
+    module_name: "coherence_momentum",
+    image_name: "coherence-momentum",
+    deployment_name: "coherence-momentum"
   }
 };
 
