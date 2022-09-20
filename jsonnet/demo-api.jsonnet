@@ -73,7 +73,7 @@ local retag_and_push_production(module_name, image_name) = {
     "dind",
   ],
   only: {
-    refs: ["main"]
+    refs: ["main", "dev"]
   },
   needs: ["%s_restart_kubernetes_staging" % module_name],
   when: "manual",
@@ -113,7 +113,7 @@ local restart_kubernetes_production(module_name, deployment_name) = {
     "dind",
   ],
   only: {
-    refs: ["main"]
+    refs: ["main", "dev"]
   },
   when: "manual",
   needs: ["%s_retag_and_push_production" % module_name],
@@ -169,6 +169,11 @@ local api_names = {
     module_name: "sentic_gcn",
     image_name: "sentic-gcn",
     deployment_name: "sentic-gcn"
+  },
+  "coherence_momentum": {
+    module_name: "coherence_momentum",
+    image_name: "coherence-momentum",
+    deployment_name: "coherence-momentum"
   }
 };
 
