@@ -97,7 +97,7 @@ local restart_kubernetes_staging(module_name, deployment_name) = {
     "dind",
   ],
   when: "manual",
-  needs: ["%s_build_and_push_staging" % module_name],
+//  needs: ["%s_build_and_push_staging" % module_name],
   script: [
     "echo 'Restarting pods...'",
     "export KUBECONFIG=$STG_KUBE_CONFIG",
