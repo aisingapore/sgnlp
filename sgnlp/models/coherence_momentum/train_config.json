@@ -1,0 +1,15 @@
+{
+  "batch_size": 1,
+  "data_type": "multiple",
+  "dev_file": "permuted_wsj_dev_max-negs-100_size-4K",
+  "eval_file": "",
+  "eval_interval": 1000,
+  "lr_anneal_epochs": 50,
+  "lr_end": 1e-06,
+  "lr_start": 5e-06,
+  "output_dir": "outputs",
+  "seed": 100,
+  "test_file": "",
+  "train_file": "permuted_wsj_train_max-negs-100_size-46K",
+  "train_steps": 200
+}

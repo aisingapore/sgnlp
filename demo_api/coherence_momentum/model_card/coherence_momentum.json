@@ -1,0 +1,36 @@
+{
+  "name": "CoherenceMomentum",
+  "languages": "English",
+  "description": "This is a neural network model that makes use of a momentum encoder and hard negative mining during training. This model is able to take in a piece of text and output a coherence score. The coherence score is only meant for comparison, i.e. it is only meaningful when used to compare between two texts, and the text with the higher coherence score is deemed to be more coherent by the model.",
+  "paper": {
+    "text": "Jwalapuram, P., Joty, S., & Lin, X. (2022). Rethinking Self-Supervision Objectives for Generalizable Coherence Modeling. Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), May 2022 (pp. 6044-6059).",
+    "url": "https://aclanthology.org/2022.acl-long.418/"
+  },
+  "trainingDataset": "Permuted dataset derived from Linguistic Data Consortium's (LDC) Wall Street Journal (WSJ) dataset. Please contact the authors to get the dataset if you have a valid LDC license.",
+  "evaluationDataset": "Permuted dataset derived from Linguistic Data Consortium's (LDC) Wall Street Journal (WSJ) dataset. Please contact the authors to get the dataset if you have a valid LDC license.",
+  "evaluationScores": "0.988 accuracy on permuted WSJ dataset. 0.986 accuracy reported by authors on permuted WSJ dataset.",
+  "trainingConfig": {
+    "text": "https://storage.googleapis.com/sgnlp/models/coherence_momentum/config.json",
+    "url": "https://storage.googleapis.com/sgnlp/models/coherence_momentum/config.json"
+  },
+  "trainingTime": "~24 hours for ~46000 steps (batch size of 1) on a single A100 GPU",
+  "modelWeights": {
+    "text": "https://storage.googleapis.com/sgnlp/models/coherence_momentum/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp/models/coherence_momentum/pytorch_model.bin"
+  },
+  "modelInput": "A paragraph of text. During training, each positive example can be paired with one or more negative examples.",
+  "modelOutput": "Coherence score for the input text.",
+  "modelSize": "~930MB",
+  "inferenceInfo": "Not available.",
+  "usageScenarios": "Essay scoring, summarization, language generation.",
+  "originalCode": {
+    "text": "https://github.com/ntunlp/coherence-paradigm",
+    "url": "https://github.com/ntunlp/coherence-paradigm"
+  },
+  "license": {
+    "text": "MIT License",
+    "url": "https://choosealicense.com/licenses/mit"
+  },
+  "contact": "sg-nlp@aisingapore.org",
+  "additionalInfo": "Not applicable."
+}

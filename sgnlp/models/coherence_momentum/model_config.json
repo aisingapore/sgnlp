@@ -1,0 +1,10 @@
+{
+  "contrastive_loss_weight": 0.85,
+  "margin": 0.1,
+  "max_len": 600,
+  "model_size": "base",
+  "momentum_coefficient": 0.9999999,
+  "num_negs": 5,
+  "num_rank_negs": 50,
+  "queue_size": 1000
+}

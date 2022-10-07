@@ -197,7 +197,7 @@ class SenticGCNTrainArgs:
         assert self.device in ["cuda", "cpu"], "Invalid device type."
         assert self.repeats >= 1, "Repeats value must be at least 1."
         assert self.patience >= 1, "Patience value must be at least 1."
-        assert 0 >= self.valset_ratio < 1, "Valset_ratio must be greater or equals to 0 and less than 1."
+        assert 0 <= self.valset_ratio < 1, "Valset_ratio must be greater or equals to 0 and less than 1."
         assert self.max_len > 0, "Max_len must be greater than 0."
 
         # Assign sub dataset columns name

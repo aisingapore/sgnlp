@@ -1,0 +1,62 @@
+version: 1.1
+kind: component
+name: train-model
+description: Job for training a predictive model using GPU.
+tags: [model_training]
+inputs:
+  - name: SA_CRED_PATH
+    description: Path to credential file for GCP service account.
+    isOptional: true
+    type: str
+    value: /var/secret/cloud.google.com/gcp-service-account.json
+    toEnv: GOOGLE_APPLICATION_CREDENTIALS
+  - name: WORKING_DIR
+    description: The working directory for the job to run in.
+    isOptional: true
+    value: /home/aisg/nlp-hub-gcp
+    type: str
+  - name: TRAIN_CONFIG_FILE_PATH
+    description: Config file path.
+    type: str
+    isOptional: false
+  - name: MODEL_CONFIG_FILE_PATH
+    description: Config file path.
+    type: str
+    isOptional: false
+run:
+  kind: job
+  connections: [fstore-pvc]
+  environment:
+    imagePullSecrets: ["gcp-imagepullsecrets"]
+    tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
+        value: present
+      - effect: NoSchedule
+        key: nomig
+        operator: Equal
+        value: present
+  volumes:
+    - name: gcp-service-account
+      secret:
+        secretName: "gcp-sa-credentials"
+  container:
+    image: asia.gcr.io/nlp-hub/coherence-paradigm-refactored:0.6
+    imagePullPolicy: IfNotPresent
+    workingDir: "{{ WORKING_DIR }}"
+    command: ["/bin/bash","-c"]
+    args: [
+      "python -m sgnlp.models.coherence_momentum.train \
+      --train_config_file {{ TRAIN_CONFIG_FILE_PATH }} \
+      --model_config_file {{ MODEL_CONFIG_FILE_PATH }}
+      "
+    ]
+    resources:
+      requests:
+        nvidia.com/gpu: 1
+      limits:
+        nvidia.com/gpu: 1
+    volumeMounts:
+      - name: gcp-service-account
+        mountPath: /var/secret/cloud.google.com
