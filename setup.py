@@ -13,7 +13,7 @@ extras_require = {
 setup(
     name="sgnlp",
     packages=find_packages(),
-    version="0.3.0",
+    version="0.4.0",
     description="Machine learning models from Singapore's NLP research community",
     long_description=long_description,
     long_description_content_type='text/markdown',
