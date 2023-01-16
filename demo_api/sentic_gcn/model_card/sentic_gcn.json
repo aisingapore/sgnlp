@@ -20,12 +20,12 @@
     },
     "trainingTime": "Sentic-GCN:  ~10 mins for ~35 epochs (early stopped),  Sentic-GCN Bert:  ~1 hr for ~40 epochs (early stopped) for SemEval14-Laptop/SemEval14-Restaurant/SemEval15-Restaurant/SemEval16-Restaurant datasets.",
     "modelWeights": {
-      "text": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin",
-      "url": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin"
+      "text": "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/pytorch_model.bin",
+      "url": "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/pytorch_model.bin"
     },
     "modelConfig": {
-      "text": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json",
-      "url": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
+      "text": "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/config.json",
+      "url": "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/config.json"
     },
     "modelInput": "Aspect (word), sentence containing the aspect",
     "modelOutput": "Sentiment of aspect, -1 (negative), 0 (neutral), 1 (postive)",

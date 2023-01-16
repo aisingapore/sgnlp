@@ -17,12 +17,12 @@
   "evaluationScores": "34.37% EMPos, 60.62% F1Pos, 83.18% F1Neg on development set, 34.64% EMPos, 60.00% F1Pos, 86.02% F1Neg, 75.71% F1 reported by authors in paper on development set.",
   "trainingTime": "~3 hours for 12 epochs on a single V100 GPU.",
   "modelWeights": {
-    "text": "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin",
-    "url": "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin"
+    "text": "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/pytorch_model.bin"
   },
   "modelConfig": {
-    "text": "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json",
-    "url": "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json"
+    "text": "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/config.json",
+    "url": "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/config.json"
   },
   "modelInput": "Target utterance, emotion in target utterance, evidence utterance and conversational history.",
   "modelOutput": "Array of start logits and array of end logits. These 2 arrays can be post processed to detemine the start and end of the causal span.",

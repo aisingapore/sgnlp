@@ -10,13 +10,13 @@
   "evaluationDataset": "Permuted dataset derived from Linguistic Data Consortium's (LDC) Wall Street Journal (WSJ) dataset. Please contact the authors to get the dataset if you have a valid LDC license.",
   "evaluationScores": "0.988 accuracy on permuted WSJ dataset. 0.986 accuracy reported by authors on permuted WSJ dataset.",
   "trainingConfig": {
-    "text": "https://storage.googleapis.com/sgnlp/models/coherence_momentum/config.json",
-    "url": "https://storage.googleapis.com/sgnlp/models/coherence_momentum/config.json"
+    "text": "https://storage.googleapis.com/sgnlp-models/models/coherence_momentum/config.json",
+    "url": "https://storage.googleapis.com/sgnlp-models/models/coherence_momentum/config.json"
   },
   "trainingTime": "~24 hours for ~46000 steps (batch size of 1) on a single A100 GPU",
   "modelWeights": {
-    "text": "https://storage.googleapis.com/sgnlp/models/coherence_momentum/pytorch_model.bin",
-    "url": "https://storage.googleapis.com/sgnlp/models/coherence_momentum/pytorch_model.bin"
+    "text": "https://storage.googleapis.com/sgnlp-models/models/coherence_momentum/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp-models/models/coherence_momentum/pytorch_model.bin"
   },
   "modelInput": "A paragraph of text. During training, each positive example can be paired with one or more negative examples.",
   "modelOutput": "Coherence score for the input text.",

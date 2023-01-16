@@ -167,7 +167,7 @@ class SenticGCNTrainArgs:
             "config_filename": "config.json",
             "model_filename": "pytorch_model.bin",
             "test_filename": "",
-            "senticnet": "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+            "senticnet": "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle",
             "spacy_pipeline": "en_core_web_sm",
             "result_folder": "./eval_result/",
             "eval_batch_size": 16,

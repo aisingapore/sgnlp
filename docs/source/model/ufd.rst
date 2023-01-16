@@ -51,7 +51,7 @@ Pretrained config and weights
 All 72 pretrained model weights and config are available to download from Azure
 Storage.
 
-The base url for the UFD models storage folder is `https://storage.googleapis.com/sgnlp/models/ufd`.
+The base url for the UFD models storage folder is `https://storage.googleapis.com/sgnlp-models/models/ufd`.
 To download a specific model set, please append the following pattern to the base
 url to directly download the config file or pretrained weights.
 
@@ -76,20 +76,20 @@ To download the model set for 'books' source domain, German target language and
 the 'dvd' target domain, use the following url:
 
 | For domain specific model:
-| `https://storage.googleapis.com/sgnlp/models/ufd/books_de_dvd_adaptor_domain/config.json`.
-| `https://storage.googleapis.com/sgnlp/models/ufd/books_de_dvd_adaptor_domain/pytorch_model.bin`.
+| `https://storage.googleapis.com/sgnlp-models/models/ufd/books_de_dvd_adaptor_domain/config.json`.
+| `https://storage.googleapis.com/sgnlp-models/models/ufd/books_de_dvd_adaptor_domain/pytorch_model.bin`.
 
 | For domain invariant model:
-| `https://storage.googleapis.com/sgnlp/models/ufd/books_de_dvd_adaptor_global/config.json`.
-| `https://storage.googleapis.com/sgnlp/models/ufd/books_de_dvd_adaptor_global/pytorch_model.bin`.
+| `https://storage.googleapis.com/sgnlp-models/models/ufd/books_de_dvd_adaptor_global/config.json`.
+| `https://storage.googleapis.com/sgnlp-models/models/ufd/books_de_dvd_adaptor_global/pytorch_model.bin`.
 
 | For combine features maper model:
-| `https://storage.googleapis.com/sgnlp/models/ufd/books_de_dvd_maper/config.json`.
-| `https://storage.googleapis.com/sgnlp/models/ufd/books_de_dvd_maper/pytorch_model.bin`.
+| `https://storage.googleapis.com/sgnlp-models/models/ufd/books_de_dvd_maper/config.json`.
+| `https://storage.googleapis.com/sgnlp-models/models/ufd/books_de_dvd_maper/pytorch_model.bin`.
 
 | For classifier model:
-| `https://storage.googleapis.com/sgnlp/models/ufd/books_de_dvd_classifier/config.json`.
-| `https://storage.googleapis.com/sgnlp/models/ufd/books_de_dvd_classifier/pytorch_model.bin`.
+| `https://storage.googleapis.com/sgnlp-models/models/ufd/books_de_dvd_classifier/config.json`.
+| `https://storage.googleapis.com/sgnlp-models/models/ufd/books_de_dvd_classifier/pytorch_model.bin`.
 
 .. note::
 

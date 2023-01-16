@@ -23,10 +23,10 @@ class SpanExtractionTestPostprocessor(unittest.TestCase):
         preprocessor = RecconSpanExtractionPreprocessor()
         preprocessed_input, evidence, examples, features = preprocessor(inputs)
         config = RecconSpanExtractionConfig.from_pretrained(
-            "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json"
+            "-models/models/reccon_span_extraction/config.json"
         )
         model = RecconSpanExtractionModel.from_pretrained(
-            "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin",
+            "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/pytorch_model.bin",
             config=config,
         )
         self.batch_size = len(inputs["emotion"])

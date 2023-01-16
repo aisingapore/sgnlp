@@ -5,10 +5,10 @@ from sgnlp.models.span_extraction import (
 )
 
 config = RecconSpanExtractionConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json"
+    "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/config.json"
 )
 model = RecconSpanExtractionModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin",
+    "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/pytorch_model.bin",
     config=config,
 )
 tokenizer = RecconSpanExtractionTokenizer.from_pretrained(

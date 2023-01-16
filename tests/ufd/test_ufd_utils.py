@@ -30,7 +30,7 @@ class TestUFDUtilsTestCase(unittest.TestCase):
             "verbose": 1,
             "device": "cpu",
             "data_folder": PARENT_DIR + "/test_data",
-            "model_folder": "https://storage.googleapis.com/sgnlp/models/ufd",
+            "model_folder": "https://storage.googleapis.com/sgnlp-models/models/ufd",
             "cache_folder": PARENT_DIR + "/test_cache",
             "embedding_model_name": "xlm-roberta-large",
             "train_args": {

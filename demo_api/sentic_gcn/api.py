@@ -11,18 +11,18 @@ from sgnlp.models.sentic_gcn import (
 app = create_api(app_name=__name__, model_card_path="model_card/sentic_gcn.json")
 
 preprocessor = SenticGCNBertPreprocessor(
-    senticnet="https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle", device="cpu"
+    senticnet="https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle", device="cpu"
 )
 
 postprocessor = SenticGCNBertPostprocessor()
 
 # Load model
 config = SenticGCNBertConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
+    "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/config.json"
 )
 
 model = SenticGCNBertModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin", config=config
+    "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/pytorch_model.bin", config=config
 )
 
 app.logger.info("Preprocessing pipeline and model initialization complete.")

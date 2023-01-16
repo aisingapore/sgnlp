@@ -63,9 +63,9 @@ class RstPointerSegmenterModel(RstPointerSegmenterPreTrainedModel):
 
         # Method 2: Loading from pretrained
         segmenter_config = RstPointerSegmenterConfig.from_pretrained(
-            'https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/config.json')
+            'https://storage.googleapis.com/sgnlp-models/models/rst_pointer/segmenter/config.json')
         segmenter = RstPointerSegmenterModel.from_pretrained(
-            'https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/pytorch_model.bin',
+            'https://storage.googleapis.com/sgnlp-models/models/rst_pointer/segmenter/pytorch_model.bin',
             config=segmenter_config)
 
     """
@@ -382,9 +382,9 @@ class RstPointerParserModel(RstPointerParserPreTrainedModel):
 
         # Method 2: Loading from pretrained
         parser_config = RstPointerParserConfig.from_pretrained(
-            'https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json')
+            'https://storage.googleapis.com/sgnlp-models/models/rst_pointer/parser/config.json')
         parser = RstPointerParserModel.from_pretrained(
-            'https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin',
+            'https://storage.googleapis.com/sgnlp-models/models/rst_pointer/parser/pytorch_model.bin',
             config=parser_config)
 
     """

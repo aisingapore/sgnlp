@@ -9,14 +9,14 @@ from sgnlp.models.sentic_gcn import (
 
 # Downloads preprocessor, pretrained config, tokenizer, model
 preprocessor = SenticGCNBertPreprocessor(
-    senticnet='https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle', 
+    senticnet='https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle', 
     device='cpu'
 )
 tokenizer = SenticGCNBertTokenizer.from_pretrained("bert-base-uncased")
 config = SenticGCNConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
+    "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/config.json"
 )
 model = SenticGCNBertModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin", 
+    "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/pytorch_model.bin", 
     config=config
 )

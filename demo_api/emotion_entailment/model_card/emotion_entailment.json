@@ -17,12 +17,12 @@
   "evaluationScores": "64.02% F1Pos, 87.84% F1Neg on development set, 64.28% F1Pos, 88.74% F1Neg, 76.51% Macro F1 reported by authors in paper on development set.",
   "trainingTime": "~3 hours for 12 epochs on a single V100 GPU.",
   "modelWeights": {
-    "text": "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin",
-    "url": "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin"
+    "text": "https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/pytorch_model.bin"
   },
   "modelConfig": {
-    "text": "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json",
-    "url": "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json"
+    "text": "https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/config.json",
+    "url": "https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/config.json"
   },
   "modelInput": "Target utterance, emotion in target utterance, evidence utterance and conversational history.",
   "modelOutput": "Probability score of whether evidence utterance caused target utterance to exhibit the emotion specified.",

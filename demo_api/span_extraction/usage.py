@@ -8,13 +8,13 @@ from sgnlp.models.span_extraction import (
 
 # Load model
 config = RecconSpanExtractionConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/config.json"
+    "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/config.json"
 )
 tokenizer = RecconSpanExtractionTokenizer.from_pretrained(
     "mrm8488/spanbert-finetuned-squadv2"
 )
 model = RecconSpanExtractionModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/reccon_span_extraction/pytorch_model.bin",
+    "https://storage.googleapis.com/sgnlp-models/models/reccon_span_extraction/pytorch_model.bin",
     config=config,
 )
 preprocessor = RecconSpanExtractionPreprocessor(tokenizer)

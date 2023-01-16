@@ -19,7 +19,7 @@ embed_model = SenticGCNBertEmbeddingModel.from_pretrained("bert-base-uncased", c
 preprocessor = SenticGCNBertPreprocessor(
     tokenizer=tokenizer,
     embedding_model=embed_model,
-    senticnet="https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+    senticnet="https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle",
     device="cpu",
 )
 
@@ -28,11 +28,11 @@ postprocessor = SenticGCNBertPostprocessor()
 
 # Load model
 config = SenticGCNBertConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
+    "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/config.json"
 )
 
 model = SenticGCNBertModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin", config=config
+    "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/pytorch_model.bin", config=config
 )
 
 # Inputs

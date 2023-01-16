@@ -36,7 +36,7 @@ class UFDModelBuilder:
 
     def __init__(
         self,
-        models_root_path: str = "https://storage.googleapis.com/sgnlp/models/ufd/",
+        models_root_path: str = "https://storage.googleapis.com/sgnlp-models/models/ufd/",
         source_domains: List[str] = ["books", "music", "dvd"],
         target_languages: List[str] = ["de", "jp", "fr"],
         target_domains: List[str] = ["books", "music", "dvd"],

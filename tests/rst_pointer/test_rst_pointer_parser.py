@@ -40,10 +40,10 @@ class TestRstPointerParser(unittest.TestCase):
     @pytest.mark.slow
     def test_from_pretrained(self):
         parser_config = RstPointerParserConfig.from_pretrained(
-            "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json"
+            "https://storage.googleapis.com/sgnlp-models/models/rst_pointer/parser/config.json"
         )
         parser = RstPointerParserModel.from_pretrained(
-            "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin",
+            "https://storage.googleapis.com/sgnlp-models/models/rst_pointer/parser/pytorch_model.bin",
             config=parser_config,
         )
 

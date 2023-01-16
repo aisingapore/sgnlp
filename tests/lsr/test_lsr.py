@@ -44,10 +44,10 @@ class TestLsr(unittest.TestCase):
     @pytest.mark.slow
     def test_from_pretrained(self):
         config = LsrConfig.from_pretrained(
-            "https://storage.googleapis.com/sgnlp/models/lsr/config.json"
+            "https://storage.googleapis.com/sgnlp-models/models/lsr/config.json"
         )
         model = LsrModel.from_pretrained(
-            "https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin",
+            "https://storage.googleapis.com/sgnlp-models/models/lsr/pytorch_model.bin",
             config=config,
         )
 

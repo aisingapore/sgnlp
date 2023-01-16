@@ -23,8 +23,8 @@ class RecconEmotionEntailmentModel(RobertaForSequenceClassification):
         config = RecconEmotionEntailmentConfig()
         model = RecconEmotionEntailmentModel(config)
         # 2. load from pretrained
-        config = RecconEmotionEntailmentConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json")
-        model = RecconEmotionEntailmentModel.from_pretrained("https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin", config=config)
+        config = RecconEmotionEntailmentConfig.from_pretrained("https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/config.json")
+        model = RecconEmotionEntailmentModel.from_pretrained("https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/pytorch_model.bin", config=config)
 
         # Using model
         tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")
