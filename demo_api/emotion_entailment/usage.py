@@ -8,11 +8,11 @@ from sgnlp.models.emotion_entailment import (
 
 # Load model
 config = RecconEmotionEntailmentConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json"
+    "https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/config.json"
 )
 tokenizer = RecconEmotionEntailmentTokenizer.from_pretrained("roberta-base")
 model = RecconEmotionEntailmentModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin",
+    "https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/pytorch_model.bin",
     config=config,
 )
 preprocessor = RecconEmotionEntailmentPreprocessor(tokenizer)

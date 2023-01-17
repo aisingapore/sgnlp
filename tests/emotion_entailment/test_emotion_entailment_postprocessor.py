@@ -23,10 +23,10 @@ class EmotionEntailmentTestPostprocessor(unittest.TestCase):
         preprocessor = RecconEmotionEntailmentPreprocessor()
         preprocessed_input = preprocessor(inputs)
         config = RecconEmotionEntailmentConfig.from_pretrained(
-            "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/config.json"
+            "https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/config.json"
         )
         model = RecconEmotionEntailmentModel.from_pretrained(
-            "https://storage.googleapis.com/sgnlp/models/reccon_emotion_entailment/pytorch_model.bin",
+            "https://storage.googleapis.com/sgnlp-models/models/reccon_emotion_entailment/pytorch_model.bin",
             config=config,
         )
         self.batch_size = len(inputs["emotion"])

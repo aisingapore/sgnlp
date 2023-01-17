@@ -18,14 +18,14 @@ from sgnlp.models.rumour_detection_twitter import (
 app = create_api(app_name=__name__, model_card_path="model_card/rumour.json")
 
 config = RumourDetectionTwitterConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/config.json"
+    "https://storage.googleapis.com/sgnlp-models/models/rumour_detection_twitter/config.json"
 )
 model = RumourDetectionTwitterModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/pytorch_model.bin",
+    "https://storage.googleapis.com/sgnlp-models/models/rumour_detection_twitter/pytorch_model.bin",
     config=config,
 )
 download_tokenizer_files_from_azure(
-    "https://storage.googleapis.com/sgnlp/models/rumour_detection_twitter/",
+    "https://storage.googleapis.com/sgnlp-models/models/rumour_detection_twitter/",
     "rumour_tokenizer",
 )
 tokenizer = RumourDetectionTwitterTokenizer.from_pretrained("rumour_tokenizer")

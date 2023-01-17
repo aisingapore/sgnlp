@@ -13,10 +13,10 @@ from sgnlp.models.nea.utils import convert_to_dataset_friendly_scores
 app = create_api(app_name=__name__, model_card_path="model_card/nea.json")
 
 nea_config = NEAConfig.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/nea/config.json"
+    "https://storage.googleapis.com/sgnlp-models/models/nea/config.json"
 )
 nea_model = NEARegPoolingModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/nea/pytorch_model.bin",
+    "https://storage.googleapis.com/sgnlp-models/models/nea/pytorch_model.bin",
     config=nea_config,
 )
 nea_tokenizer = NEATokenizer.from_pretrained("nea_tokenizer")

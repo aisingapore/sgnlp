@@ -57,10 +57,10 @@ class TestLsrPreprocessor(unittest.TestCase):
             ]
         }
 
-        rel2id_path = cached_path('https://storage.googleapis.com/sgnlp/models/lsr/rel2id.json')
-        word2id_path = cached_path('https://storage.googleapis.com/sgnlp/models/lsr/word2id.json')
-        ner2id_path = cached_path('https://storage.googleapis.com/sgnlp/models/lsr/ner2id.json')
-        config = LsrConfig.from_pretrained("https://storage.googleapis.com/sgnlp/models/lsr/config.json")
+        rel2id_path = cached_path('https://storage.googleapis.com/sgnlp-models/models/lsr/rel2id.json')
+        word2id_path = cached_path('https://storage.googleapis.com/sgnlp-models/models/lsr/word2id.json')
+        ner2id_path = cached_path('https://storage.googleapis.com/sgnlp-models/models/lsr/ner2id.json')
+        config = LsrConfig.from_pretrained("https://storage.googleapis.com/sgnlp-models/models/lsr/config.json")
         preprocessor = LsrPreprocessor(rel2id_path=rel2id_path, word2id_path=word2id_path, ner2id_path=ner2id_path,
                                        config=config, is_train=True)
         preprocessed_input = preprocessor([instance])

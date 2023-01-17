@@ -53,31 +53,31 @@ following code:
     )
 
     download_tokenizer_files(
-        "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_tokenizer/",
+        "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_tokenizer/",
         "senticgcn_tokenizer")
 
     tokenizer = SenticGCNTokenizer.from_pretrained("senticgcn_tokenizer")
 
     config = SenticGCNConfig.from_pretrained(
-        "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn/config.json"
+        "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn/config.json"
     )
     model = SenticGCNModel.from_pretrained(
-        "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn/pytorch_model.bin",
+        "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn/pytorch_model.bin",
         config=config
     )
 
     embed_config = SenticGCNEmbeddingConfig.from_pretrained(
-        "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/config.json"
+        "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_embedding_model/config.json"
     )
 
     embed_model = SenticGCNEmbeddingModel.from_pretrained(
-        "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/pytorch_model.bin",
+        "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_embedding_model/pytorch_model.bin",
         config=embed_config
     )
 
     preprocessor = SenticGCNPreprocessor(
         tokenizer=tokenizer, embedding_model=embed_model,
-        senticnet="https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        senticnet="https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle",
         device="cpu")
 
     postprocessor = SenticGCNPostprocessor()
@@ -140,11 +140,11 @@ with the following code:
     tokenizer = SenticGCNBertTokenizer.from_pretrained("bert-base-uncased")
 
     config = SenticGCNBertConfig.from_pretrained(
-        "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/config.json"
+        "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/config.json"
     )
 
     model = SenticGCNBertModel.from_pretrained(
-        "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_bert/pytorch_model.bin",
+        "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_bert/pytorch_model.bin",
         config=config
     )
 
@@ -156,7 +156,7 @@ with the following code:
 
     preprocessor = SenticGCNBertPreprocessor(
         tokenizer=tokenizer, embedding_model=embed_model,
-        senticnet="https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        senticnet="https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle",
         device="cpu")
 
     postprocessor = SenticGCNBertPostprocessor()
@@ -371,7 +371,7 @@ and example of the Sentic-GCN Bert config file can be found
 +==========================================+======================================================================================+
 | eval_args/model                          | The model type to evaluate. Either 'senticgcn' or 'senticgcnbert'.                   |
 +------------------------------------------+--------------------------------------------------------------------------------------+
-| eval_args/model                          | Path to model folder, could be cloud storage, local folder or HuggingFace model hub. |
+| eval_args/model_path                     | Path to model folder, could be cloud storage, local folder or HuggingFace model hub. |
 +------------------------------------------+--------------------------------------------------------------------------------------+
 | tokenizer                                | The tokenizer type to use for dataset preprocessing.                                 |
 +------------------------------------------+--------------------------------------------------------------------------------------+

@@ -20,12 +20,12 @@
   },
   "trainingTime": "~17 hours for 100 epochs on a single V100 GPU.",
   "modelWeights": {
-    "text": "https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin",
-    "url": "https://storage.googleapis.com/sgnlp/models/lsr/pytorch_model.bin"
+    "text": "https://storage.googleapis.com/sgnlp-models/models/lsr/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp-models/models/lsr/pytorch_model.bin"
   },
   "modelConfig": {
-    "text": "https://storage.googleapis.com/sgnlp/models/lsr/config.json",
-    "url": "https://storage.googleapis.com/sgnlp/models/lsr/config.json"
+    "text": "https://storage.googleapis.com/sgnlp-models/models/lsr/config.json",
+    "url": "https://storage.googleapis.com/sgnlp-models/models/lsr/config.json"
   },
   "modelInput": "Coreference clusters of entities, relations between clusters of entities, and text.",
   "modelOutput": "Scores of all possible relation labels between all possible pairs of entity clusters.",

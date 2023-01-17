@@ -17,7 +17,7 @@ app.logger.setLevel(gunicorn_logger.level)
 
 # Load model
 model = Lif3WayApModel.from_pretrained(
-    "https://storage.googleapis.com/sgnlp/models/lif_3way_ap/model.tar.gz",
+    "https://storage.googleapis.com/sgnlp-models/models/lif_3way_ap/model.tar.gz",
     predictor_name="lif_3way_ap_predictor",
 )
 

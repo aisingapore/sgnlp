@@ -54,7 +54,7 @@ class SenticGCNBasePreprocessor:
         spacy_pipeline: str = "en_core_web_sm",
         senticnet: Union[
             str, Dict[str, float]
-        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        ] = "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle",
         device: str = "cpu",
     ) -> None:
         # Set device
@@ -174,16 +174,16 @@ class SenticGCNPreprocessor(SenticGCNBasePreprocessor):
         self,
         tokenizer: Union[
             str, PreTrainedTokenizer
-        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_tokenizer/",
+        ] = "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_tokenizer/",
         embedding_model: Union[
             str, PreTrainedModel
-        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticgcn_embedding_model/",
+        ] = "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticgcn_embedding_model/",
         config_filename: str = "config.json",
         model_filename: str = "pytorch_model.bin",
         spacy_pipeline: str = "en_core_web_sm",
         senticnet: Union[
             str, Dict[str, float]
-        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        ] = "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle",
         device: str = "cpu",
     ) -> None:
         super().__init__(
@@ -361,7 +361,7 @@ class SenticGCNBertPreprocessor(SenticGCNBasePreprocessor):
         spacy_pipeline: str = "en_core_web_sm",
         senticnet: Union[
             str, Dict[str, float]
-        ] = "https://storage.googleapis.com/sgnlp/models/sentic_gcn/senticnet.pickle",
+        ] = "https://storage.googleapis.com/sgnlp-models/models/sentic_gcn/senticnet.pickle",
         max_len: int = 85,
         device: str = "cpu",
     ) -> None:

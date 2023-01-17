@@ -21,32 +21,32 @@
   "trainingConfig": [
     {
       "text": "Segmenter training config",
-      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/training_config.json"
+      "url": "https://storage.googleapis.com/sgnlp-models/models/rst_pointer/segmenter/training_config.json"
     },
     {
       "text": "Parser training config",
-      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/training_config.json"
+      "url": "https://storage.googleapis.com/sgnlp-models/models/rst_pointer/parser/training_config.json"
     }
   ],
   "trainingTime": "~2 hours for 100 epochs on a single V100 GPU for segmenter model. ~6 hours for 200 epochs on a single V100 GPU for parser model",
   "modelWeights": [
     {
       "text": "Segmenter weights",
-      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/pytorch_model.bin"
+      "url": "https://storage.googleapis.com/sgnlp-models/models/rst_pointer/segmenter/pytorch_model.bin"
     },
     {
       "text": "Parser weights",
-      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/pytorch_model.bin"
+      "url": "https://storage.googleapis.com/sgnlp-models/models/rst_pointer/parser/pytorch_model.bin"
     }
   ],
   "modelConfig": [
     {
       "text": "Segmenter config",
-      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/segmenter/config.json"
+      "url": "https://storage.googleapis.com/sgnlp-models/models/rst_pointer/segmenter/config.json"
     },
     {
       "text": "Parser config",
-      "url": "https://storage.googleapis.com/sgnlp/models/rst_pointer/parser/config.json"
+      "url": "https://storage.googleapis.com/sgnlp-models/models/rst_pointer/parser/config.json"
     }
   ],
   "modelInput": "A sentence.",
