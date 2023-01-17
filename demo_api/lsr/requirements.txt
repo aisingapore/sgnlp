@@ -1,7 +1,7 @@
 torch==1.7
 allennlp==2.1.0
 allennlp-models==2.1.0
-numpy==1.2.0
+numpy==1.20.0
 networkx==2.4
 transformers
 textdistance==4.2.1
