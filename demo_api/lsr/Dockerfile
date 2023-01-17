@@ -4,6 +4,7 @@ COPY . /demo_api
 
 WORKDIR /demo_api/lsr
 
+RUN pip install -U pip
 RUN pip install -r requirements.txt
 RUN python -m download_pretrained
 
