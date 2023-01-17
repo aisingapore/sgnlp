@@ -1,3 +1,4 @@
 allennlp
 networkx==2.4
+numpy==1.23.3
 pytest
