@@ -1,10 +1,10 @@
 torch==1.7
 allennlp==2.1.0
 allennlp-models==2.1.0
-numpy
+numpy==1.2.0
 networkx==2.4
 transformers
 textdistance==4.2.1
 flask
 gunicorn
-sgnlp==0.1.1
+sgnlp==0.4
