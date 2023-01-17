@@ -371,7 +371,7 @@ and example of the Sentic-GCN Bert config file can be found
 +==========================================+======================================================================================+
 | eval_args/model                          | The model type to evaluate. Either 'senticgcn' or 'senticgcnbert'.                   |
 +------------------------------------------+--------------------------------------------------------------------------------------+
-| eval_args/model                          | Path to model folder, could be cloud storage, local folder or HuggingFace model hub. |
+| eval_args/model_path                     | Path to model folder, could be cloud storage, local folder or HuggingFace model hub. |
 +------------------------------------------+--------------------------------------------------------------------------------------+
 | tokenizer                                | The tokenizer type to use for dataset preprocessing.                                 |
 +------------------------------------------+--------------------------------------------------------------------------------------+
