@@ -4,7 +4,7 @@ jobs:
   unit-testing:
     strategy:
       matrix:
-        os: [window-latest, macos-latest, ubuntu-latest]
+        os: [window-latest, macos-latest, ubuntu-20.04]
         python: ['3.8.16', '3.9.16', '3.10.10']
     runs-on: ${{ matrix.os }}
     name: 'Unit tests'
