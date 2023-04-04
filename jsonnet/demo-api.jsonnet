@@ -16,24 +16,6 @@ local build_and_push_staging(module_name, image_name) = {
   ],
 };
 
-local build_and_push_dev_staging(module_name, image_name) = {
-  image: "registry.aisingapore.net/sg-nlp/sg-nlp-runner:latest",
-  stage: "build_and_push_staging",
-  tags: [
-    "on-prem",
-    "dind",
-  ],
-  when: "manual",
-  script: [
-    "echo 'Logging in to AISG Docker Registry...'",
-    "echo $STG_REGISTRY_PASSWORD | docker login registry.aisingapore.net -u $STG_DOCKER_USER --password-stdin",
-    "echo 'Building and pushing image...'",
-    "docker build --no-cache -t %s -f demo_api/%s/dev.Dockerfile ." % [module_name, module_name],
-    "docker tag %s registry.aisingapore.net/sg-nlp/%s:latest" % [module_name, image_name],
-    "docker push registry.aisingapore.net/sg-nlp/%s:latest" % image_name,
-  ],
-};
-
 local build_and_push_docs_staging() = {
   image: "python:3.8.11-slim",
   stage: "build_and_push_staging",
@@ -73,7 +55,7 @@ local retag_and_push_production(module_name, image_name) = {
     "dind",
   ],
   only: {
-    refs: ["main", "dev"]
+    refs: ["main"]
   },
   needs: ["%s_restart_kubernetes_staging" % module_name],
   when: "manual",
@@ -97,7 +79,7 @@ local restart_kubernetes_staging(module_name, deployment_name) = {
     "dind",
   ],
   when: "manual",
-//  needs: ["%s_build_and_push_staging" % module_name],
+  needs: ["%s_build_and_push_staging" % module_name],
   script: [
     "echo 'Restarting pods...'",
     "export KUBECONFIG=$STG_KUBE_CONFIG",
@@ -113,7 +95,7 @@ local restart_kubernetes_production(module_name, deployment_name) = {
     "dind",
   ],
   only: {
-    refs: ["main", "dev"]
+    refs: ["main"]
   },
   when: "manual",
   needs: ["%s_retag_and_push_production" % module_name],
@@ -145,6 +127,16 @@ local api_names = {
     image_name: "rumour-detection-twitter",
     deployment_name: "rumour-detection-twitter"
   },
+  "stance_classificaton": {
+    module_name: "stance_classificaton",
+    image_name: "stance-classificaton",
+    deployment_name: "stance-classificaton"
+  },  
+  "rumour_verification": {
+    module_name: "rumour_verification",
+    image_name: "rumour-verification",
+    deployment_name: "rumour-verification"
+  },
   "csgec": {
     module_name: "csgec",
     image_name: "csgec",
@@ -169,20 +161,6 @@ local api_names = {
     module_name: "sentic_gcn",
     image_name: "sentic-gcn",
     deployment_name: "sentic-gcn"
-  },
-  "coherence_momentum": {
-    module_name: "coherence_momentum",
-    image_name: "coherence-momentum",
-    deployment_name: "coherence-momentum"
-  }
-};
-
-// To deploy dev builds into production (for beta public testing)
-local dev_api_names = {
-  "coherence_momentum": {
-    module_name: "coherence_momentum",
-    image_name: "coherence-momentum",
-    deployment_name: "coherence-momentum"
   }
 };
 
@@ -198,11 +176,6 @@ local dev_api_names = {
   [api_names[key]["module_name"] + "_build_and_push_staging"]:
     build_and_push_staging(api_names[key]["module_name"], api_names[key]["image_name"])
     for key in std.objectFields(api_names)
-} + {
-  // Build and push dev staging
-  [dev_api_names[key]["module_name"] + "_build_and_push_dev_staging"]:
-    build_and_push_dev_staging(dev_api_names[key]["module_name"], dev_api_names[key]["image_name"])
-    for key in std.objectFields(dev_api_names)
 } + {
   // Restart kubernetes staging
   [api_names[key]["module_name"] + "_restart_kubernetes_staging"]:
