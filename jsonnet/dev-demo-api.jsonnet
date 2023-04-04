@@ -59,7 +59,7 @@ local api_names = {
     module_name: "rumour_verification",
     image_name: "rumour-verification",
     deployment_name: "rumour-verification"
-  },
+  },  
   "sentic_gcn": {
     module_name: "sentic_gcn",
     image_name: "sentic-gcn",
@@ -70,10 +70,10 @@ local api_names = {
     image_name: "ufd",
     deployment_name: "ufd"
   },
-  "dual_bert": {
-    module_name: "dual_bert",
-    image_name: "dual-bert",
-    deployment_name: "dual-bert"
+  "coherence_momentum": {
+    module_name: "coherence_momentum",
+    image_name: "coherence-momentum",
+    deployment_name: "coherence-momentum"
   }
 };
 
