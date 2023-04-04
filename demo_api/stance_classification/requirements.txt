@@ -1,0 +1,6 @@
+torch==1.10.1
+spacy==3.2.1
+numpy==1.22.0
+flask
+gunicorn
+sgnlp

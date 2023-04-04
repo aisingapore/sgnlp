@@ -1,0 +1,44 @@
+{
+  "name": "Stance Classification with Hierarchical Transformer (Single-task Learning)",
+  "languages": "English",
+  "description": "BERT-based Hierarchical Transformer for rumour verification.",
+  "paper": {
+    "text": "Jianfei Yu, Jing Jiang, Ling Min Serena Khoo, Hai Leong Chieu, Rui Xia (2020). Coupled hierarchical transformer for stance-aware rumor verification in social media conversations.",
+    "url": "https://aclanthology.org/2020.emnlp-main.108.pdf"
+  },
+  "trainingDataset": {
+    "text": "SemEval-2017",
+    "url": "https://github.com/jefferyYu/DualHierarchicalTransformer/tree/master/rumor_data/semeval17/split_0"
+  },
+  "evaluationDataset": {
+    "text": "SemEval-2017",
+    "url": "https://github.com/jefferyYu/DualHierarchicalTransformer/tree/master/rumor_data/semeval17/split_0"
+  },
+  "evaluationScores": "59.2% Macro-F1, 60.7% Acc",
+  "trainingConfig": {
+    "text": "Refer to documentation for details."
+  },
+  "trainingTime": "~1 hr for 26 epochs",
+  "modelWeights": {
+    "text": "https://storage.googleapis.com/sgnlp/models/rumour_stance/rumour_verification/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp/models/rumour_stance/rumour_verification/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "https://storage.googleapis.com/sgnlp/models/rumour_stance/rumour_verification/config.json",
+    "url": "https://storage.googleapis.com/sgnlp/models/rumour_stance/rumour_verification/config.json"
+  },
+  "modelInput": "Conversation thread",
+  "modelOutput": "Tag source claim in the thread with a rumour label (True, False, Unverified)",
+  "modelSize": "~470MB",
+  "inferenceInfo": "< 1 sec on Intel(R) i3 Quad-Core @ 3.6GHz.",
+  "usageScenarios": "Identify false rumor",
+  "originalCode": {
+    "text": "https://github.com/jefferyYu/DualHierarchicalTransformer",
+    "url": "https://github.com/jefferyYu/DualHierarchicalTransformer"
+  },
+  "license": {
+    "text": "",
+    "url": ""
+  },
+  "contact": "sg-nlp@aisingapore.org"
+}

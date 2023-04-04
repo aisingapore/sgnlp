@@ -1,0 +1,21 @@
+{
+  "bert_model": "bert-base-uncased",
+  "train_path": "rumour_input/rumour_train.tsv",
+  "dev_path": "rumour_input/rumour_dev.tsv",
+  "test_path": "rumour_input/rumour_test.tsv",
+  "output_dir": "rumour_output/",
+  "batch_size": 4,
+  "max_seq_length": 512,
+  "max_tweet_num": 17,
+  "max_tweet_length": 30,
+  "max_tweet_bucket": 4,
+  "do_lower_case": false,
+  "no_cuda": false,
+  "fp16": false,
+  "num_train_epochs": 26,
+  "learning_rate": 5e-5,
+  "gradient_accumulation_steps": 1,
+  "loss_scale": 0,
+  "warmup_proportion": 0.1,
+  "seed": 32
+}

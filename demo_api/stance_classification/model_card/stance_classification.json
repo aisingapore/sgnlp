@@ -1,0 +1,44 @@
+{
+  "name": "Stance Classification with Hierarchical Transformer (Single-task Learning)",
+  "languages": "English",
+  "description": "BERT-based Hierarchical Transformer with model design in the input and output layers specific to stance classification.",
+  "paper": {
+    "text": "Jianfei Yu, Jing Jiang, Ling Min Serena Khoo, Hai Leong Chieu, Rui Xia (2020). Coupled hierarchical transformer for stance-aware rumor verification in social media conversations.",
+    "url": "https://aclanthology.org/2020.emnlp-main.108.pdf"
+  },
+  "trainingDataset": {
+    "text": "SemEval-2017",
+    "url": "https://github.com/jefferyYu/DualHierarchicalTransformer/tree/master/rumor_data/semeval17_stance/split_0"
+  },
+  "evaluationDataset": {
+    "text": "SemEval-2017",
+    "url": "https://github.com/jefferyYu/DualHierarchicalTransformer/tree/master/rumor_data/semeval17_stance/split_0"
+  },
+  "evaluationScores": "50.9% Macro-F1, 76.3% Acc",
+  "trainingConfig": {
+    "text": "Refer to documentation for details."
+  },
+  "trainingTime": "~1 hr for 27 epochs",
+  "modelWeights": {
+    "text": "https://storage.googleapis.com/sgnlp/models/rumour_stance/stance_classification/pytorch_model.bin",
+    "url": "https://storage.googleapis.com/sgnlp/models/rumour_stance/stance_classification/pytorch_model.bin"
+  },
+  "modelConfig": {
+    "text": "https://storage.googleapis.com/sgnlp/models/rumour_stance/stance_classification/config.json",
+    "url": "https://storage.googleapis.com/sgnlp/models/rumour_stance/stance_classification/config.json"
+  },
+  "modelInput": "Conversation thread",
+  "modelOutput": "Label each post in the thread with a stance label (Support, Deny, Query, Comment) towards the claim in the source post",
+  "modelSize": "~470MB",
+  "inferenceInfo": "< 5 secs on Intel(R) i3 Quad-Core @ 3.6GHz.",
+  "usageScenarios": "Improve rumor verification",
+  "originalCode": {
+    "text": "https://github.com/jefferyYu/DualHierarchicalTransformer",
+    "url": "https://github.com/jefferyYu/DualHierarchicalTransformer"
+  },
+  "license": {
+    "text": "",
+    "url": ""
+  },
+  "contact": "sg-nlp@aisingapore.org"
+}

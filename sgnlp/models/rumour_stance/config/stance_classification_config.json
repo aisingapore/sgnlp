@@ -1,0 +1,21 @@
+{
+  "bert_model": "bert-base-uncased",
+  "train_path": "stance_input/stance_train.tsv",
+  "dev_path": "stance_input/stance_dev.tsv",
+  "test_path": "stance_input/stance_test.tsv",
+  "output_dir": "stance_output/",
+  "batch_size": 2,
+  "max_seq_length": 512,
+  "max_tweet_num": 17,
+  "max_tweet_length": 30,
+  "max_tweet_bucket": 10,
+  "do_lower_case": false,
+  "no_cuda": false,
+  "fp16": false,
+  "num_train_epochs": 27,
+  "learning_rate": 5e-5,
+  "gradient_accumulation_steps": 1,
+  "loss_scale": 0,
+  "warmup_proportion": 0.1,
+  "seed": 64
+}

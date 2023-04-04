@@ -145,6 +145,16 @@ local api_names = {
     image_name: "rumour-detection-twitter",
     deployment_name: "rumour-detection-twitter"
   },
+  "stance_classificaton": {
+    module_name: "stance_classificaton",
+    image_name: "stance-classificaton",
+    deployment_name: "stance-classificaton"
+  },  
+  "rumour_verification": {
+    module_name: "rumour_verification",
+    image_name: "rumour-verification",
+    deployment_name: "rumour-verification"
+  },  
   "csgec": {
     module_name: "csgec",
     image_name: "csgec",

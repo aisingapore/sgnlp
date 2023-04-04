@@ -50,6 +50,16 @@ local api_names = {
     image_name: "lif-3way-ap",
     deployment_name: "lif-3way-ap"
   },
+  "stance_classificaton": {
+    module_name: "stance_classificaton",
+    image_name: "stance-classificaton",
+    deployment_name: "stance-classificaton"
+  },  
+  "rumour_verification": {
+    module_name: "rumour_verification",
+    image_name: "rumour-verification",
+    deployment_name: "rumour-verification"
+  },  
   "sentic_gcn": {
     module_name: "sentic_gcn",
     image_name: "sentic-gcn",
