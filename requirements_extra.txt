@@ -1,2 +1,2 @@
 allennlp
-networkx==2.4
+networkx==3.0

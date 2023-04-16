@@ -1,0 +1,28 @@
+name: Unit Testing
+on: [push]
+jobs:
+  unit-testing:
+    strategy:
+      matrix:
+        os: [window-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    name: 'Unit tests'
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: |
+            3.8
+            3.9
+            3.10
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements_dev.txt
+          pip install -r requirements_extra.txt
+      - name: Run unit tests
+        run: |
+          pytest tests
